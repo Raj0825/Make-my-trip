@@ -18,8 +18,12 @@ public class UserController {
         return userServices.login(email,password);
     }
     @PostMapping("/signup")
-    public ResponseEntity<Users> signup(@RequestBody Users user){
-        return ResponseEntity.ok(userServices.signup(user));
+    public ResponseEntity<?> signup(@RequestBody Users user) {
+        try {
+            return ResponseEntity.ok(userServices.signup(user));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
     @GetMapping("/email")
     public ResponseEntity<Users> getuserbyemail(@RequestParam String email){
