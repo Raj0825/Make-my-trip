@@ -1,12 +1,5 @@
 package com.makemytrip.makemytrip.services;
-import com.makemytrip.makemytrip.models.Users;
-import com.makemytrip.makemytrip.models.Users.Booking;
-import com.makemytrip.makemytrip.models.Flight;
-import com.makemytrip.makemytrip.models.Hotel;
-import com.makemytrip.makemytrip.models.Train;
-import com.makemytrip.makemytrip.models.Bus;
-import com.makemytrip.makemytrip.models.Cab;
-import com.makemytrip.makemytrip.models.Homestay;
+import com.makemytrip.makemytrip.models.*;
 import com.makemytrip.makemytrip.repositories.UserRepository;
 import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.HotelRepository;
@@ -43,7 +36,7 @@ public class BookingService {
     @Autowired
     private HomestayRepository homestayRepository;
 
-    public Booking bookFlight(String userId,String flightId,int seats,double price){
+    public Users.Booking bookFlight(String userId, String flightId, int seats, double price){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Flight> flightOptional =flightRepository.findById(flightId);
         if(usersOptional.isPresent() && flightOptional.isPresent()){
@@ -53,7 +46,7 @@ public class BookingService {
                 flight.setAvailableSeats(flight.getAvailableSeats()- seats);
                 flightRepository.save(flight);
 
-                Booking booking=new Booking();
+                Users.Booking booking=new Users.Booking();
                 booking.setType("Flight");
                 booking.setBookingId(flightId);
                 booking.setDate(LocalDate.now().toString());
@@ -68,7 +61,7 @@ public class BookingService {
         }
         throw new RuntimeException("User or flight not found");
     }
-    public Booking bookhotel(String userId,String hotelId,int rooms,double price){
+    public Users.Booking bookhotel(String userId, String hotelId, int rooms, double price){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Hotel> hotelOptional = hotelRepository.findById(hotelId);
         if(usersOptional.isPresent() && hotelOptional.isPresent()){
@@ -78,7 +71,7 @@ public class BookingService {
                 hotel.setAvailableRooms(hotel.getAvailableRooms()- rooms);
                 hotelRepository.save(hotel);
 
-                Booking booking=new Booking();
+                Users.Booking booking=new Users.Booking();
                 booking.setType("Hotel");
                 booking.setBookingId(hotelId);
                 booking.setDate(LocalDate.now().toString());
@@ -94,7 +87,7 @@ public class BookingService {
         throw new RuntimeException("User or flight not found");
     }
 
-    public Booking booktrain(String userId,String trainId,int seats,double price){
+    public Users.Booking booktrain(String userId, String trainId, int seats, double price){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Train> trainOptional =trainRepository.findById(trainId);
         if(usersOptional.isPresent() && trainOptional.isPresent()){
@@ -104,7 +97,7 @@ public class BookingService {
                 train.setAvailableSeats(train.getAvailableSeats()- seats);
                 trainRepository.save(train);
 
-                Booking booking=new Booking();
+                Users.Booking booking=new Users.Booking();
                 booking.setType("Train");
                 booking.setBookingId(trainId);
                 booking.setDate(LocalDate.now().toString());
@@ -120,7 +113,7 @@ public class BookingService {
         throw new RuntimeException("User or train not found");
     }
 
-    public Booking bookbus(String userId,String busId,int seats,double price){
+    public Users.Booking bookbus(String userId, String busId, int seats, double price){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Bus> busOptional =busRepository.findById(busId);
         if(usersOptional.isPresent() && busOptional.isPresent()){
@@ -130,7 +123,7 @@ public class BookingService {
                 bus.setAvailableSeats(bus.getAvailableSeats()- seats);
                 busRepository.save(bus);
 
-                Booking booking=new Booking();
+                Users.Booking booking=new Users.Booking();
                 booking.setType("Bus");
                 booking.setBookingId(busId);
                 booking.setDate(LocalDate.now().toString());
@@ -146,7 +139,7 @@ public class BookingService {
         throw new RuntimeException("User or bus not found");
     }
 
-    public Booking bookcab(String userId,String cabId,int seats,double price){
+    public Users.Booking bookcab(String userId, String cabId, int seats, double price){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Cab> cabOptional =cabRepository.findById(cabId);
         if(usersOptional.isPresent() && cabOptional.isPresent()){
@@ -156,7 +149,7 @@ public class BookingService {
                 cab.setAvailableSeats(cab.getAvailableSeats()- seats);
                 cabRepository.save(cab);
 
-                Booking booking=new Booking();
+                Users.Booking booking=new Users.Booking();
                 booking.setType("Cab");
                 booking.setBookingId(cabId);
                 booking.setDate(LocalDate.now().toString());
@@ -172,7 +165,7 @@ public class BookingService {
         throw new RuntimeException("User or cab not found");
     }
 
-    public Booking bookhomestay(String userId,String homestayId,int rooms,double price){
+    public Users.Booking bookhomestay(String userId, String homestayId, int rooms, double price){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Homestay> homestayOptional = homestayRepository.findById(homestayId);
         if(usersOptional.isPresent() && homestayOptional.isPresent()){
@@ -182,7 +175,7 @@ public class BookingService {
                 homestay.setAvailableRooms(homestay.getAvailableRooms()- rooms);
                 homestayRepository.save(homestay);
 
-                Booking booking=new Booking();
+                Users.Booking booking=new Users.Booking();
                 booking.setType("Homestay");
                 booking.setBookingId(homestayId);
                 booking.setDate(LocalDate.now().toString());

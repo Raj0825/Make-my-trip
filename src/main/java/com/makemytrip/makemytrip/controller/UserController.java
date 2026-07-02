@@ -1,9 +1,9 @@
 package com.makemytrip.makemytrip.controller;
+import com.makemytrip.makemytrip.models.Users;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.makemytrip.makemytrip.models.Users;
 import com.makemytrip.makemytrip.services.UserServices;
 
 @RestController
@@ -14,7 +14,7 @@ public class UserController {
     private UserServices userServices;
 
     @PostMapping("/login")
-    public Users login(@RequestParam String email,@RequestParam String password){
+    public Users login(@RequestParam String email, @RequestParam String password){
         return userServices.login(email,password);
     }
     @PostMapping("/signup")

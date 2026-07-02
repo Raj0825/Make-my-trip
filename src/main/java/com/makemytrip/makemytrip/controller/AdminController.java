@@ -1,15 +1,9 @@
 package com.makemytrip.makemytrip.controller;
+import com.makemytrip.makemytrip.models.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.makemytrip.makemytrip.models.Users;
-import com.makemytrip.makemytrip.models.Flight;
-import com.makemytrip.makemytrip.models.Hotel;
-import com.makemytrip.makemytrip.models.Train;
-import com.makemytrip.makemytrip.models.Bus;
-import com.makemytrip.makemytrip.models.Cab;
-import com.makemytrip.makemytrip.models.Homestay;
 import com.makemytrip.makemytrip.repositories.UserRepository;
 import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.HotelRepository;

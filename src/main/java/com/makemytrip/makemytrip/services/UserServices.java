@@ -12,7 +12,7 @@ public class UserServices{
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public Users login(String email ,String password){
+    public Users login(String email , String password){
         Users user = userRepository.findByEmail(email);
         if(user != null && passwordEncoder.matches(password,user.getPassword())){
             return  user;

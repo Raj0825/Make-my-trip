@@ -1,7 +1,7 @@
 package com.makemytrip.makemytrip.controller;
+import com.makemytrip.makemytrip.models.Users;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.makemytrip.makemytrip.models.Users;
 import com.makemytrip.makemytrip.services.BookingService;
 
 @RestController
@@ -12,7 +12,7 @@ public class BookingController {
     private BookingService bookingService;
 
     @PostMapping("/flight")
-    public Users.Booking bookFlight(@RequestParam String userId,@RequestParam String flightId,@RequestParam int seats,@RequestParam double price){
+    public Users.Booking bookFlight(@RequestParam String userId, @RequestParam String flightId, @RequestParam int seats, @RequestParam double price){
         return bookingService.bookFlight(userId,flightId,seats,price);
     }
     @PostMapping("/hotel")
