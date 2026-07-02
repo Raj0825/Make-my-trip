@@ -20,16 +20,32 @@ public class UserServices{
         return null;
     }
 
-    public Users signup(Users user){
-        if(userRepository.findByEmail(user.getEmail())!= null){
-            throw new RuntimeException("Email is already registered");
-        }
-        user.setPassword(passwordEncoder.encode((user.getPassword())));
-        if (user.getRole()== null){
-            user.setRole("USER");
-        }
-        return userRepository.save(user);
+    public Users signup(Users user) {
 
+        try {
+            System.out.println("===== SIGNUP START =====");
+            System.out.println("Email = " + user.getEmail());
+
+            if (userRepository.findByEmail(user.getEmail()) != null) {
+                throw new RuntimeException("Email is already registered");
+            }
+
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+            if (user.getRole() == null) {
+                user.setRole("USER");
+            }
+
+            Users savedUser = userRepository.save(user);
+
+            System.out.println("===== USER SAVED SUCCESSFULLY =====");
+
+            return savedUser;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
     public Users getUserByEmail(String email){
         return userRepository.findByEmail(email);
