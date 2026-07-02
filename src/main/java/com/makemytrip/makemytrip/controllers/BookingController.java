@@ -7,6 +7,7 @@ import com.makemytrip.makemytrip.services.BookingService;
 
 @RestController
 @RequestMapping("/booking")
+@CrossOrigin(origins = "*")
 public class BookingController {
     @Autowired
     private BookingService bookingService;
@@ -18,5 +19,25 @@ public class BookingController {
     @PostMapping("/hotel")
     public Users.Booking bookhotel (@RequestParam String userId,@RequestParam String hotelId,@RequestParam int rooms,@RequestParam double price){
         return bookingService.bookhotel(userId,hotelId,rooms,price);
+    }
+
+    @PostMapping("/train")
+    public Users.Booking booktrain(@RequestParam String userId,@RequestParam String trainId,@RequestParam int seats,@RequestParam double price){
+        return bookingService.booktrain(userId,trainId,seats,price);
+    }
+
+    @PostMapping("/bus")
+    public Users.Booking bookbus(@RequestParam String userId,@RequestParam String busId,@RequestParam int seats,@RequestParam double price){
+        return bookingService.bookbus(userId,busId,seats,price);
+    }
+
+    @PostMapping("/cab")
+    public Users.Booking bookcab(@RequestParam String userId,@RequestParam String cabId,@RequestParam int seats,@RequestParam double price){
+        return bookingService.bookcab(userId,cabId,seats,price);
+    }
+
+    @PostMapping("/homestay")
+    public Users.Booking bookhomestay(@RequestParam String userId,@RequestParam String homestayId,@RequestParam int rooms,@RequestParam double price){
+        return bookingService.bookhomestay(userId,homestayId,rooms,price);
     }
 }

@@ -1,4 +1,4 @@
-import { getflight, gethotel } from "@/api";
+import { getflight, gethotel, gettrain, getbus, getcab, gethomestay } from "@/api";
 import Loader from "@/components/Loader";
 import { SearchSelect } from "@/components/SearchSelect";
 import SignupDialog from "@/components/SignupDialog";
@@ -32,6 +32,10 @@ export default function Home() {
   const [hotel, sethotel] = useState<any[]>([]);
   const [loading, setloading] = useState(true);
   const [flight, setflight] = useState<any[]>([]);
+  const [train, settrain] = useState<any[]>([]);
+  const [bus, setbus] = useState<any[]>([]);
+  const [cab, setcab] = useState<any[]>([]);
+  const [homestay, sethomestay] = useState<any[]>([]);
   const user = useSelector((state: any) => state.user.user);
   const router = useRouter();
   const flightD = [
@@ -125,6 +129,14 @@ export default function Home() {
         sethotel(data);
         const flightdata = await getflight();
         setflight(flightdata);
+        const traindata = await gettrain();
+        settrain(traindata);
+        const busdata = await getbus();
+        setbus(busdata);
+        const cabdata = await getcab();
+        setcab(cabdata);
+        const homestaydata = await gethomestay();
+        sethomestay(homestaydata);
       } catch (error) {
         console.error(error);
       } finally {
@@ -135,17 +147,16 @@ export default function Home() {
     fetchdata();
   }, [user]);
 
-  const cityOptions = useMemo(() => {
-    const cities = new Set<string>();
-    flight.forEach((flight) => {
-      cities.add(flight.from);
-      cities.add(flight.to);
-    });
-    hotel.forEach((hotel) => {
-      cities.add(hotel.location);
-    });
-    return Array.from(cities).map((city) => ({ value: city, label: city }));
-  }, [flight, hotel]);
+ const cityOptions = useMemo(() => {
+   const cities = new Set<string>();
+   flight.forEach((f) => { if(f.from) cities.add(f.from); if(f.to) cities.add(f.to); });
+   train.forEach((t) => { if(t.from) cities.add(t.from); if(t.to) cities.add(t.to); });
+   bus.forEach((b) => { if(b.from) cities.add(b.from); if(b.to) cities.add(b.to); });
+   cab.forEach((c) => { if(c.from) cities.add(c.from); if(c.to) cities.add(c.to); });
+   hotel.forEach((h) => { if(h.location) cities.add(h.location); });
+   homestay.forEach((hs) => { if(hs.location) cities.add(hs.location); });
+   return Array.from(cities).map((city) => ({ value: city, label: city }));
+ }, [flight, hotel, train, bus, cab, homestay]);
 
   if (loading) {
     return <Loader />;
@@ -161,6 +172,32 @@ export default function Home() {
     } else if (bookingtype === "hotels") {
       const results = hotel.filter(
         (hotel) => hotel.location.toLowerCase() === to.toLowerCase()
+      );
+      setsearchresult(results);
+    } else if (bookingtype === "trains") {
+      const results = train.filter(
+        (TRAIN) =>
+          TRAIN.from.toLowerCase() === from.toLowerCase() &&
+          TRAIN.to.toLowerCase() === to.toLowerCase()
+      );
+      setsearchresult(results);
+    } else if (bookingtype === "buses") {
+      const results = bus.filter(
+        (BUS) =>
+          BUS.from.toLowerCase() === from.toLowerCase() &&
+          BUS.to.toLowerCase() === to.toLowerCase()
+      );
+      setsearchresult(results);
+    } else if (bookingtype === "cabs") {
+      const results = cab.filter(
+        (CAB) =>
+          CAB.from.toLowerCase() === from.toLowerCase() &&
+          CAB.to.toLowerCase() === to.toLowerCase()
+      );
+      setsearchresult(results);
+    } else if (bookingtype === "homestays") {
+      const results = homestay.filter(
+        (homestay) => homestay.location.toLowerCase() === to.toLowerCase()
       );
       setsearchresult(results);
     }
@@ -179,8 +216,16 @@ export default function Home() {
   const handlebooknow = (id: any) => {
     if (bookingtype === "flights") {
       router.push(`/book-flight/${id}`);
-    } else {
+    } else if (bookingtype === "hotels") {
       router.push(`/book-hotel/${id}`);
+    } else if (bookingtype === "trains") {
+      router.push(`/book-train/${id}`);
+    } else if (bookingtype === "buses") {
+      router.push(`/book-bus/${id}`);
+    } else if (bookingtype === "cabs") {
+      router.push(`/book-cab/${id}`);
+    } else if (bookingtype === "homestays") {
+      router.push(`/book-homestay/${id}`);
     }
   };
   return (
@@ -206,11 +251,31 @@ export default function Home() {
               active={bookingtype === "hotels"}
               onClick={() => setbookingtype("hotels")}
             />
-            <NavItem icon={<HomeIcon />} text="Homestays" />
+            <NavItem
+              icon={<HomeIcon />}
+              text="Homestays"
+              active={bookingtype === "homestays"}
+              onClick={() => setbookingtype("homestays")}
+            />
             <NavItem icon={<Umbrella />} text="Holiday" />
-            <NavItem icon={<Train />} text="Trains" />
-            <NavItem icon={<Bus />} text="Buses" />
-            <NavItem icon={<Car />} text="Cabs" />
+            <NavItem
+              icon={<Train />}
+              text="Trains"
+              active={bookingtype === "trains"}
+              onClick={() => setbookingtype("trains")}
+            />
+            <NavItem
+              icon={<Bus />}
+              text="Buses"
+              active={bookingtype === "buses"}
+              onClick={() => setbookingtype("buses")}
+            />
+            <NavItem
+              icon={<Car />}
+              text="Cabs"
+              active={bookingtype === "cabs"}
+              onClick={() => setbookingtype("cabs")}
+            />
             <NavItem icon={<CreditCard />} text="Forex" />
             <NavItem icon={<Shield />} text="Insurance" />
           </div>
@@ -218,7 +283,10 @@ export default function Home() {
 
         <div className="bg-white rounded-xl shadow-lg mx-auto max-w-5xl p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {bookingtype === "flights" && (
+            {(bookingtype === "flights" ||
+              bookingtype === "trains" ||
+              bookingtype === "buses" ||
+              bookingtype === "cabs") && (
               <div className="col-span-1">
                 <SearchSelect
                   options={cityOptions}
@@ -234,12 +302,22 @@ export default function Home() {
             <div className="col-span-1">
               <SearchSelect
                 options={cityOptions}
-                placeholder={bookingtype === "flights" ? "To" : "City"}
+                placeholder={
+                  bookingtype === "flights" ||
+                  bookingtype === "trains" ||
+                  bookingtype === "buses" ||
+                  bookingtype === "cabs"
+                    ? "To"
+                    : "City"
+                }
                 value={to}
                 onChange={setto}
                 icon={<MapPin className="text-gray-400" />}
                 subtitle={
-                  bookingtype === "flights"
+                  bookingtype === "flights" ||
+                  bookingtype === "trains" ||
+                  bookingtype === "buses" ||
+                  bookingtype === "cabs"
                     ? "Enter city or airport"
                     : "Enter city"
                 }
@@ -311,10 +389,98 @@ export default function Home() {
                           Book Now
                         </Button>
                       </>
-                    ) : (
+                    ) : bookingtype === "hotels" ? (
                       <>
                         <h3 className="font-semibold text-lg">
                           {result.hotelName}
+                        </h3>
+                        <p className="text-gray-600">City: {result.location}</p>
+                        <p className="text-lg font-bold mt-2">
+                          ₹{result.pricePerNight} per night
+                        </p>
+                        <Button
+                          className="w-full mt-4"
+                          onClick={() => handlebooknow(result.id)}
+                        >
+                          Book Now
+                        </Button>
+                      </>
+                    ) : bookingtype === "trains" ? (
+                      <>
+                        <p className="font-semibold text-lg">
+                          Train Name: {result.trainName}
+                        </p>
+                        <h3 className="font-semibold text-lg">
+                          {result.from} to {result.to}
+                        </h3>
+                        <p className="text-gray-600">
+                          Departure Time: {formatDate(result.departureTime)}
+                        </p>
+                        <p className="text-gray-600">
+                          Arrival Time: {formatDate(result.arrivalTime)}
+                        </p>
+                        <p className="text-lg font-bold mt-2">
+                          ₹{result.price}
+                        </p>
+                        <Button
+                          className="w-full mt-4"
+                          onClick={() => handlebooknow(result.id)}
+                        >
+                          Book Now
+                        </Button>
+                      </>
+                    ) : bookingtype === "buses" ? (
+                      <>
+                        <p className="font-semibold text-lg">
+                          Bus Name: {result.busName}
+                        </p>
+                        <h3 className="font-semibold text-lg">
+                          {result.from} to {result.to}
+                        </h3>
+                        <p className="text-gray-600">
+                          Departure Time: {formatDate(result.departureTime)}
+                        </p>
+                        <p className="text-gray-600">
+                          Arrival Time: {formatDate(result.arrivalTime)}
+                        </p>
+                        <p className="text-lg font-bold mt-2">
+                          ₹{result.price}
+                        </p>
+                        <Button
+                          className="w-full mt-4"
+                          onClick={() => handlebooknow(result.id)}
+                        >
+                          Book Now
+                        </Button>
+                      </>
+                    ) : bookingtype === "cabs" ? (
+                      <>
+                        <p className="font-semibold text-lg">
+                          Cab Type: {result.cabType}
+                        </p>
+                        <h3 className="font-semibold text-lg">
+                          {result.from} to {result.to}
+                        </h3>
+                        <p className="text-gray-600">
+                          Departure Time: {formatDate(result.departureTime)}
+                        </p>
+                        <p className="text-gray-600">
+                          Arrival Time: {formatDate(result.arrivalTime)}
+                        </p>
+                        <p className="text-lg font-bold mt-2">
+                          ₹{result.price}
+                        </p>
+                        <Button
+                          className="w-full mt-4"
+                          onClick={() => handlebooknow(result.id)}
+                        >
+                          Book Now
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="font-semibold text-lg">
+                          {result.homestayName}
                         </h3>
                         <p className="text-gray-600">City: {result.location}</p>
                         <p className="text-lg font-bold mt-2">

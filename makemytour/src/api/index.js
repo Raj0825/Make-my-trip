@@ -196,7 +196,303 @@ export const handleflightbooking = async (userId, flightId, seats, price) => {
 
 export const handlehotelbooking = async (userId, hotelId, rooms, price) => {
   try {
-    const url = `${BACKEND_URL}/booking/flight?userId=${userId}&hotelId=${hotelId}&rooms=${rooms}&price=${price}`;
+    const url = `${BACKEND_URL}/booking/hotel?userId=${userId}&hotelId=${hotelId}&rooms=${rooms}&price=${price}`;
+    const res = await axios.post(url);
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+// ---------------- Trains ----------------
+
+export const gettrain = async () => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/train`);
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const addtrain = async (
+  trainName,
+  from,
+  to,
+  departureTime,
+  arrivalTime,
+  price,
+  availableSeats
+) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/admin/train`, {
+      trainName,
+      from,
+      to,
+      departureTime,
+      arrivalTime,
+      price,
+      availableSeats,
+    });
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const edittrain = async (
+  id,
+  trainName,
+  from,
+  to,
+  departureTime,
+  arrivalTime,
+  price,
+  availableSeats
+) => {
+  try {
+    const res = await axios.put(`${BACKEND_URL}/admin/train/${id}`, {
+      trainName,
+      from,
+      to,
+      departureTime,
+      arrivalTime,
+      price,
+      availableSeats,
+    });
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const handletrainbooking = async (userId, trainId, seats, price) => {
+  try {
+    const url = `${BACKEND_URL}/booking/train?userId=${userId}&trainId=${trainId}&seats=${seats}&price=${price}`;
+    const res = await axios.post(url);
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+// ---------------- Buses ----------------
+
+export const getbus = async () => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/bus`);
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const addbus = async (
+  busName,
+  from,
+  to,
+  departureTime,
+  arrivalTime,
+  price,
+  availableSeats
+) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/admin/bus`, {
+      busName,
+      from,
+      to,
+      departureTime,
+      arrivalTime,
+      price,
+      availableSeats,
+    });
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const editbus = async (
+  id,
+  busName,
+  from,
+  to,
+  departureTime,
+  arrivalTime,
+  price,
+  availableSeats
+) => {
+  try {
+    const res = await axios.put(`${BACKEND_URL}/admin/bus/${id}`, {
+      busName,
+      from,
+      to,
+      departureTime,
+      arrivalTime,
+      price,
+      availableSeats,
+    });
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const handlebusbooking = async (userId, busId, seats, price) => {
+  try {
+    const url = `${BACKEND_URL}/booking/bus?userId=${userId}&busId=${busId}&seats=${seats}&price=${price}`;
+    const res = await axios.post(url);
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+// ---------------- Cabs ----------------
+
+export const getcab = async () => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/cab`);
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const addcab = async (
+  cabType,
+  from,
+  to,
+  departureTime,
+  arrivalTime,
+  price,
+  availableSeats
+) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/admin/cab`, {
+      cabType,
+      from,
+      to,
+      departureTime,
+      arrivalTime,
+      price,
+      availableSeats,
+    });
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const editcab = async (
+  id,
+  cabType,
+  from,
+  to,
+  departureTime,
+  arrivalTime,
+  price,
+  availableSeats
+) => {
+  try {
+    const res = await axios.put(`${BACKEND_URL}/admin/cab/${id}`, {
+      cabType,
+      from,
+      to,
+      departureTime,
+      arrivalTime,
+      price,
+      availableSeats,
+    });
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const handlecabbooking = async (userId, cabId, seats, price) => {
+  try {
+    const url = `${BACKEND_URL}/booking/cab?userId=${userId}&cabId=${cabId}&seats=${seats}&price=${price}`;
+    const res = await axios.post(url);
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+// ---------------- Homestays ----------------
+
+export const gethomestay = async () => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/homestay`);
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const addhomestay = async (
+  homestayName,
+  location,
+  pricePerNight,
+  availableRooms,
+  amenities
+) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/admin/homestay`, {
+      homestayName,
+      location,
+      pricePerNight,
+      availableRooms,
+      amenities,
+    });
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const edithomestay = async (
+  id,
+  homestayName,
+  location,
+  pricePerNight,
+  availableRooms,
+  amenities
+) => {
+  try {
+    const res = await axios.put(`${BACKEND_URL}/admin/homestay/${id}`, {
+      homestayName,
+      location,
+      pricePerNight,
+      availableRooms,
+      amenities,
+    });
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const handlehomestaybooking = async (userId, homestayId, rooms, price) => {
+  try {
+    const url = `${BACKEND_URL}/booking/homestay?userId=${userId}&homestayId=${homestayId}&rooms=${rooms}&price=${price}`;
     const res = await axios.post(url);
     const data = res.data;
     return data;
