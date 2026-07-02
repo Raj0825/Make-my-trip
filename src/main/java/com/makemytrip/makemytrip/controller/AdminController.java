@@ -1,4 +1,4 @@
-package com.makemytrip.makemytrip.controllers;
+package com.makemytrip.makemytrip.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.ResponseEntity;
