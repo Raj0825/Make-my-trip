@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BACKEND_URL = "https://make-my-trip-api.onrender.com";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export const login = async (email, password) => {
   try {
