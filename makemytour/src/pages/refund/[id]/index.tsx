@@ -1,17 +1,20 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { ArrowLeft, CreditCard, CalendarDays, BadgeIndianRupee } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+
 import RefundProgress from "@/components/refund/RefundProgress";
-import RefundTimeline from "@/components/refund/RefundTimeline";
 import RefundInfoCard from "@/components/refund/RefundInfoCard";
+import RefundTimeline from "@/components/refund/RefundTimeline";
 
 export default function RefundPage() {
   const router = useRouter();
   const { id } = router.query;
 
-  // Dummy Data (Replace with API later)
+  // Temporary data
+  // Replace this with your API response later
   const refund = {
-    bookingId: id || "BK12345678",
+    bookingId: String(id || "BK12345678"),
+    refundId: "RFD-20260708-001",
     amount: 7431.5,
     status: "PROCESSING",
     progress: 75,
@@ -20,95 +23,83 @@ export default function RefundPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-slate-100">
 
       {/* Header */}
-      <div className="bg-blue-600 text-white shadow-md">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center gap-4">
-          <Link href="/profile">
-            <ArrowLeft className="cursor-pointer hover:scale-110 transition" />
+
+      <div className="bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white rounded-b-3xl shadow-xl">
+
+        <div className="max-w-6xl mx-auto px-6 py-8">
+
+          <Link
+            href="/profile"
+            className="inline-flex items-center gap-2 text-blue-100 hover:text-white mb-6"
+          >
+            <ArrowLeft size={18} />
+            Back
           </Link>
 
-          <div>
-            <h1 className="text-3xl font-bold">
-              Refund Tracking
-            </h1>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
 
-            <p className="text-blue-100">
-              Booking ID : {refund.bookingId}
-            </p>
+            <div>
+
+              <p className="uppercase tracking-[0.3em] text-blue-100 text-sm">
+                Refund Tracking
+              </p>
+
+              <h1 className="text-4xl font-bold mt-2">
+                ₹ {refund.amount.toLocaleString()}
+              </h1>
+
+              <p className="mt-3 text-blue-100">
+                Your refund is currently being processed.
+              </p>
+
+              <div className="inline-flex mt-5 px-5 py-2 rounded-full bg-white/20 backdrop-blur-md">
+                Processing by Bank
+              </div>
+
+            </div>
+
+            <div className="hidden md:flex">
+
+              <div className="w-28 h-28 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center text-6xl">
+
+                💸
+
+              </div>
+
+            </div>
+
           </div>
+
         </div>
+
       </div>
 
-      <div className="max-w-5xl mx-auto py-10 px-5">
+      {/* Body */}
 
-        {/* Progress */}
+      <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
+
         <RefundProgress
           progress={refund.progress}
           status={refund.status}
         />
 
-        {/* Cards */}
-        <div className="grid md:grid-cols-3 gap-5 mt-8">
+        <RefundInfoCard
+          refundAmount={refund.amount}
+          bookingId={refund.bookingId}
+          refundId={refund.refundId}
+          paymentMethod={refund.paymentMethod}
+          expectedDate={refund.expectedDate}
+        />
 
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-3 text-blue-600">
-              <BadgeIndianRupee />
-              <h2 className="font-semibold">
-                Refund Amount
-              </h2>
-            </div>
-
-            <p className="text-3xl font-bold mt-3">
-              ₹ {refund.amount}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-3 text-green-600">
-              <CalendarDays />
-              <h2 className="font-semibold">
-                Expected Refund
-              </h2>
-            </div>
-
-            <p className="text-xl font-semibold mt-3">
-              {refund.expectedDate}
-            </p>
-          </div>
-
-          <div className="mt-8">
-              <RefundInfoCard
-                  refundAmount={refund.amount}
-                  bookingId={String(refund.bookingId)}
-                  refundId="RFD-20260708-001"
-                  paymentMethod={refund.paymentMethod}
-                  expectedDate={refund.expectedDate}
-              />
-          </div>
-
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-3 text-purple-600">
-              <CreditCard />
-              <h2 className="font-semibold">
-                Payment Method
-              </h2>
-            </div>
-
-            <p className="text-xl font-semibold mt-3">
-              {refund.paymentMethod}
-            </p>
-          </div>
-
-        </div>
-
-        {/* Timeline */}
-        <div className="mt-10">
-          <RefundTimeline status={refund.status} />
-        </div>
+        <RefundTimeline
+          status={refund.status}
+        />
 
       </div>
+
     </div>
   );
 }
