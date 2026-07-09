@@ -34,7 +34,6 @@ export default function RefundPage() {
       setLoading(false);
       return;
     }
-
     try {
       const saved = localStorage.getItem("user");
       if (saved) {
