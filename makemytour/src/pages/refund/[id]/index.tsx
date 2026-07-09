@@ -30,14 +30,23 @@ export default function RefundPage() {
     if (!bookingId) return;
     try {
       const saved = localStorage.getItem("user");
+      console.log("localStorage user:", saved);
+      console.log("looking for bookingId:", bookingId);
       if (saved) {
         const user = JSON.parse(saved);
+        console.log("bookings:", user?.bookings);
         const found = user?.bookings?.find(
-          (b: any) => b.bookingId === bookingId && b.cancelled
+          (b: any) => {
+            console.log("comparing", b.bookingId, "===", bookingId, b.cancelled);
+            return b.bookingId === bookingId && b.cancelled;
+          }
         );
+        console.log("found:", found);
         setBooking(found || null);
       }
-    } catch {}
+    } catch (e) {
+      console.log("error:", e);
+    }
     setLoading(false);
   }, [bookingId]);
 
