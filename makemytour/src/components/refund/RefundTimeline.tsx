@@ -1,131 +1,70 @@
-import {
-  CheckCircle2,
-  Loader2,
-  Circle,
-} from "lucide-react";
+import { CheckCircle2, Loader2, Circle } from "lucide-react";
 
 interface Props {
   status: string;
+  cancelledAt?: string;
+  expectedDate?: string;
 }
 
-export default function RefundTimeline({ status }: Props) {
+export default function RefundTimeline({ status, cancelledAt, expectedDate }: Props) {
+  // Map our 3-state backend status to 4-step UI journey
+  const statusToIndex: Record<string, number> = {
+    PENDING:   0,
+    PROCESSED: 2,
+    COMPLETED: 3,
+  };
+  const currentIndex = statusToIndex[status] ?? 0;
+
   const steps = [
     {
       title: "Booking Cancelled",
-      date: "08 Jul 2026 • 05:05 PM",
+      subtitle: cancelledAt || "Refund initiated",
       key: "REQUESTED",
     },
     {
       title: "Refund Approved",
-      date: "08 Jul 2026 • 05:08 PM",
+      subtitle: "Verified by our team",
       key: "APPROVED",
     },
     {
       title: "Processing by Bank",
-      date: "Estimated 1–2 Working Days",
+      subtitle: "Estimated 1–3 working days",
       key: "PROCESSING",
     },
     {
       title: "Refund Credited",
-      date: "Pending",
+      subtitle: status === "COMPLETED" ? "Done ✓" : expectedDate ? `Expected by ${expectedDate}` : "Pending",
       key: "COMPLETED",
     },
   ];
 
-  const currentIndex = steps.findIndex(
-    (step) => step.key === status
-  );
-
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
-
-      <h2 className="text-2xl font-bold mb-8">
-        Refund Journey
-      </h2>
-
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <h2 className="text-lg font-bold text-gray-800 mb-6">Refund Journey</h2>
       <div className="relative">
-
         {steps.map((step, index) => {
-
           const completed = index < currentIndex;
           const active = index === currentIndex;
-
           return (
-            <div
-              key={step.key}
-              className="flex gap-5 relative pb-10 last:pb-0"
-            >
-
-              {/* Vertical Line */}
-
+            <div key={step.key} className="flex gap-4 relative pb-8 last:pb-0">
               {index !== steps.length - 1 && (
-                <div
-                  className={`absolute left-5 top-10 w-1 h-full rounded-full
-                  ${
-                    completed
-                      ? "bg-green-500"
-                      : "bg-gray-300"
-                  }`}
-                />
+                <div className={`absolute left-5 top-10 w-0.5 h-full ${completed ? "bg-green-400" : "bg-gray-200"}`} />
               )}
-
-              {/* Icon */}
-
-              <div className="z-10">
-
-                {completed && (
-                  <CheckCircle2
-                    size={40}
-                    className="text-green-500"
-                  />
-                )}
-
-                {active && (
-                  <Loader2
-                    size={40}
-                    className="text-orange-500 animate-spin"
-                  />
-                )}
-
-                {!completed && !active && (
-                  <Circle
-                    size={40}
-                    className="text-gray-300"
-                  />
-                )}
-
+              <div className="z-10 shrink-0">
+                {completed && <CheckCircle2 size={40} className="text-green-500" />}
+                {active    && <Loader2 size={40} className="text-blue-500 animate-spin" />}
+                {!completed && !active && <Circle size={40} className="text-gray-300" />}
               </div>
-
-              {/* Text */}
-
-              <div className="flex-1">
-
-                <h3
-                  className={`text-lg font-semibold
-                  ${
-                    completed
-                      ? "text-green-600"
-                      : active
-                      ? "text-orange-600"
-                      : "text-gray-500"
-                  }`}
-                >
+              <div className="flex-1 pt-1">
+                <h3 className={`font-semibold text-base ${completed ? "text-green-600" : active ? "text-blue-600" : "text-gray-400"}`}>
                   {step.title}
                 </h3>
-
-                <p className="text-gray-500 mt-1">
-                  {step.date}
-                </p>
-
+                <p className="text-sm text-gray-400 mt-0.5">{step.subtitle}</p>
               </div>
-
             </div>
           );
-
         })}
-
       </div>
-
     </div>
   );
 }

@@ -1,121 +1,57 @@
 import { CheckCircle, Loader2 } from "lucide-react";
 
 interface Props {
-  progress: number;
   status: string;
 }
 
-export default function RefundProgress({
-  progress,
-  status,
-}: Props) {
-  const getStatusColor = () => {
-    switch (status) {
-      case "COMPLETED":
-        return "bg-green-500";
-      case "PROCESSING":
-        return "bg-orange-500";
-      case "APPROVED":
-        return "bg-blue-500";
-      default:
-        return "bg-red-500";
-    }
-  };
+const STATUS_CONFIG: Record<string, { progress: number; color: string; text: string }> = {
+  PENDING:   { progress: 25,  color: "bg-yellow-500", text: "Refund Requested" },
+  PROCESSED: { progress: 65,  color: "bg-blue-500",   text: "Processing by Bank" },
+  COMPLETED: { progress: 100, color: "bg-green-500",  text: "Refund Credited" },
+};
 
-  const getStatusText = () => {
-    switch (status) {
-      case "COMPLETED":
-        return "Refund Completed";
-      case "PROCESSING":
-        return "Processing by Bank";
-      case "APPROVED":
-        return "Refund Approved";
-      default:
-        return "Refund Requested";
-    }
-  };
+export default function RefundProgress({ status }: Props) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG["PENDING"];
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
-
-      <div className="flex justify-between items-center mb-6">
-
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div className="flex justify-between items-start mb-5">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">
-            Refund Progress
-          </h2>
-
-          <p className="text-gray-500 mt-1">
-            Your refund is being processed.
-          </p>
+          <h2 className="text-lg font-bold text-gray-800">Refund Progress</h2>
+          <p className="text-gray-500 text-sm mt-0.5">Your refund is being processed.</p>
         </div>
-
         {status === "COMPLETED" ? (
-          <CheckCircle
-            size={38}
-            className="text-green-500"
-          />
+          <CheckCircle size={34} className="text-green-500" />
         ) : (
-          <Loader2
-            size={38}
-            className="animate-spin text-orange-500"
-          />
+          <Loader2 size={34} className="animate-spin text-blue-500" />
         )}
       </div>
 
-      {/* Progress Percentage */}
-
-      <div className="flex justify-between mb-2">
-
-        <span className="font-medium">
-          {getStatusText()}
-        </span>
-
-        <span className="font-bold">
-          {progress}%
-        </span>
-
+      <div className="flex justify-between text-sm mb-2">
+        <span className="font-semibold text-gray-700">{cfg.text}</span>
+        <span className="font-bold text-gray-800">{cfg.progress}%</span>
       </div>
 
-      {/* Progress Bar */}
-
-      <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-
+      <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
         <div
-          className={`${getStatusColor()} h-4 rounded-full transition-all duration-1000 ease-out`}
-          style={{
-            width: `${progress}%`,
-          }}
+          className={`${cfg.color} h-3 rounded-full transition-all duration-1000 ease-out`}
+          style={{ width: `${cfg.progress}%` }}
         />
-
       </div>
 
-      {/* Stage Labels */}
-
-      <div className="flex justify-between mt-5 text-sm text-gray-500">
-
-        <div className="text-center">
-          <div className="w-3 h-3 bg-red-500 rounded-full mx-auto mb-2"></div>
-          Requested
-        </div>
-
-        <div className="text-center">
-          <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto mb-2"></div>
-          Approved
-        </div>
-
-        <div className="text-center">
-          <div className="w-3 h-3 bg-orange-500 rounded-full mx-auto mb-2"></div>
-          Processing
-        </div>
-
-        <div className="text-center">
-          <div className="w-3 h-3 bg-green-500 rounded-full mx-auto mb-2"></div>
-          Credited
-        </div>
-
+      <div className="flex justify-between mt-4 text-xs text-gray-400">
+        {[
+          { label: "Requested", color: "bg-yellow-400" },
+          { label: "Approved",  color: "bg-blue-400" },
+          { label: "Processing",color: "bg-indigo-400" },
+          { label: "Credited",  color: "bg-green-500" },
+        ].map((s) => (
+          <div key={s.label} className="flex flex-col items-center gap-1.5">
+            <div className={`w-2.5 h-2.5 ${s.color} rounded-full`} />
+            {s.label}
+          </div>
+        ))}
       </div>
-
     </div>
   );
 }
