@@ -29,7 +29,7 @@ export default function RefundPage() {
   useEffect(() => {
     if (!router.isReady) return;
 
-    const id = router.query.bookingId as string;
+    const id = router.query.id as string;
     if (!id) {
       setLoading(false);
       return;
