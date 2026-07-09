@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { ArrowLeft, IndianRupee, AlertCircle } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
 import RefundProgress from "@/components/refund/RefundProgress";
 import RefundInfoCard from "@/components/refund/RefundInfoCard";
 import RefundTimeline from "@/components/refund/RefundTimeline";
@@ -23,12 +23,31 @@ const STATUS_COLOR: Record<string, string> = {
 export default function RefundPage() {
   const router = useRouter();
   const { bookingId } = router.query;
-  const user = useSelector((state: any) => state.user.user);
+  const [booking, setBooking] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Find the matching cancelled booking from Redux
-  const booking = user?.bookings?.find(
-    (b: any) => b.bookingId === bookingId && b.cancelled
-  );
+  useEffect(() => {
+    if (!bookingId) return;
+    try {
+      const saved = localStorage.getItem("user");
+      if (saved) {
+        const user = JSON.parse(saved);
+        const found = user?.bookings?.find(
+          (b: any) => b.bookingId === bookingId && b.cancelled
+        );
+        setBooking(found || null);
+      }
+    } catch {}
+    setLoading(false);
+  }, [bookingId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!booking) {
     return (
@@ -53,14 +72,12 @@ export default function RefundPage() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      {/* Hero header */}
       <div className="bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white rounded-b-3xl shadow-xl">
         <div className="max-w-5xl mx-auto px-6 py-8">
           <Link href="/profile"
             className="inline-flex items-center gap-2 text-blue-100 hover:text-white mb-6 text-sm transition">
             <ArrowLeft size={16} /> Back to Profile
           </Link>
-
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
               <p className="uppercase tracking-[0.25em] text-blue-200 text-xs font-semibold mb-2">
@@ -75,9 +92,7 @@ export default function RefundPage() {
                 <h1 className="text-3xl font-bold">No Refund Applicable</h1>
               )}
               <p className="mt-2 text-blue-100 text-sm">
-                {hasRefund
-                  ? "Your refund is on its way."
-                  : "This booking was cancelled outside the refund window."}
+                {hasRefund ? "Your refund is on its way." : "This booking was cancelled outside the refund window."}
               </p>
               <div className={`inline-flex mt-4 px-4 py-1.5 rounded-full text-sm font-semibold backdrop-blur-md ${STATUS_COLOR[status] || "bg-white/20 text-white"}`}>
                 {STATUS_LABEL[status] || status}
@@ -89,11 +104,8 @@ export default function RefundPage() {
           </div>
         </div>
       </div>
-
-      {/* Content */}
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-6">
         {hasRefund && <RefundProgress status={status} />}
-
         <RefundInfoCard
           refundAmount={booking.refundAmount}
           bookingId={booking.bookingId}
@@ -101,7 +113,6 @@ export default function RefundPage() {
           cancellationReason={booking.cancellationReason}
           expectedDate={booking.expectedRefundDate || "—"}
         />
-
         {hasRefund && (
           <RefundTimeline
             status={status}
