@@ -46,14 +46,20 @@ public class CancellationService {
         }
 
         // Calculate refund: 50% if within 24hrs of booking date, 0% after
-        String bookingDateStr = targetBooking.getDate();
-        LocalDateTime bookingDateTime = LocalDate.parse(bookingDateStr).atStartOfDay();
-        LocalDateTime now = LocalDateTime.now();
-        long hoursSinceBooking = java.time.Duration.between(bookingDateTime, now).toHours();
-
         double refundAmount = 0;
-        if (hoursSinceBooking <= 24) {
-            refundAmount = targetBooking.getTotalPrice() * 0.5;
+        try {
+            String bookingDateStr = targetBooking.getDate();
+            if (bookingDateStr != null) {
+                LocalDateTime bookingDateTime = LocalDate.parse(bookingDateStr).atStartOfDay();
+                LocalDateTime now = LocalDateTime.now();
+                long hoursSinceBooking = java.time.Duration.between(bookingDateTime, now).toHours();
+                if (hoursSinceBooking <= 24) {
+                    refundAmount = targetBooking.getTotalPrice() * 0.5;
+                }
+            }
+        } catch (Exception e) {
+            // If date parsing fails, default to no refund
+            refundAmount = 0;
         }
 
         // Restore inventory
