@@ -27,28 +27,26 @@ export default function RefundPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!bookingId) return;
+    if (!router.isReady) return;
+
+    const id = router.query.bookingId as string;
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const saved = localStorage.getItem("user");
-      console.log("localStorage user:", saved);
-      console.log("looking for bookingId:", bookingId);
       if (saved) {
         const user = JSON.parse(saved);
-        console.log("bookings:", user?.bookings);
         const found = user?.bookings?.find(
-          (b: any) => {
-            console.log("comparing", b.bookingId, "===", bookingId, b.cancelled);
-            return b.bookingId === bookingId && b.cancelled;
-          }
+          (b: any) => b.bookingId === id && b.cancelled
         );
-        console.log("found:", found);
         setBooking(found || null);
       }
-    } catch (e) {
-      console.log("error:", e);
-    }
+    } catch {}
     setLoading(false);
-  }, [bookingId]);
+  }, [router.isReady, router.query.bookingId]);
 
   if (loading) {
     return (
