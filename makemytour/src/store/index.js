@@ -1,18 +1,26 @@
 import { configureStore, createSlice } from "@reduxjs/toolkit";
 
-
 const saveusertolocalstorage = (user) => {
-  if (typeof window !== "undefined" && localStorage) {
-    localStorage.setItem("user", JSON.stringify(user));
-  }
+  try {
+    if (typeof window !== "undefined" && localStorage) {
+      localStorage.setItem("user", JSON.stringify(user));
+    }
+  } catch {}
 };
-const initialState = {
-  user: null,
+
+const loaduserfromlocalstorage = () => {
+  try {
+    if (typeof window !== "undefined" && localStorage) {
+      const saved = localStorage.getItem("user");
+      if (saved) return { user: JSON.parse(saved) };
+    }
+  } catch {}
+  return { user: null };
 };
 
 const userSlice = createSlice({
   name: "user",
-  initialState,
+  initialState: loaduserfromlocalstorage(),
   reducers: {
     setUser: (state, action) => {
       state.user = action.payload;
@@ -20,9 +28,11 @@ const userSlice = createSlice({
     },
     clearUser: (state) => {
       state.user = null;
-      if (typeof window !== "undefined" && localStorage) {
-        localStorage.removeItem("user");
-      }
+      try {
+        if (typeof window !== "undefined" && localStorage) {
+          localStorage.removeItem("user");
+        }
+      } catch {}
     },
   },
 });
