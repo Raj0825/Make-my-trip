@@ -10,6 +10,9 @@ import com.makemytrip.makemytrip.models.Homestay;
 import com.makemytrip.makemytrip.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -97,6 +100,8 @@ public class CancellationService {
     }
 
     // Auto-complete refunds that are older than 7 days
+    // Runs automatically every hour — no manual trigger or admin action needed
+    @Scheduled(cron = "0 0 * * * *")
     public void autoCompleteRefunds() {
         userRepository.findAll().forEach(user -> {
             boolean updated = false;
