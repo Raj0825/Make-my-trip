@@ -11,11 +11,13 @@ public class UserServices{
     private UserRepository userRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private CancellationService cancellationService;
 
     public Users login(String email , String password){
         Users user = userRepository.findByEmail(email);
         if(user != null && passwordEncoder.matches(password,user.getPassword())){
-            return  user;
+            return cancellationService.refreshRefundStatuses(user);
         }
         return null;
     }
@@ -48,7 +50,8 @@ public class UserServices{
         }
     }
     public Users getUserByEmail(String email){
-        return userRepository.findByEmail(email);
+        Users user = userRepository.findByEmail(email);
+        return cancellationService.refreshRefundStatuses(user);
     }
 
     public Users editprofile(String id,Users updatedUser){

@@ -9,8 +9,6 @@ import com.makemytrip.makemytrip.models.Cab;
 import com.makemytrip.makemytrip.models.Homestay;
 import com.makemytrip.makemytrip.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -99,8 +97,41 @@ public class CancellationService {
         return booking;
     }
 
+    // Recompute refund status for one user's bookings based on elapsed time,
+    // save if anything changed, and return the same user with corrected data.
+    // Call this wherever a user/booking is read (login, get-by-email, etc.)
+    // so the status shown is always correct, even if the server was asleep.
+    public Users refreshRefundStatuses(Users user) {
+        if (user == null || user.getBookings() == null) return user;
+
+        boolean updated = false;
+        for (Users.Booking booking : user.getBookings()) {
+            String status = booking.getRefundStatus();
+            if (booking.getCancelledAt() != null &&
+                    ("PENDING".equals(status) || "PROCESSED".equals(status))) {
+                try {
+                    LocalDateTime cancelledAt = LocalDateTime.parse(
+                            booking.getCancelledAt(),
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    );
+                    long daysSinceCancellation = java.time.Duration.between(cancelledAt, LocalDateTime.now()).toDays();
+                    if (daysSinceCancellation >= REFUND_COMPLETION_DAYS && !"COMPLETED".equals(status)) {
+                        booking.setRefundStatus("COMPLETED");
+                        updated = true;
+                    } else if (daysSinceCancellation >= 1 && "PENDING".equals(status)) {
+                        booking.setRefundStatus("PROCESSED");
+                        updated = true;
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        if (updated) userRepository.save(user);
+        return user;
+    }
+
     // Auto-complete refunds that are older than 7 days
-    // Runs automatically every hour — no manual trigger or admin action needed
+    // Also runs on a schedule as a backup — but on free hosting tiers that
+    // sleep, refreshRefundStatuses() above is what actually keeps this correct.
     @Scheduled(cron = "0 0 * * * *")
     public void autoCompleteRefunds() {
         userRepository.findAll().forEach(user -> {
