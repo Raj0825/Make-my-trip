@@ -99,6 +99,9 @@ export default function ReviewSection({ serviceType, serviceId }: Props) {
   const [flagOpenFor, setFlagOpenFor] = useState<string | null>(null);
   const [flagReason, setFlagReason] = useState("");
 
+  // lightbox (enlarged photo view)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
   const load = async () => {
     setLoading(true);
     try {
@@ -316,8 +319,9 @@ export default function ReviewSection({ serviceType, serviceId }: Props) {
                       <img
                         key={i}
                         src={`${BACKEND_URL}${url}`}
-                        className="w-20 h-20 object-cover rounded-md border"
+                        className="w-20 h-20 object-cover rounded-md border cursor-pointer hover:opacity-80 transition-opacity"
                         alt="review"
+                        onClick={() => setLightboxUrl(`${BACKEND_URL}${url}`)}
                       />
                     ))}
                   </div>
@@ -392,6 +396,25 @@ export default function ReviewSection({ serviceType, serviceId }: Props) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <img
+            src={lightboxUrl}
+            className="max-w-full max-h-full rounded-lg"
+            alt="Review photo enlarged"
+          />
+          <button
+            className="absolute top-4 right-4 text-white bg-white/10 hover:bg-white/20 rounded-full p-2"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <X size={24} />
+          </button>
         </div>
       )}
     </div>
