@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ModerationPanel from "@/components/reviews/ModerationPanel";
+import AdminLogin from "@/components/admin/AdminLogin";
+import { isAdminLoggedIn, adminLogout } from "@/api";
 import {
   Card,
   CardContent,

@@ -2,6 +2,35 @@ import axios from "axios";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
+axios.interceptors.request.use((config) => {
+  const url = config.url || "";
+  const isAdminRoute = url.includes("/admin/") || url.includes("/reviews/admin/");
+  const isPublicAdminRoute = url.includes("/admin/login") || url.includes("/admin/bootstrap");
+
+  if (isAdminRoute && !isPublicAdminRoute) {
+    const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const url = error?.config?.url || "";
+    const isAdminRoute = url.includes("/admin/") || url.includes("/reviews/admin/");
+    if (isAdminRoute && (error?.response?.status === 401 || error?.response?.status === 403)) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("adminToken");
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const login = async (email, password) => {
   try {
     const url = `${BACKEND_URL}/user/login?email=${email}&password=${password}`;
@@ -611,4 +640,31 @@ export const moderateReview = async (reviewId, action) => {
     console.log(error);
     throw error;
   }
+};
+
+// ---------------- Admin Auth ----------------
+
+export const adminLogin = async (email, password) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/admin/login`, { email, password });
+    if (typeof window !== "undefined") {
+      localStorage.setItem("adminToken", res.data.token);
+      localStorage.setItem("adminName", res.data.firstName || "");
+    }
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const adminLogout = () => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminName");
+  }
+};
+
+export const isAdminLoggedIn = () => {
+  if (typeof window === "undefined") return false;
+  return !!localStorage.getItem("adminToken");
 };
