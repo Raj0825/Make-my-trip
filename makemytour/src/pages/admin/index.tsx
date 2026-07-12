@@ -1095,10 +1095,35 @@ export default function AdminDashboard() {
   const [selectedBus, setSelectedBus] = useState(null);
   const [selectedCab, setSelectedCab] = useState(null);
   const [selectedHomestay, setSelectedHomestay] = useState(null);
+  const [authed, setAuthed] = useState(false);
+  const [checkedAuth, setCheckedAuth] = useState(false);
+
+  useEffect(() => {
+    setAuthed(isAdminLoggedIn());
+    setCheckedAuth(true);
+  }, []);
+
+  if (!checkedAuth) {
+    return null;
+  }
+
+  if (!authed) {
+    return <AdminLogin onSuccess={() => setAuthed(true)} />;
+  }
+
+  const handleLogout = () => {
+    adminLogout();
+    setAuthed(false);
+  };
 
   return (
     <div className="container mx-auto p-4 bg-white max-w-full">
-      <h1 className="text-3xl font-bold mb-6 ">Admin Dashboard</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <Button variant="outline" onClick={handleLogout}>
+          Log Out
+        </Button>
+      </div>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-8 text-black">
           <TabsTrigger value="flights">Flights</TabsTrigger>
