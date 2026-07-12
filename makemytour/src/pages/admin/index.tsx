@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import HomestayList from "@/components/Homestay/Homestay";
 import ModerationPanel from "@/components/reviews/ModerationPanel";
 import {
   Card,
@@ -1099,7 +1098,7 @@ export default function AdminDashboard() {
     <div className="container mx-auto p-4 bg-white max-w-full">
       <h1 className="text-3xl font-bold mb-6 ">Admin Dashboard</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7 text-black">
+        <TabsList className="grid w-full grid-cols-8 text-black">
           <TabsTrigger value="flights">Flights</TabsTrigger>
           <TabsTrigger value="hotels">Hotels</TabsTrigger>
           <TabsTrigger value="trains">Trains</TabsTrigger>
