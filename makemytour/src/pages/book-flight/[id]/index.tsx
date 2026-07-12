@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import ReviewSection from "@/components/reviews/ReviewSection";
 
 import {
   Plane,
@@ -590,6 +591,7 @@ const BookFlightPage = () => {
             </div>
           </div>
         </div>
+        <ReviewSection serviceType="Flight" serviceId={id as string} />
       </div>
     </div>
   );

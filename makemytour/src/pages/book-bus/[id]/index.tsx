@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import ReviewSection from "@/components/reviews/ReviewSection";
 import {
   Bus as BusIcon,
   Clock,
@@ -267,6 +268,7 @@ const BookBusPage = () => {
             )}
           </Dialog>
         </div>
+        <ReviewSection serviceType="Bus" serviceId={id as string} />
       </div>
     </div>
   );

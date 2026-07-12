@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import ReviewSection from "@/components/reviews/ReviewSection";
 import { HomeIcon, MapPin, CreditCard, Ticket } from "lucide-react";
 import { useEffect, useState } from "react";
 import { gethomestay, handlehomestaybooking } from "@/api";
@@ -251,6 +252,7 @@ const BookHomestayPage = () => {
             )}
           </Dialog>
         </div>
+        <ReviewSection serviceType="Homestay" serviceId={id as string} />
       </div>
     </div>
   );

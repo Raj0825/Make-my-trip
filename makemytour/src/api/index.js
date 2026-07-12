@@ -513,3 +513,102 @@ export const cancelbooking = async (userId, bookingId, reason) => {
     throw error;
   }
 };
+
+
+// ---------------- Reviews ----------------
+
+export const createReview = async (review) => {
+  // review: { serviceType, serviceId, userId, userName, rating, reviewText, photoUrls }
+  try {
+    const res = await axios.post(`${BACKEND_URL}/reviews`, review);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const getReviews = async (serviceType, serviceId, sort = "newest", minRating, maxRating) => {
+  try {
+    const params = new URLSearchParams({ sort });
+    if (minRating) params.append("minRating", minRating);
+    if (maxRating) params.append("maxRating", maxRating);
+    const url = `${BACKEND_URL}/reviews/${serviceType}/${serviceId}?${params.toString()}`;
+    const res = await axios.get(url);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const replyToReview = async (reviewId, userId, userName, text) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/reviews/${reviewId}/reply`, {
+      userId, userName, text,
+    });
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const markReviewHelpful = async (reviewId, userId) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/reviews/${reviewId}/helpful?userId=${userId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const flagReview = async (reviewId, userId, reason) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/reviews/${reviewId}/flag`, {
+      userId, reason,
+    });
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const uploadReviewPhoto = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await axios.post(`${BACKEND_URL}/uploads/review-photo`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data.url; // relative path e.g. /uploads/reviews/xxx.jpg
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+// ---- Moderator (admin) ----
+
+export const getFlaggedReviews = async () => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/reviews/admin/flagged`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const moderateReview = async (reviewId, action) => {
+  // action: "APPROVE" | "REMOVE"
+  try {
+    const res = await axios.put(`${BACKEND_URL}/reviews/admin/${reviewId}/moderate?action=${action}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};

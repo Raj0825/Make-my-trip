@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import HomestayList from "@/components/Homestay/Homestay";
+import ModerationPanel from "@/components/reviews/ModerationPanel";
 import {
   Card,
   CardContent,
@@ -1105,6 +1107,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="cabs">Cabs</TabsTrigger>
           <TabsTrigger value="homestays">Homestays</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="reviews">Reviews</TabsTrigger>
         </TabsList>
         <TabsContent value="flights">
           <Card>
@@ -1210,6 +1213,19 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <UserSearch />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="reviews">
+          <Card>
+            <CardHeader>
+              <CardTitle>Review Moderation</CardTitle>
+              <CardDescription>
+                Reviews flagged by multiple users appear here for approval or removal.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ModerationPanel />
             </CardContent>
           </Card>
         </TabsContent>

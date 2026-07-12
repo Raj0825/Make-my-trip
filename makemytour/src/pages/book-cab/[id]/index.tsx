@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import ReviewSection from "@/components/reviews/ReviewSection";
 import {
   Car as CarIcon,
   Clock,
@@ -267,6 +268,7 @@ const BookCabPage = () => {
             )}
           </Dialog>
         </div>
+        <ReviewSection serviceType="Cab" serviceId={id as string} />
       </div>
     </div>
   );
