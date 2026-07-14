@@ -668,3 +668,74 @@ export const isAdminLoggedIn = () => {
   if (typeof window === "undefined") return false;
   return !!localStorage.getItem("adminToken");
 };
+
+
+// ---------------- Flight Status Tracking + Push ----------------
+
+export const getVapidPublicKey = async () => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/push/vapid-public-key`);
+    return res.data; // { publicKey }
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const subscribeToPush = async (userId, endpoint, keys) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/push/subscribe`, {
+      userId,
+      endpoint,
+      keys,
+    });
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const getFlightStatus = async (flightId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/flight-status/${flightId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const trackFlight = async (userId, flightId) => {
+  try {
+    const res = await axios.post(
+      `${BACKEND_URL}/flight-status/track?userId=${userId}&flightId=${flightId}`
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const untrackFlight = async (userId, flightId) => {
+  try {
+    const res = await axios.delete(
+      `${BACKEND_URL}/flight-status/track?userId=${userId}&flightId=${flightId}`
+    );
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const getTrackedFlights = async (userId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/flight-status/tracked/${userId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};

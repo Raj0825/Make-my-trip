@@ -1,5 +1,8 @@
 import { useRouter } from "next/router";
 import ReviewSection from "@/components/reviews/ReviewSection";
+import TrackFlightButton from "@/components/flight-tracking/TrackFlightButton";
+import FlightStatusBadge from "@/components/flight-tracking/FlightStatusBadge";
+import { getFlightStatus } from "@/api";
 
 import {
   Plane,
@@ -49,10 +52,25 @@ const BookFlightPage = () => {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [open, setopem] = useState(false);
-  const user = useSelector((state: any) => state.user.user);
-  const dispatch = useDispatch();
-  useEffect(() => {
-    const fetchFlights = async () => {
+    const [flightStatus, setFlightStatus] = useState<any>(null);
+    const user = useSelector((state: any) => state.user.user);
+    const dispatch = useDispatch();
+    useEffect(() => {
+      if (!id) return;
+      const fetchStatus = async () => {
+        try {
+          const status = await getFlightStatus(id as string);
+          setFlightStatus(status);
+        } catch {
+          // ignore — status is a nice-to-have, not blocking
+        }
+      };
+      fetchStatus();
+      const interval = setInterval(fetchStatus, 30000);
+      return () => clearInterval(interval);
+    }, [id]);
+    useEffect(() => {
+      const fetchFlights = async () => {
       try {
         const data = await getflight();
         const filteredData = data.filter((flight: any) => flight.id === id);
@@ -547,6 +565,13 @@ const BookFlightPage = () => {
                   </DialogContent>
                 )}
               </Dialog>
+
+              {/* Live Flight Status + Tracking */}
+                <div className="mt-4 space-y-3">
+                    <FlightStatusBadge status={flightStatus} />
+                    <TrackFlightButton flightId={id as string} />
+                </div>
+
               {/* Promo Codes */}
               <div className="mt-8">
                 <div className="bg-[#FFF8E7] p-6 rounded-xl">

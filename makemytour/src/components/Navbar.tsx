@@ -2,6 +2,7 @@ import React from "react";
 import SignupDialog from "./SignupDialog";
 import { LogOut, Plane, User } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
+import { LogOut, Plane, User, Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,11 +63,15 @@ const Navbar = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push("/profile")}>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => logout()}>
+                 <DropdownMenuItem onClick={() => router.push("/profile")}>
+                                     <User className="mr-2 h-4 w-4" />
+                                     <span>Profile</span>
+                                   </DropdownMenuItem>
+                                   <DropdownMenuItem onClick={() => router.push("/track-flights")}>
+                                     <Bell className="mr-2 h-4 w-4" />
+                                     <span>Track Flights</span>
+                                   </DropdownMenuItem>
+                                   <DropdownMenuItem onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
