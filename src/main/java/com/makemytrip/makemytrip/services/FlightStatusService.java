@@ -75,7 +75,7 @@ public class FlightStatusService {
         return result;
     }
 
-    @Scheduled(fixedRate = 20 * 1000)
+    @Scheduled(fixedRate = 3 * 60 * 1000)
     public void simulateStatusUpdates() {
         Set<String> trackedFlightIds = new HashSet<>();
         flightTrackingRepository.findAll().forEach(t -> trackedFlightIds.add(t.getFlightId()));
