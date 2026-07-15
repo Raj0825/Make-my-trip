@@ -141,7 +141,7 @@ const ProfilePage = () => {
     catch { return 999; }
   };
 
-  const allBookings = user?.bookings || [];
+  const allBookings = (user?.bookings || []).filter((b: any) => b != null);
   const filteredBookings =
     activeTab === "active"    ? allBookings.filter((b: any) => !b.cancelled) :
     activeTab === "cancelled" ? allBookings.filter((b: any) => b.cancelled) :

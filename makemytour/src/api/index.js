@@ -2,6 +2,9 @@ import axios from "axios";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
+// Automatically attach the admin JWT to any request hitting a protected
+// admin route, so none of the existing addflight/edithotel/etc functions
+// below need to change individually.
 axios.interceptors.request.use((config) => {
   const url = config.url || "";
   const isAdminRoute = url.includes("/admin/") || url.includes("/reviews/admin/");
@@ -17,6 +20,9 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
+// If the admin's token is missing/expired/invalid, the backend returns
+// 401/403 on admin routes — clear the stale token so the UI knows to
+// show the login form again instead of silently failing every request.
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -220,6 +226,7 @@ export const handleflightbooking = async (userId, flightId, seats, price) => {
     return data;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
@@ -543,7 +550,6 @@ export const cancelbooking = async (userId, bookingId, reason) => {
   }
 };
 
-
 // ---------------- Reviews ----------------
 
 export const createReview = async (review) => {
@@ -647,6 +653,7 @@ export const moderateReview = async (reviewId, action) => {
 export const adminLogin = async (email, password) => {
   try {
     const res = await axios.post(`${BACKEND_URL}/admin/login`, { email, password });
+    // res.data: { token, email, firstName, role }
     if (typeof window !== "undefined") {
       localStorage.setItem("adminToken", res.data.token);
       localStorage.setItem("adminName", res.data.firstName || "");
@@ -668,7 +675,6 @@ export const isAdminLoggedIn = () => {
   if (typeof window === "undefined") return false;
   return !!localStorage.getItem("adminToken");
 };
-
 
 // ---------------- Flight Status Tracking + Push ----------------
 

@@ -185,26 +185,27 @@ const BookFlightPage = () => {
     totalPrice + totalTaxes + totalOtherServices - totalDiscounts;
 
   const handlebooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const data = await handleflightbooking(
-        user?.id,
-        flight?.id,
-        quantity,
-        grandTotal
-      );
-      const updateuser = {
-        ...user,
-        bookings: [...user.bookings, data],
-      };
-      dispatch(setUser(updateuser));
-      setopem(false);
-      setQuantity(1);
-      router.push("/profile");
-    } catch (error) {
-      console.log(error);
-    }
-  };
+      e.preventDefault();
+      try {
+        const data = await handleflightbooking(
+          user?.id,
+          flight?.id,
+          quantity,
+          grandTotal
+        );
+        const updateuser = {
+          ...user,
+          bookings: [...user.bookings, data],
+        };
+        dispatch(setUser(updateuser));
+        setopem(false);
+        setQuantity(1);
+        router.push("/profile");
+      } catch (error: any) {
+        const message = error?.response?.data || "Booking failed. Please try again.";
+        alert(typeof message === "string" ? message : "Booking failed. Please try again.");
+      }
+    };
   const BookingContent = () => (
     <DialogContent className="sm:max-w-[600px] bg-white">
       <DialogHeader>
