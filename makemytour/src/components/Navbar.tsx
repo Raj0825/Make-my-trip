@@ -24,7 +24,10 @@ const Navbar = () => {
   return (
     <header className=" backdrop-blur-md py-4 sticky top-0 z-50">
       <div className="container mx-auto px-4 flex items-center justify-between">
-        <div className="flex items-center space-x-2 text-white">
+        <div
+          className="flex items-center space-x-2 text-white cursor-pointer"
+          onClick={() => router.push("/")}
+        >
           <Plane className="w-8 h-8 text-red-500" />
           <span className="text-2xl font-bold text-black">MakeMyTour</span>
         </div>
@@ -62,15 +65,15 @@ const Navbar = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                 <DropdownMenuItem onClick={() => router.push("/profile")}>
-                                     <User className="mr-2 h-4 w-4" />
-                                     <span>Profile</span>
-                                   </DropdownMenuItem>
-                                   <DropdownMenuItem onClick={() => router.push("/track-flights")}>
-                                     <Bell className="mr-2 h-4 w-4" />
-                                     <span>Track Flights</span>
-                                   </DropdownMenuItem>
-                                   <DropdownMenuItem onClick={() => logout()}>
+                  <DropdownMenuItem onClick={() => router.push("/profile")}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/track-flights")}>
+                    <Bell className="mr-2 h-4 w-4" />
+                    <span>Track Flights</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
