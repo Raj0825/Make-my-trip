@@ -64,4 +64,5 @@ const CabList = ({ onSelect }: any) => {
     </div>
   );
 };
+
 export default CabList;
