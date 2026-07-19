@@ -25,7 +25,7 @@ const AISLE_COLS = new Set(["C", "D"]);
 
 // Refresh the seat map periodically so seats taken by other users
 // disappear from availability without needing a manual reload.
-const POLL_INTERVAL_MS = 15 * 1000;
+const POLL_INTERVAL_MS = 30 * 1000;
 
 export default function SeatMap({
   flightId,
@@ -159,28 +159,40 @@ export default function SeatMap({
         {rows.map(({ rowNum, seats: rowSeats }) => (
           <div key={rowNum} className="flex items-center gap-1.5 justify-center">
             <span className="w-5 text-xs text-gray-400">{rowNum}</span>
-            {rowSeats.map((seat, idx) => (
-              <div key={seat.id} className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  disabled={seat.status !== "AVAILABLE"}
-                  onClick={() => toggleSeat(seat)}
-                  title={
-                    seat.seatClass === "PREMIUM"
-                      ? `${seat.seatNumber} — Premium (+₹${seat.surcharge})`
-                      : seat.seatNumber
-                  }
-                  className={`w-8 h-8 rounded border flex items-center justify-center text-[10px] font-medium transition-colors ${seatClasses(
-                    seat,
-                    COLUMN_ORDER[idx]
-                  )}`}
-                >
-                  <Armchair size={14} className={selected.includes(seat.seatNumber) ? "hidden" : ""} />
-                  {selected.includes(seat.seatNumber) && <Check size={14} />}
-                </button>
-                {COLUMN_ORDER[idx] === "C" && <span className="w-3" />}
-              </div>
-            ))}
+            {rowSeats.map((seat, idx) => {
+              const isSelected = selected.includes(seat.seatNumber);
+              return (
+                <div key={seat.id} className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={seat.status !== "AVAILABLE"}
+                    onClick={() => toggleSeat(seat)}
+                    title={
+                      seat.seatClass === "PREMIUM"
+                        ? `${seat.seatNumber} — Premium (+₹${seat.surcharge})`
+                        : seat.seatNumber
+                    }
+                    style={
+                      isSelected
+                        ? {
+                            backgroundColor: "#2563eb",
+                            color: "#ffffff",
+                            borderColor: "#2563eb",
+                            boxShadow: "0 0 0 3px rgba(37, 99, 235, 0.35)",
+                            transform: "scale(1.12)",
+                          }
+                        : undefined
+                    }
+                    className={`w-8 h-8 rounded border flex items-center justify-center text-[10px] font-medium transition-all ${
+                      isSelected ? "" : seatClasses(seat, COLUMN_ORDER[idx])
+                    }`}
+                  >
+                    {isSelected ? <Check size={14} /> : <Armchair size={14} />}
+                  </button>
+                  {COLUMN_ORDER[idx] === "C" && <span className="w-3" />}
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
