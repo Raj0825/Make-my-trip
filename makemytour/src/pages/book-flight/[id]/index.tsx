@@ -284,15 +284,26 @@ const BookFlightPage = () => {
               Number of Tickets
             </Label>
             <Input
-              id="quantity"
-              type="number"
-              min="1"
-              max={flight.availableSeats}
-              value={quantity}
-              onChange={handleQuantityChange}
-            />
-          </div>
-        </div>
+                          id="quantity"
+                          type="number"
+                          min="1"
+                          max={flight.availableSeats}
+                          value={quantity}
+                          onChange={handleQuantityChange}
+                        />
+                      </div>
+                    </div>
+
+                    <SeatMap
+                      flightId={flight?.id}
+                      quantity={quantity}
+                      onChange={(seatNumbers, surcharge) => {
+                        setSelectedSeats(seatNumbers);
+                        setSeatSurcharge(surcharge);
+                      }}
+                      rememberPreference={rememberSeatPref}
+                      onRememberPreferenceChange={setRememberSeatPref}
+                    />
         <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
@@ -318,11 +329,19 @@ const BookFlightPage = () => {
               </span>
             </div>
             <div className="flex justify-between items-center text-green-600">
-              <span className="font-medium">Discounts</span>
-              <span className="font-medium">
-                - ₹ {Math.abs(totalDiscounts).toLocaleString()}
-              </span>
-            </div>
+                          <span className="font-medium">Discounts</span>
+                          <span className="font-medium">
+                            - ₹ {Math.abs(totalDiscounts).toLocaleString()}
+                          </span>
+                        </div>
+                        {seatSurcharge > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Seat Selection</span>
+                            <span className="font-medium">
+                              ₹ {seatSurcharge.toLocaleString()}
+                            </span>
+                          </div>
+                        )}
             <div className="border-t pt-2 mt-2">
               <div className="flex justify-between items-center">
                 <span className="font-bold text-lg">Total Amount</span>
