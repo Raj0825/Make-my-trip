@@ -46,6 +46,10 @@ public class Users {
         private String cancelledAt;
         private String expectedRefundDate;
 
+        // Seat / room selection fields
+        private java.util.List<String> seatNumbers; // e.g. ["12A", "12B"] — flights only
+        private String roomType;                    // e.g. "Deluxe Room" — hotels only
+
         // Getters and Setters — original fields
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }
@@ -71,5 +75,11 @@ public class Users {
         public void setCancelledAt(String cancelledAt) { this.cancelledAt = cancelledAt; }
         public String getExpectedRefundDate() { return expectedRefundDate; }
         public void setExpectedRefundDate(String expectedRefundDate) { this.expectedRefundDate = expectedRefundDate; }
+
+        // Getters and Setters — seat / room selection fields
+        public java.util.List<String> getSeatNumbers() { return seatNumbers; }
+        public void setSeatNumbers(java.util.List<String> seatNumbers) { this.seatNumbers = seatNumbers; }
+        public String getRoomType() { return roomType; }
+        public void setRoomType(String roomType) { this.roomType = roomType; }
     }
 }
