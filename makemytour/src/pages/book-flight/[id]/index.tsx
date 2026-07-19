@@ -3,6 +3,8 @@ import ReviewSection from "@/components/reviews/ReviewSection";
 import TrackFlightButton from "@/components/flight-tracking/TrackFlightButton";
 import FlightStatusBadge from "@/components/flight-tracking/FlightStatusBadge";
 import { getFlightStatus } from "@/api";
+import SeatMap from "@/components/seat-selection/SeatMap";
+import { saveBookingPreferences } from "@/api";
 
 import {
   Plane,
@@ -51,6 +53,9 @@ const BookFlightPage = () => {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+    const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+    const [seatSurcharge, setSeatSurcharge] = useState(0);
+    const [rememberSeatPref, setRememberSeatPref] = useState(false);
   const [open, setopem] = useState(false);
     const [flightStatus, setFlightStatus] = useState<any>(null);
     const user = useSelector((state: any) => state.user.user);
@@ -182,24 +187,38 @@ const BookFlightPage = () => {
   const totalOtherServices = fareSummary?.otherServices * quantity;
   const totalDiscounts = fareSummary?.discounts * quantity;
   const grandTotal =
-    totalPrice + totalTaxes + totalOtherServices - totalDiscounts;
+      totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge;
 
   const handlebooking = async (e: React.FormEvent) => {
       e.preventDefault();
+      if (selectedSeats.length !== quantity) {
+        alert(`Please select ${quantity} seat${quantity > 1 ? "s" : ""} before proceeding.`);
+        return;
+      }
       try {
         const data = await handleflightbooking(
           user?.id,
           flight?.id,
           quantity,
-          grandTotal
+          grandTotal,
+          selectedSeats
         );
         const updateuser = {
           ...user,
           bookings: [...user.bookings, data],
         };
         dispatch(setUser(updateuser));
+
+        if (rememberSeatPref && selectedSeats.length > 0) {
+          const lastCol = selectedSeats[0].slice(-1);
+          const seatType = ["A", "F"].includes(lastCol) ? "WINDOW" : ["C", "D"].includes(lastCol) ? "AISLE" : "MIDDLE";
+          saveBookingPreferences(user.id, { seatType }).catch(() => {});
+        }
+
         setopem(false);
         setQuantity(1);
+        setSelectedSeats([]);
+        setSeatSurcharge(0);
         router.push("/profile");
       } catch (error: any) {
         const message = error?.response?.data || "Booking failed. Please try again.";

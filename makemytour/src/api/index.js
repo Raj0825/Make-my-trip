@@ -798,3 +798,50 @@ export const saveBookingPreferences = async (userId, prefs) => {
     throw error;
   }
 };
+
+// ---------------- Seat Selection + Room Types + Preferences ----------------
+
+export const getSeatMap = async (flightId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/flight-seats/${flightId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const getRoomTypes = async (hotelId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/room-types/${hotelId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const getBookingPreferences = async (userId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/preferences/${userId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const saveBookingPreferences = async (userId, prefs) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/preferences`, {
+      userId,
+      seatType: prefs?.seatType,
+      seatClass: prefs?.seatClass,
+      roomTypeName: prefs?.roomTypeName,
+    });
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
