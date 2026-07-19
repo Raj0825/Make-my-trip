@@ -39,8 +39,12 @@ import SignupDialog from "@/components/SignupDialog";
 import Loader from "@/components/Loader";
 import { setUser } from "@/store";
 import ReviewSection from "@/components/reviews/ReviewSection";
+import RoomTypeGrid from "@/components/room-selection/RoomTypeGrid";
+import { saveBookingPreferences } from "@/api";
 const BookHotelPage = () => {
   const [quantity, setQuantity] = useState(1);
+    const [selectedRoomType, setSelectedRoomType] = useState<any>(null);
+    const [rememberRoomPref, setRememberRoomPref] = useState(false);
   const router = useRouter();
   const { id } = router.query; // Access the hotel ID from the URL
   const [hotels, sethotels] = useState<Hotel[]>([]);
@@ -105,38 +109,51 @@ const BookHotelPage = () => {
     },
   };
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const value = Number.parseInt(e.target.value);
-    setQuantity(
-      isNaN(value) ? 1 : Math.max(1, Math.min(value, hotel.availableRooms))
-    );
-  };
-
-  const totalPrice = hotel?.pricePerNight * quantity;
-  const totalTaxes = hotelData?.room.taxes * quantity;
-  const totalDiscounts = hotelData?.room.discountedPrice * quantity;
-  const grandTotal = totalPrice + totalTaxes - totalDiscounts;
-  const handlebooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const data = await handlehotelbooking(
-        user?.id,
-        hotel?.id,
-        quantity,
-        grandTotal
+      e.preventDefault();
+      const value = Number.parseInt(e.target.value);
+      const max = selectedRoomType?.availableRooms ?? hotel.availableRooms;
+      setQuantity(
+        isNaN(value) ? 1 : Math.max(1, Math.min(value, max))
       );
-      const updateuser = {
-        ...user,
-        bookings: [...user.bookings, data],
-      };
-      dispatch(setUser(updateuser));
-      setopem(false);
-      setQuantity(1);
-      router.push("/profile");
-    } catch (error) {
-      console.log(error);
-    }
-  };
+    };
+
+ const totalPrice = (selectedRoomType?.pricePerNight ?? hotel?.pricePerNight) * quantity;
+   const totalTaxes = hotelData?.room.taxes * quantity;
+   const totalDiscounts = hotelData?.room.discountedPrice * quantity;
+   const grandTotal = totalPrice + totalTaxes - totalDiscounts;
+   const handlebooking = async (e: React.FormEvent) => {
+     e.preventDefault();
+     if (!selectedRoomType) {
+       alert("Please select a room type before proceeding.");
+       return;
+     }
+     try {
+       const data = await handlehotelbooking(
+         user?.id,
+         hotel?.id,
+         quantity,
+         grandTotal,
+         selectedRoomType.id,
+         selectedRoomType.name
+       );
+       const updateuser = {
+         ...user,
+         bookings: [...user.bookings, data],
+       };
+       dispatch(setUser(updateuser));
+
+       if (rememberRoomPref) {
+         saveBookingPreferences(user.id, { roomTypeName: selectedRoomType.name }).catch(() => {});
+       }
+
+       setopem(false);
+       setQuantity(1);
+       router.push("/profile");
+     } catch (error: any) {
+       const message = error?.response?.data || "Booking failed. Please try again.";
+       alert(typeof message === "string" ? message : "Booking failed. Please try again.");
+     }
+   };
   const HotelContent = () => (
     <DialogContent className="sm:max-w-[600px] bg-white">
       <DialogHeader>
@@ -196,13 +213,28 @@ const BookHotelPage = () => {
               id="quantity"
               type="number"
               min="1"
-              max={hotel.availableRooms}
+              max={selectedRoomType?.availableRooms ?? hotel.availableRooms}
               value={quantity}
               onChange={handleQuantityChange}
             />
           </div>
         </div>
-        <div className="bg-gray-100 rounded-lg p-4">
+
+                <div>
+                  <Label className="flex items-center mb-2">
+                    <Home className="w-4 h-4 mr-2" />
+                    Choose Room Type
+                  </Label>
+                  <RoomTypeGrid
+                    hotelId={hotel?.id}
+                    selectedRoomTypeId={selectedRoomType?.id || null}
+                    onSelect={setSelectedRoomType}
+                    rememberPreference={rememberRoomPref}
+                    onRememberPreferenceChange={setRememberRoomPref}
+                  />
+                </div>
+
+                <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
             Fare Summary
