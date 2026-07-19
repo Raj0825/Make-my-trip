@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { Armchair, Info } from "lucide-react";
+import { Armchair, Info, Check } from "lucide-react";
 import { getSeatMap, getBookingPreferences } from "@/api";
 
 interface Seat {
@@ -130,7 +130,8 @@ export default function SeatMap({
 
   const seatClasses = (seat: Seat, col: string) => {
     if (seat.status === "BOOKED") return "bg-gray-200 text-gray-400 cursor-not-allowed";
-    if (selected.includes(seat.seatNumber)) return "bg-blue-600 text-white border-blue-600";
+    if (selected.includes(seat.seatNumber))
+      return "bg-blue-600 text-white border-blue-600 ring-2 ring-blue-300 ring-offset-1 scale-110";
     if (seat.seatClass === "PREMIUM")
       return "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100";
     if (isRecommended(col)) return "bg-green-50 text-green-700 border-green-300 hover:bg-green-100";
@@ -154,7 +155,7 @@ export default function SeatMap({
         )}
       </div>
 
-      <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
+      <div className="space-y-1.5">
         {rows.map(({ rowNum, seats: rowSeats }) => (
           <div key={rowNum} className="flex items-center gap-1.5 justify-center">
             <span className="w-5 text-xs text-gray-400">{rowNum}</span>
@@ -174,7 +175,8 @@ export default function SeatMap({
                     COLUMN_ORDER[idx]
                   )}`}
                 >
-                  <Armchair size={14} />
+                  <Armchair size={14} className={selected.includes(seat.seatNumber) ? "hidden" : ""} />
+                  {selected.includes(seat.seatNumber) && <Check size={14} />}
                 </button>
                 {COLUMN_ORDER[idx] === "C" && <span className="w-3" />}
               </div>
