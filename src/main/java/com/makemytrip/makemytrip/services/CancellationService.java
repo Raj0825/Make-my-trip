@@ -23,6 +23,8 @@ public class CancellationService {
     @Autowired private UserRepository userRepository;
     @Autowired private FlightRepository flightRepository;
     @Autowired private HotelRepository hotelRepository;
+    @Autowired private FlightSeatService flightSeatService;
+    @Autowired private RoomTypeService roomTypeService;
     @Autowired private TrainRepository trainRepository;
     @Autowired private BusRepository busRepository;
     @Autowired private CabRepository cabRepository;
@@ -164,14 +166,24 @@ public class CancellationService {
         int quantity = booking.getQuantity();
 
         switch (type) {
-            case "Flight" -> flightRepository.findById(bookingId).ifPresent(f -> {
-                f.setAvailableSeats(f.getAvailableSeats() + quantity);
-                flightRepository.save(f);
-            });
-            case "Hotel" -> hotelRepository.findById(bookingId).ifPresent(h -> {
-                h.setAvailableRooms(h.getAvailableRooms() + quantity);
-                hotelRepository.save(h);
-            });
+            case "Flight" -> {
+                flightRepository.findById(bookingId).ifPresent(f -> {
+                    f.setAvailableSeats(f.getAvailableSeats() + quantity);
+                    flightRepository.save(f);
+                });
+                if (booking.getSeatNumbers() != null && !booking.getSeatNumbers().isEmpty()) {
+                    flightSeatService.releaseSeats(bookingId, booking.getSeatNumbers());
+                }
+            }
+            case "Hotel" -> {
+                hotelRepository.findById(bookingId).ifPresent(h -> {
+                    h.setAvailableRooms(h.getAvailableRooms() + quantity);
+                    hotelRepository.save(h);
+                });
+                if (booking.getRoomType() != null) {
+                    roomTypeService.releaseRoomByName(bookingId, booking.getRoomType(), quantity);
+                }
+            }
             case "Train" -> trainRepository.findById(bookingId).ifPresent(t -> {
                 t.setAvailableSeats(t.getAvailableSeats() + quantity);
                 trainRepository.save(t);

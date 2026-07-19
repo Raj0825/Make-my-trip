@@ -13,17 +13,19 @@ public class BookingController {
     private BookingService bookingService;
 
     @PostMapping("/flight")
-    public ResponseEntity<?> bookFlight(@RequestParam String userId, @RequestParam String flightId, @RequestParam int seats, @RequestParam double price){
+    public ResponseEntity<?> bookFlight(@RequestParam String userId, @RequestParam String flightId, @RequestParam int seats, @RequestParam double price,
+                                        @RequestParam(required = false) String seatNumbers){
         try {
-            return ResponseEntity.ok(bookingService.bookFlight(userId,flightId,seats,price));
+            return ResponseEntity.ok(bookingService.bookFlight(userId,flightId,seats,price,seatNumbers));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
     @PostMapping("/hotel")
-    public ResponseEntity<?> bookhotel (@RequestParam String userId,@RequestParam String hotelId,@RequestParam int rooms,@RequestParam double price){
+    public ResponseEntity<?> bookhotel (@RequestParam String userId,@RequestParam String hotelId,@RequestParam int rooms,@RequestParam double price,
+                                        @RequestParam(required = false) String roomTypeId, @RequestParam(required = false) String roomTypeName){
         try {
-            return ResponseEntity.ok(bookingService.bookhotel(userId,hotelId,rooms,price));
+            return ResponseEntity.ok(bookingService.bookhotel(userId,hotelId,rooms,price,roomTypeId,roomTypeName));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
