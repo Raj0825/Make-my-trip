@@ -56,6 +56,7 @@ export default function FlightStatusBadge({ status }: { status: FlightStatusData
       <p className="text-[10px] mt-1 opacity-60">
         Updated {new Date(status.lastUpdated).toLocaleTimeString()}
       </p>
+
     </div>
   );
 }
