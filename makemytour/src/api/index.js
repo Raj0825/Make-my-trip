@@ -218,9 +218,12 @@ export const edithotel = async (
   }
 };
 
-export const handleflightbooking = async (userId, flightId, seats, price) => {
+export const handleflightbooking = async (userId, flightId, seats, price, seatNumbers) => {
   try {
-    const url = `${BACKEND_URL}/booking/flight?userId=${userId}&flightId=${flightId}&seats=${seats}&price=${price}`;
+    let url = `${BACKEND_URL}/booking/flight?userId=${userId}&flightId=${flightId}&seats=${seats}&price=${price}`;
+    if (seatNumbers && seatNumbers.length > 0) {
+      url += `&seatNumbers=${encodeURIComponent(seatNumbers.join(","))}`;
+    }
     const res = await axios.post(url);
     const data = res.data;
     return data;
@@ -230,14 +233,17 @@ export const handleflightbooking = async (userId, flightId, seats, price) => {
   }
 };
 
-export const handlehotelbooking = async (userId, hotelId, rooms, price) => {
+export const handlehotelbooking = async (userId, hotelId, rooms, price, roomTypeId, roomTypeName) => {
   try {
-    const url = `${BACKEND_URL}/booking/hotel?userId=${userId}&hotelId=${hotelId}&rooms=${rooms}&price=${price}`;
+    let url = `${BACKEND_URL}/booking/hotel?userId=${userId}&hotelId=${hotelId}&rooms=${rooms}&price=${price}`;
+    if (roomTypeId) url += `&roomTypeId=${roomTypeId}`;
+    if (roomTypeName) url += `&roomTypeName=${encodeURIComponent(roomTypeName)}`;
     const res = await axios.post(url);
     const data = res.data;
     return data;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
@@ -739,6 +745,53 @@ export const untrackFlight = async (userId, flightId) => {
 export const getTrackedFlights = async (userId) => {
   try {
     const res = await axios.get(`${BACKEND_URL}/flight-status/tracked/${userId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+// ---------------- Seat Selection + Room Types + Preferences ----------------
+
+export const getSeatMap = async (flightId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/flight-seats/${flightId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const getRoomTypes = async (hotelId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/room-types/${hotelId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const getBookingPreferences = async (userId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/preferences/${userId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const saveBookingPreferences = async (userId, prefs) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/preferences`, {
+      userId,
+      seatType: prefs?.seatType,
+      seatClass: prefs?.seatClass,
+      roomTypeName: prefs?.roomTypeName,
+    });
     return res.data;
   } catch (error) {
     console.log(error);
