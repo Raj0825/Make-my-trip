@@ -14,6 +14,7 @@ interface FlightStatusData {
   estimatedArrivalTime?: string;
   lastUpdated: string;
   history: StatusEvent[];
+
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
