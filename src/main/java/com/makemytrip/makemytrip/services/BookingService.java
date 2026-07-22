@@ -44,6 +44,12 @@ public class BookingService {
     @Autowired
     private RoomTypeService roomTypeService;
 
+    @Autowired
+    private DynamicPricingService dynamicPricingService;
+
+    @Autowired
+    private PriceFreezeService priceFreezeService;
+
     public Users.Booking bookFlight(String userId, String flightId, int seats, double price, String seatNumbersCsv){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Flight> flightOptional =flightRepository.findById(flightId);
@@ -72,6 +78,7 @@ public class BookingService {
 
                 flight.setAvailableSeats(flight.getAvailableSeats()- seats);
                 flightRepository.save(flight);
+                dynamicPricingService.recalculate(DynamicPricingService.FLIGHT, flightId);
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Flight");
@@ -99,6 +106,7 @@ public class BookingService {
             if(hotel.getAvailableRooms() >= rooms){
                 hotel.setAvailableRooms(hotel.getAvailableRooms()- rooms);
                 hotelRepository.save(hotel);
+                dynamicPricingService.recalculate(DynamicPricingService.HOTEL, hotelId);
 
                 if (roomTypeId != null && !roomTypeId.isBlank()) {
                     roomTypeService.bookRoom(roomTypeId, rooms);
@@ -132,6 +140,7 @@ public class BookingService {
             if(train.getAvailableSeats() >= seats){
                 train.setAvailableSeats(train.getAvailableSeats()- seats);
                 trainRepository.save(train);
+                dynamicPricingService.recalculate(DynamicPricingService.TRAIN, trainId);
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Train");
@@ -158,6 +167,7 @@ public class BookingService {
             if(bus.getAvailableSeats() >= seats){
                 bus.setAvailableSeats(bus.getAvailableSeats()- seats);
                 busRepository.save(bus);
+                dynamicPricingService.recalculate(DynamicPricingService.BUS, busId);
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Bus");
@@ -184,6 +194,7 @@ public class BookingService {
             if(cab.getAvailableSeats() >= seats){
                 cab.setAvailableSeats(cab.getAvailableSeats()- seats);
                 cabRepository.save(cab);
+                dynamicPricingService.recalculate(DynamicPricingService.CAB, cabId);
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Cab");
@@ -210,6 +221,7 @@ public class BookingService {
             if(homestay.getAvailableRooms() >= rooms){
                 homestay.setAvailableRooms(homestay.getAvailableRooms()- rooms);
                 homestayRepository.save(homestay);
+                dynamicPricingService.recalculate(DynamicPricingService.HOMESTAY, homestayId);
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Homestay");
