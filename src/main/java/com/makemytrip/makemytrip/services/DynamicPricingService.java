@@ -95,6 +95,47 @@ public class DynamicPricingService {
         return applyRecalculation(existing.get());
     }
 
+    /**
+     * Call this whenever an admin manually edits an item's price directly (outside a booking).
+     * A manual edit is treated as re-anchoring the item: the new admin price becomes the fresh
+     * "basePrice", so the engine's demand/seasonal adjustments apply on top of it going forward
+     * instead of silently reverting to whatever the old anchor used to be.
+     */
+    public PricingProfile resetBasePrice(String entityType, String entityId, double newBasePrice) {
+        PricingProfile profile = pricingProfileRepository.findByEntityTypeAndEntityId(entityType, entityId)
+                .orElseGet(() -> {
+                    PricingProfile p = new PricingProfile();
+                    p.setEntityType(entityType);
+                    p.setEntityId(entityId);
+                    p.setTotalCapacity(1);
+                    return p;
+                });
+        profile.setBasePrice(newBasePrice);
+        profile.setCurrentPrice(newBasePrice);
+        profile.setCurrentMultiplier(1.0);
+        profile.setLastUpdated(System.currentTimeMillis());
+        profile = pricingProfileRepository.save(profile);
+
+        PricingProfile recalculated = applyRecalculation(profile);
+
+        PriceHistoryEntry entry = new PriceHistoryEntry();
+        entry.setEntityType(entityType);
+        entry.setEntityId(entityId);
+        entry.setPrice(recalculated.getCurrentPrice());
+        entry.setMultiplier(recalculated.getCurrentMultiplier());
+        entry.setDemandFactor(recalculated.getDemandFactor());
+        entry.setSeasonalFactor(recalculated.getSeasonalFactor());
+        entry.setReason("Manual price update by admin");
+        entry.setTimestamp(recalculated.getLastUpdated());
+        priceHistoryRepository.save(entry);
+        messagingTemplate.convertAndSend(
+                "/topic/prices/" + entityType + "/" + entityId,
+                entry
+        );
+
+        return recalculated;
+    }
+
     /** Engine tick: re-prices every known item. Runs every 5 minutes. */
     @Scheduled(fixedRate = 5 * 60 * 1000)
     public void engineTick() {

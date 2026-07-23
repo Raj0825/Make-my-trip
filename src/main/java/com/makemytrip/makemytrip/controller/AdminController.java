@@ -11,6 +11,7 @@ import com.makemytrip.makemytrip.repositories.TrainRepository;
 import com.makemytrip.makemytrip.repositories.BusRepository;
 import com.makemytrip.makemytrip.repositories.CabRepository;
 import com.makemytrip.makemytrip.repositories.HomestayRepository;
+import com.makemytrip.makemytrip.services.DynamicPricingService;
 import java.util.List;
 import java.util.Optional;
 @RestController
@@ -37,6 +38,9 @@ public class AdminController {
 
     @Autowired
     private HomestayRepository homestayRepository;
+
+    @Autowired
+    private DynamicPricingService dynamicPricingService;
 
     @GetMapping("/users")
     public ResponseEntity<List<Users>> getallusers(){
@@ -65,6 +69,7 @@ public class AdminController {
             flight.setPrice(updatedFlight.getPrice());
             flight.setAvailableSeats(updatedFlight.getAvailableSeats());
             flightRepository.save(flight);
+            dynamicPricingService.resetBasePrice(DynamicPricingService.FLIGHT, id, updatedFlight.getPrice());
             return  ResponseEntity.ok(flight);
         }
         return ResponseEntity.notFound().build();
@@ -80,6 +85,7 @@ public class AdminController {
             hotel.setPricePerNight(updatedHotel.getPricePerNight());
             hotel.setamenities((updatedHotel.getamenities()));
             hotelRepository.save(hotel);
+            dynamicPricingService.resetBasePrice(DynamicPricingService.HOTEL, id, updatedHotel.getPricePerNight());
             return ResponseEntity.ok(hotel);
         }
         return ResponseEntity.notFound().build();
@@ -103,6 +109,7 @@ public class AdminController {
             train.setPrice(updatedTrain.getPrice());
             train.setAvailableSeats(updatedTrain.getAvailableSeats());
             trainRepository.save(train);
+            dynamicPricingService.resetBasePrice(DynamicPricingService.TRAIN, id, updatedTrain.getPrice());
             return ResponseEntity.ok(train);
         }
         return ResponseEntity.notFound().build();
@@ -126,6 +133,7 @@ public class AdminController {
             bus.setPrice(updatedBus.getPrice());
             bus.setAvailableSeats(updatedBus.getAvailableSeats());
             busRepository.save(bus);
+            dynamicPricingService.resetBasePrice(DynamicPricingService.BUS, id, updatedBus.getPrice());
             return ResponseEntity.ok(bus);
         }
         return ResponseEntity.notFound().build();
@@ -149,6 +157,7 @@ public class AdminController {
             cab.setPrice(updatedCab.getPrice());
             cab.setAvailableSeats(updatedCab.getAvailableSeats());
             cabRepository.save(cab);
+            dynamicPricingService.resetBasePrice(DynamicPricingService.CAB, id, updatedCab.getPrice());
             return ResponseEntity.ok(cab);
         }
         return ResponseEntity.notFound().build();
@@ -170,6 +179,7 @@ public class AdminController {
             homestay.setPricePerNight(updatedHomestay.getPricePerNight());
             homestay.setamenities(updatedHomestay.getamenities());
             homestayRepository.save(homestay);
+            dynamicPricingService.resetBasePrice(DynamicPricingService.HOMESTAY, id, updatedHomestay.getPricePerNight());
             return ResponseEntity.ok(homestay);
         }
         return ResponseEntity.notFound().build();
