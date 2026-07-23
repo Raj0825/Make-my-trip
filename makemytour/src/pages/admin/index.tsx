@@ -202,42 +202,35 @@ function AddEditHotel({ hotel, onSaved }: { hotel: Hotel | null; onSaved?: () =>
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting flight data:", formData);
-    if (flight) {
-      await editflight(
-        flight?.id,
-        formData.flightName,
-        formData.from,
-        formData.to,
-        formData.departureTime,
-        formData.arrivalTime,
-        formData.price,
-        formData.availableSeats
+    if (hotel) {
+      await edithotel(
+        hotel.id,
+        formData.hotelName,
+        formData.location,
+        formData.pricePerNight,
+        formData.availableRooms,
+        formData.amenities
       );
       onSaved?.();
       return;
     }
-    await addflight(
-      formData.flightName,
-      formData.from,
-      formData.to,
-      formData.departureTime,
-      formData.arrivalTime,
-      formData.price,
-      formData.availableSeats
+    await addhotel(
+      formData.hotelName,
+      formData.location,
+      formData.pricePerNight,
+      formData.availableRooms,
+      formData.amenities
     );
     onSaved?.();
-    if (!flight) {
+    if (!hotel) {
       setFormData({
-        flightName: "",
-        from: "",
-        to: "",
-        departureTime: "",
-        arrivalTime: "",
-        price: 0,
-        availableSeats: 0,
+        hotelName: "",
+        location: "",
+        pricePerNight: 0,
+        availableRooms: 0,
+        amenities: "",
       });
     }
   };
@@ -362,6 +355,7 @@ function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: (
         formData.price,
         formData.availableSeats
       );
+      onSaved?.();
       return;
     }
     await addflight(
@@ -373,6 +367,7 @@ function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: (
       formData.price,
       formData.availableSeats
     );
+    onSaved?.();
     if (!flight) {
       setFormData({
         flightName: "",
@@ -526,6 +521,7 @@ function AddEditTrain({ train, onSaved }: { train: Train | null; onSaved?: () =>
         formData.price,
         formData.availableSeats
       );
+      onSaved?.();
       return;
     }
     await addtrain(
@@ -537,6 +533,7 @@ function AddEditTrain({ train, onSaved }: { train: Train | null; onSaved?: () =>
       formData.price,
       formData.availableSeats
     );
+    onSaved?.();
     if (!train) {
       setFormData({
         trainName: "",
@@ -690,6 +687,7 @@ function AddEditBus({ bus, onSaved }: { bus: Bus | null; onSaved?: () => void })
         formData.price,
         formData.availableSeats
       );
+      onSaved?.();
       return;
     }
     await addbus(
@@ -701,6 +699,7 @@ function AddEditBus({ bus, onSaved }: { bus: Bus | null; onSaved?: () => void })
       formData.price,
       formData.availableSeats
     );
+    onSaved?.();
     if (!bus) {
       setFormData({
         busName: "",
@@ -854,6 +853,7 @@ function AddEditCab({ cab, onSaved }: { cab: Cab | null; onSaved?: () => void })
         formData.price,
         formData.availableSeats
       );
+      onSaved?.();
       return;
     }
     await addcab(
@@ -865,6 +865,7 @@ function AddEditCab({ cab, onSaved }: { cab: Cab | null; onSaved?: () => void })
       formData.price,
       formData.availableSeats
     );
+    onSaved?.();
     if (!cab) {
       setFormData({
         cabType: "",
@@ -1012,6 +1013,7 @@ function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onS
         formData.availableRooms,
         formData.amenities
       );
+      onSaved?.();
       return;
     }
     await addhomestay(
@@ -1021,6 +1023,7 @@ function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onS
       formData.availableRooms,
       formData.amenities
     );
+    onSaved?.();
     if (!homestay) {
       setFormData({
         homestayName: "",
@@ -1097,18 +1100,21 @@ function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onS
 }
 
 export default function AdminDashboard() {
- const [selectedFlight, setSelectedFlight] = useState(null);
-   const [selectedHotel, setSelectedHotel] = useState(null);
-   const [selectedTrain, setSelectedTrain] = useState(null);
-   const [selectedBus, setSelectedBus] = useState(null);
-   const [selectedCab, setSelectedCab] = useState(null);
-   const [selectedHomestay, setSelectedHomestay] = useState(null);
-   const [flightRefresh, setFlightRefresh] = useState(0);
-   const [hotelRefresh, setHotelRefresh] = useState(0);
-   const [trainRefresh, setTrainRefresh] = useState(0);
-   const [busRefresh, setBusRefresh] = useState(0);
-   const [cabRefresh, setCabRefresh] = useState(0);
-   const [homestayRefresh, setHomestayRefresh] = useState(0);
+  const [activeTab, setActiveTab] = useState("flights");
+  const [selectedFlight, setSelectedFlight] = useState(null);
+  const [selectedHotel, setSelectedHotel] = useState(null);
+  const [selectedTrain, setSelectedTrain] = useState(null);
+  const [selectedBus, setSelectedBus] = useState(null);
+  const [selectedCab, setSelectedCab] = useState(null);
+  const [selectedHomestay, setSelectedHomestay] = useState(null);
+  const [flightRefresh, setFlightRefresh] = useState(0);
+  const [hotelRefresh, setHotelRefresh] = useState(0);
+  const [trainRefresh, setTrainRefresh] = useState(0);
+  const [busRefresh, setBusRefresh] = useState(0);
+  const [cabRefresh, setCabRefresh] = useState(0);
+  const [homestayRefresh, setHomestayRefresh] = useState(0);
+  const [authed, setAuthed] = useState(false);
+  const [checkedAuth, setCheckedAuth] = useState(false);
 
   useEffect(() => {
     setAuthed(isAdminLoggedIn());
@@ -1179,8 +1185,14 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <HotelList onSelect={setSelectedHotel} />
-                <AddEditHotel hotel={selectedHotel} />
+                <HotelList onSelect={setSelectedHotel} refreshKey={hotelRefresh} />
+                <AddEditHotel
+                  hotel={selectedHotel}
+                  onSaved={() => {
+                    setHotelRefresh((k) => k + 1);
+                    setSelectedHotel(null);
+                  }}
+                />
               </div>
             </CardContent>
           </Card>
@@ -1195,8 +1207,14 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <TrainList onSelect={setSelectedTrain} />
-                <AddEditTrain train={selectedTrain} />
+                <TrainList onSelect={setSelectedTrain} refreshKey={trainRefresh} />
+                <AddEditTrain
+                  train={selectedTrain}
+                  onSaved={() => {
+                    setTrainRefresh((k) => k + 1);
+                    setSelectedTrain(null);
+                  }}
+                />
               </div>
             </CardContent>
           </Card>
@@ -1211,8 +1229,14 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <BusList onSelect={setSelectedBus} />
-                <AddEditBus bus={selectedBus} />
+                <BusList onSelect={setSelectedBus} refreshKey={busRefresh} />
+                <AddEditBus
+                  bus={selectedBus}
+                  onSaved={() => {
+                    setBusRefresh((k) => k + 1);
+                    setSelectedBus(null);
+                  }}
+                />
               </div>
             </CardContent>
           </Card>
@@ -1227,8 +1251,14 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <CabList onSelect={setSelectedCab} />
-                <AddEditCab cab={selectedCab} />
+                <CabList onSelect={setSelectedCab} refreshKey={cabRefresh} />
+                <AddEditCab
+                  cab={selectedCab}
+                  onSaved={() => {
+                    setCabRefresh((k) => k + 1);
+                    setSelectedCab(null);
+                  }}
+                />
               </div>
             </CardContent>
           </Card>
@@ -1243,8 +1273,14 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <HomestayList onSelect={setSelectedHomestay} />
-                <AddEditHomestay homestay={selectedHomestay} />
+                <HomestayList onSelect={setSelectedHomestay} refreshKey={homestayRefresh} />
+                <AddEditHomestay
+                  homestay={selectedHomestay}
+                  onSaved={() => {
+                    setHomestayRefresh((k) => k + 1);
+                    setSelectedHomestay(null);
+                  }}
+                />
               </div>
             </CardContent>
           </Card>
