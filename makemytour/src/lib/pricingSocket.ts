@@ -20,7 +20,14 @@ function getClient(): Client {
 export function subscribeToPriceUpdates(
   entityType: string,
   entityId: string,
-  onUpdate: (update: { price: number; multiplier: number; reason: string; timestamp: number }) => void
+  onUpdate: (update: {
+    price: number;
+    multiplier: number;
+    demandFactor: number;
+    seasonalFactor: number;
+    reason: string;
+    timestamp: number;
+  }) => void
 ): () => void {
   const client = getClient();
   refCount++;
