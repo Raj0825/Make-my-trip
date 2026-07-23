@@ -192,9 +192,11 @@ public class DynamicPricingService {
 
         boolean changed = Math.abs(newPrice - profile.getCurrentPrice()) > 0.005;
 
+        String reason = buildReason(demandFactor, seasonal);
+
         profile.setDemandFactor(round2(demandFactor));
         profile.setSeasonalFactor(round2(seasonal.bump));
-        profile.setSeasonalReason(seasonal.reason);
+        profile.setSeasonalReason(reason);
         profile.setCurrentMultiplier(round2(multiplier));
         profile.setCurrentPrice(newPrice);
         profile.setLastUpdated(System.currentTimeMillis());
@@ -203,7 +205,6 @@ public class DynamicPricingService {
         writeEntityPrice(profile.getEntityType(), profile.getEntityId(), newPrice);
 
         if (changed) {
-            String reason = buildReason(demandFactor, seasonal);
             PriceHistoryEntry entry = new PriceHistoryEntry();
             entry.setEntityType(profile.getEntityType());
             entry.setEntityId(profile.getEntityId());
