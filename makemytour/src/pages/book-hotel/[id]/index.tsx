@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 import {
   Star,
   MapPin,
@@ -464,6 +465,9 @@ const BookHotelPage = () => {
             </div>
 
             {/* Rating Card */}
+            <div className="mb-4">
+              <DynamicPriceCard entityType="HOTEL" entityId={id as string} userId={user?.id} />
+            </div>
             <ReviewSection serviceType="Hotel" serviceId={id as string} />
 
             {/* Location Card */}
