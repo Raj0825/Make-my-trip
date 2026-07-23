@@ -5,6 +5,7 @@ import FlightStatusBadge from "@/components/flight-tracking/FlightStatusBadge";
 import { getFlightStatus } from "@/api";
 import SeatMap from "@/components/seat-selection/SeatMap";
 import { saveBookingPreferences } from "@/api";
+import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 
 import {
   Plane,
@@ -784,6 +785,9 @@ const BookFlightPage = () => {
               </div>
             </div>
           </div>
+        </div>
+        <div className="mb-4">
+          <DynamicPriceCard entityType="FLIGHT" entityId={id as string} userId={user?.id} />
         </div>
         <ReviewSection serviceType="Flight" serviceId={id as string} />
       </div>

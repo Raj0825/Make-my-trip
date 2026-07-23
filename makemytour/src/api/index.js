@@ -752,6 +752,57 @@ export const getTrackedFlights = async (userId) => {
   }
 };
 
+// ---------------- Dynamic Pricing Engine ----------------
+
+export const getCurrentPricing = async (entityType, entityId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/api/pricing/${entityType}/${entityId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const getPriceHistory = async (entityType, entityId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/api/pricing/${entityType}/${entityId}/history`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const freezePrice = async (userId, entityType, entityId, minutes = 60) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/api/pricing/freeze`, {
+      userId,
+      entityType,
+      entityId,
+      minutes,
+    });
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const getEffectivePrice = async (userId, entityType, entityId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/api/pricing/freeze/effective`, {
+      params: { userId, entityType, entityId },
+    });
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const PRICING_WS_URL = `${BACKEND_URL}/ws`;
+
 // ---------------- Seat Selection + Room Types + Preferences ----------------
 
 export const getSeatMap = async (flightId) => {
