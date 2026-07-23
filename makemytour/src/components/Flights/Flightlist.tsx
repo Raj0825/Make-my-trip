@@ -10,7 +10,7 @@ import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
 import { getflight } from "@/api";
 import Loader from "../Loader";
-const FlightList = ({ onSelect }: any) => {
+const FlightList = ({ onSelect, refreshKey }: any) => {
   const [flight, setflight] = useState<any[]>([]);
   const [loading, setloading] = useState(true);
   useEffect(() => {
@@ -25,8 +25,8 @@ const FlightList = ({ onSelect }: any) => {
       }
     };
     fetchflight();
-  }, []);
-  
+  }, [refreshKey]);
+
   if (loading) {
     return <Loader />;
   }
@@ -45,7 +45,7 @@ const FlightList = ({ onSelect }: any) => {
         <TableBody>
           {flight.length > 0 ? (
             flight?.map((flight: any) => (
-              <TableRow key={flight._id}>
+              <TableRow key={flight.id}>
                 <TableCell>{flight.flightName}</TableCell>
                 <TableCell>{flight.from}</TableCell>
                 <TableCell>{flight.to}</TableCell>

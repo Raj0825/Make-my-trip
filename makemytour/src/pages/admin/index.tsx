@@ -172,7 +172,7 @@ interface Hotel {
   amenities: string;
 }
 
-function AddEditHotel({ hotel }: { hotel: Hotel | null }) {
+function AddEditHotel({ hotel, onSaved }: { hotel: Hotel | null; onSaved?: () => void }) {
   const [formData, setFormData] = useState<Hotel>({
     hotelName: "",
     location: "",
@@ -202,33 +202,42 @@ function AddEditHotel({ hotel }: { hotel: Hotel | null }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (hotel) {
-      await edithotel(
-        hotel.id,
-        formData.hotelName,
-        formData.location,
-        formData.pricePerNight,
-        formData.availableRooms,
-        formData.amenities
+    console.log("Submitting flight data:", formData);
+    if (flight) {
+      await editflight(
+        flight?.id,
+        formData.flightName,
+        formData.from,
+        formData.to,
+        formData.departureTime,
+        formData.arrivalTime,
+        formData.price,
+        formData.availableSeats
       );
+      onSaved?.();
       return;
     }
-    await addhotel(
-      formData.hotelName,
-      formData.location,
-      formData.pricePerNight,
-      formData.availableRooms,
-      formData.amenities
+    await addflight(
+      formData.flightName,
+      formData.from,
+      formData.to,
+      formData.departureTime,
+      formData.arrivalTime,
+      formData.price,
+      formData.availableSeats
     );
-    if (!hotel) {
+    onSaved?.();
+    if (!flight) {
       setFormData({
-        hotelName: "",
-        location: "",
-        pricePerNight: 0,
-        availableRooms: 0,
-        amenities: "",
+        flightName: "",
+        from: "",
+        to: "",
+        departureTime: "",
+        arrivalTime: "",
+        price: 0,
+        availableSeats: 0,
       });
     }
   };
@@ -306,7 +315,7 @@ interface Flight {
   availableSeats: number;
 }
 
-function AddEditFlight({ flight }: { flight: Flight | null }) {
+function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: () => void }) {
   const [formData, setFormData] = useState<Flight>({
     flightName: "",
     from: "",
@@ -472,7 +481,7 @@ interface Train {
   availableSeats: number;
 }
 
-function AddEditTrain({ train }: { train: Train | null }) {
+function AddEditTrain({ train, onSaved }: { train: Train | null; onSaved?: () => void }) {
   const [formData, setFormData] = useState<Train>({
     trainName: "",
     from: "",
@@ -636,7 +645,7 @@ interface Bus {
   availableSeats: number;
 }
 
-function AddEditBus({ bus }: { bus: Bus | null }) {
+function AddEditBus({ bus, onSaved }: { bus: Bus | null; onSaved?: () => void }) {
   const [formData, setFormData] = useState<Bus>({
     busName: "",
     from: "",
@@ -800,7 +809,7 @@ interface Cab {
   availableSeats: number;
 }
 
-function AddEditCab({ cab }: { cab: Cab | null }) {
+function AddEditCab({ cab, onSaved }: { cab: Cab | null; onSaved?: () => void }) {
   const [formData, setFormData] = useState<Cab>({
     cabType: "",
     from: "",
@@ -962,7 +971,7 @@ interface Homestay {
   amenities: string;
 }
 
-function AddEditHomestay({ homestay }: { homestay: Homestay | null }) {
+function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onSaved?: () => void }) {
   const [formData, setFormData] = useState<Homestay>({
     homestayName: "",
     location: "",
@@ -1088,15 +1097,18 @@ function AddEditHomestay({ homestay }: { homestay: Homestay | null }) {
 }
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("flights");
-  const [selectedFlight, setSelectedFlight] = useState(null);
-  const [selectedHotel, setSelectedHotel] = useState(null);
-  const [selectedTrain, setSelectedTrain] = useState(null);
-  const [selectedBus, setSelectedBus] = useState(null);
-  const [selectedCab, setSelectedCab] = useState(null);
-  const [selectedHomestay, setSelectedHomestay] = useState(null);
-  const [authed, setAuthed] = useState(false);
-  const [checkedAuth, setCheckedAuth] = useState(false);
+ const [selectedFlight, setSelectedFlight] = useState(null);
+   const [selectedHotel, setSelectedHotel] = useState(null);
+   const [selectedTrain, setSelectedTrain] = useState(null);
+   const [selectedBus, setSelectedBus] = useState(null);
+   const [selectedCab, setSelectedCab] = useState(null);
+   const [selectedHomestay, setSelectedHomestay] = useState(null);
+   const [flightRefresh, setFlightRefresh] = useState(0);
+   const [hotelRefresh, setHotelRefresh] = useState(0);
+   const [trainRefresh, setTrainRefresh] = useState(0);
+   const [busRefresh, setBusRefresh] = useState(0);
+   const [cabRefresh, setCabRefresh] = useState(0);
+   const [homestayRefresh, setHomestayRefresh] = useState(0);
 
   useEffect(() => {
     setAuthed(isAdminLoggedIn());
@@ -1145,8 +1157,14 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <FlightList onSelect={setSelectedFlight} />
-                <AddEditFlight flight={selectedFlight} />
+                <FlightList onSelect={setSelectedFlight} refreshKey={flightRefresh} />
+                <AddEditFlight
+                  flight={selectedFlight}
+                  onSaved={() => {
+                    setFlightRefresh((k) => k + 1);
+                    setSelectedFlight(null);
+                  }}
+                />
               </div>
             </CardContent>
           </Card>

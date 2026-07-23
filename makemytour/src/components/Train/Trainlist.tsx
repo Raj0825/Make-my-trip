@@ -10,7 +10,7 @@ import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
 import { gettrain } from "@/api";
 import Loader from "../Loader";
-const TrainList = ({ onSelect }: any) => {
+const TrainList = ({ onSelect, refreshKey }: any) => {
   const [train, settrain] = useState<any[]>([]);
   const [loading, setloading] = useState(true);
   useEffect(() => {
@@ -25,7 +25,7 @@ const TrainList = ({ onSelect }: any) => {
       }
     };
     fetchtrain();
-  }, []);
+  }, [refreshKey]);
 
   if (loading) {
     return <Loader />;
@@ -45,7 +45,7 @@ const TrainList = ({ onSelect }: any) => {
         <TableBody>
           {train.length > 0 ? (
             train?.map((train: any) => (
-              <TableRow key={train._id}>
+              <TableRow key={train.id}>
                 <TableCell>{train.trainName}</TableCell>
                 <TableCell>{train.from}</TableCell>
                 <TableCell>{train.to}</TableCell>

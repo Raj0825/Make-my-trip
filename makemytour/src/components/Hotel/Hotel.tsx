@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { gethotel } from "@/api";
 import Loader from "../Loader";
 
-const HotelList = ({ onSelect }: any) => {
+const HotelList = ({ onSelect, refreshKey }: any) => {
   const [hotel, sethotel] = useState<any[]>([]);
   const [loading, setloading] = useState(true);
   useEffect(() => {
@@ -26,8 +26,8 @@ const HotelList = ({ onSelect }: any) => {
       }
     };
     fetchhotel();
-  }, []);
-  
+  }, [refreshKey]);
+
   if (loading) {
     return <Loader />;
   }
@@ -46,7 +46,7 @@ const HotelList = ({ onSelect }: any) => {
         <TableBody>
           {hotel.length > 0 ? (
             hotel.map((hotel: any) => (
-              <TableRow key={hotel._id}>
+              <TableRow key={hotel.id}>
                 <TableCell>{hotel.hotelName}</TableCell>
                 <TableCell>{hotel.location}</TableCell>
                 <TableCell>${hotel.pricePerNight}</TableCell>

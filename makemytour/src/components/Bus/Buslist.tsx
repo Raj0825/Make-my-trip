@@ -10,7 +10,7 @@ import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
 import { getbus } from "@/api";
 import Loader from "../Loader";
-const BusList = ({ onSelect }: any) => {
+const BusList = ({ onSelect, refreshKey }: any) => {
   const [bus, setbus] = useState<any[]>([]);
   const [loading, setloading] = useState(true);
   useEffect(() => {
@@ -25,7 +25,7 @@ const BusList = ({ onSelect }: any) => {
       }
     };
     fetchbus();
-  }, []);
+  }, [refreshKey]);
 
   if (loading) {
     return <Loader />;
@@ -45,7 +45,7 @@ const BusList = ({ onSelect }: any) => {
         <TableBody>
           {bus.length > 0 ? (
             bus?.map((bus: any) => (
-              <TableRow key={bus._id}>
+              <TableRow key={bus.id}>
                 <TableCell>{bus.busName}</TableCell>
                 <TableCell>{bus.from}</TableCell>
                 <TableCell>{bus.to}</TableCell>

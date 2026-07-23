@@ -10,7 +10,7 @@ import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
 import { getcab } from "@/api";
 import Loader from "../Loader";
-const CabList = ({ onSelect }: any) => {
+const CabList = ({ onSelect, refreshKey }: any) => {
   const [cab, setcab] = useState<any[]>([]);
   const [loading, setloading] = useState(true);
   useEffect(() => {
@@ -25,7 +25,7 @@ const CabList = ({ onSelect }: any) => {
       }
     };
     fetchcab();
-  }, []);
+  }, [refreshKey]);
 
   if (loading) {
     return <Loader />;
@@ -45,7 +45,7 @@ const CabList = ({ onSelect }: any) => {
         <TableBody>
           {cab.length > 0 ? (
             cab?.map((cab: any) => (
-              <TableRow key={cab._id}>
+              <TableRow key={cab.id}>
                 <TableCell>{cab.cabType}</TableCell>
                 <TableCell>{cab.from}</TableCell>
                 <TableCell>{cab.to}</TableCell>

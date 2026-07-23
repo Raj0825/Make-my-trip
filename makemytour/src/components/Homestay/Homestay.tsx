@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { gethomestay } from "@/api";
 import Loader from "../Loader";
 
-const HomestayList = ({ onSelect }: any) => {
+const HomestayList = ({ onSelect, refreshKey }: any) => {
   const [homestay, sethomestay] = useState<any[]>([]);
   const [loading, setloading] = useState(true);
   useEffect(() => {
@@ -26,7 +26,7 @@ const HomestayList = ({ onSelect }: any) => {
       }
     };
     fetchhomestay();
-  }, []);
+  }, [refreshKey]);
 
   if (loading) {
     return <Loader />;
@@ -46,7 +46,7 @@ const HomestayList = ({ onSelect }: any) => {
         <TableBody>
           {homestay.length > 0 ? (
             homestay.map((homestay: any) => (
-              <TableRow key={homestay._id}>
+              <TableRow key={homestay.id}>
                 <TableCell>{homestay.homestayName}</TableCell>
                 <TableCell>{homestay.location}</TableCell>
                 <TableCell>${homestay.pricePerNight}</TableCell>
