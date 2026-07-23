@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 import ReviewSection from "@/components/reviews/ReviewSection";
 import {
   Bus as BusIcon,
@@ -267,6 +268,9 @@ const BookBusPage = () => {
               </DialogContent>
             )}
           </Dialog>
+        </div>
+        <div className="mb-4">
+          <DynamicPriceCard entityType="BUS" entityId={id as string} userId={user?.id} />
         </div>
         <ReviewSection serviceType="Bus" serviceId={id as string} />
       </div>

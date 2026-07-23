@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 import ReviewSection from "@/components/reviews/ReviewSection";
 import {
   TrainFront,
@@ -267,6 +268,9 @@ const BookTrainPage = () => {
               </DialogContent>
             )}
           </Dialog>
+        </div>
+        <div className="mb-4">
+          <DynamicPriceCard entityType="TRAIN" entityId={id as string} userId={user?.id} />
         </div>
         <ReviewSection serviceType="Train" serviceId={id as string} />
       </div>
