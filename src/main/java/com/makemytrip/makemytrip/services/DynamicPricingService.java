@@ -137,7 +137,7 @@ public class DynamicPricingService {
     }
 
     /** Engine tick: re-prices every known item. Runs every 5 minutes. */
-    @Scheduled(fixedRate = 5 * 60 * 1000)
+    @Scheduled(fixedRate = 1 * 60 * 1000)
     public void engineTick() {
         for (PricingProfile profile : pricingProfileRepository.findAll()) {
             try {
