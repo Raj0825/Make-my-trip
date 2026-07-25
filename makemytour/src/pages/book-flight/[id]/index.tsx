@@ -2,10 +2,10 @@ import { useRouter } from "next/router";
 import ReviewSection from "@/components/reviews/ReviewSection";
 import TrackFlightButton from "@/components/flight-tracking/TrackFlightButton";
 import FlightStatusBadge from "@/components/flight-tracking/FlightStatusBadge";
+import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 import { getFlightStatus } from "@/api";
 import SeatMap from "@/components/seat-selection/SeatMap";
 import { saveBookingPreferences } from "@/api";
-import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 
 import {
   Plane,
@@ -202,6 +202,7 @@ const BookFlightPage = () => {
           flight?.id,
           quantity,
           grandTotal,
+          flight?.price,
           selectedSeats
         );
         const updateuser = {
@@ -742,6 +743,11 @@ const BookFlightPage = () => {
                     <TrackFlightButton flightId={id as string} />
                 </div>
 
+              {/* Dynamic Pricing: live price, breakdown, history graph, price freeze */}
+              <div className="mt-4">
+                <DynamicPriceCard entityType="FLIGHT" entityId={id as string} userId={user?.id} />
+              </div>
+
               {/* Promo Codes */}
               <div className="mt-8">
                 <div className="bg-[#FFF8E7] p-6 rounded-xl">
@@ -785,9 +791,6 @@ const BookFlightPage = () => {
               </div>
             </div>
           </div>
-        </div>
-        <div className="mb-4">
-          <DynamicPriceCard entityType="FLIGHT" entityId={id as string} userId={user?.id} />
         </div>
         <ReviewSection serviceType="Flight" serviceId={id as string} />
       </div>

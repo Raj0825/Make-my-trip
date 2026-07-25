@@ -100,7 +100,8 @@ const BookCabPage = () => {
         user?.id,
         cab?.id,
         quantity,
-        grandTotal
+        grandTotal,
+        cab?.price
       );
       const updateuser = {
         ...user,

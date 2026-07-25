@@ -50,7 +50,22 @@ public class BookingService {
     @Autowired
     private PriceFreezeService priceFreezeService;
 
-    public Users.Booking bookFlight(String userId, String flightId, int seats, double price, String seatNumbersCsv){
+    /**
+     * The frontend sends the total it computed (base fare + taxes + fees - discounts, etc.)
+     * along with the per-unit base price it used to compute that total. We never trust the
+     * client's base price outright: we resolve the authoritative one ourselves (the user's
+     * active price freeze if any, else the live engine price), consume the freeze if used,
+     * and substitute it into the total - so taxes/fees the client computed are preserved,
+     * but the actual base fare charged always comes from the server, not the browser.
+     */
+    private double resolveFinalPrice(String userId, String entityType, String entityId,
+                                     int quantity, double clientUnitPrice, double clientTotal) {
+        double authoritativeUnitPrice = priceFreezeService.resolveAndConsumePrice(userId, entityType, entityId);
+        double delta = (authoritativeUnitPrice - clientUnitPrice) * quantity;
+        return Math.max(0, clientTotal + delta);
+    }
+
+    public Users.Booking bookFlight(String userId, String flightId, int seats, double price, double unitPrice, String seatNumbersCsv){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Flight> flightOptional =flightRepository.findById(flightId);
         if(usersOptional.isPresent() && flightOptional.isPresent()){
@@ -79,13 +94,14 @@ public class BookingService {
                 flight.setAvailableSeats(flight.getAvailableSeats()- seats);
                 flightRepository.save(flight);
                 dynamicPricingService.recalculate(DynamicPricingService.FLIGHT, flightId);
+                double finalPrice = resolveFinalPrice(userId, DynamicPricingService.FLIGHT, flightId, seats, unitPrice, price);
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Flight");
                 booking.setBookingId(flightId);
                 booking.setDate(LocalDate.now().toString());
                 booking.setQuantity(seats);
-                booking.setTotalPrice(price);
+                booking.setTotalPrice(finalPrice);
                 if (seatNumbers != null) booking.setSeatNumbers(seatNumbers);
 
                 user.getBookings().add(booking);
@@ -97,7 +113,7 @@ public class BookingService {
         }
         throw new RuntimeException("User or flight not found");
     }
-    public Users.Booking bookhotel(String userId, String hotelId, int rooms, double price, String roomTypeId, String roomTypeName){
+    public Users.Booking bookhotel(String userId, String hotelId, int rooms, double price, double unitPrice, String roomTypeId, String roomTypeName){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Hotel> hotelOptional = hotelRepository.findById(hotelId);
         if(usersOptional.isPresent() && hotelOptional.isPresent()){
@@ -112,12 +128,14 @@ public class BookingService {
                     roomTypeService.bookRoom(roomTypeId, rooms);
                 }
 
+                double finalPrice = resolveFinalPrice(userId, DynamicPricingService.HOTEL, hotelId, rooms, unitPrice, price);
+
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Hotel");
                 booking.setBookingId(hotelId);
                 booking.setDate(LocalDate.now().toString());
                 booking.setQuantity(rooms);
-                booking.setTotalPrice(price);
+                booking.setTotalPrice(finalPrice);
                 if (roomTypeName != null && !roomTypeName.isBlank()) {
                     booking.setRoomType(roomTypeName);
                 }
@@ -131,7 +149,7 @@ public class BookingService {
         throw new RuntimeException("User or flight not found");
     }
 
-    public Users.Booking booktrain(String userId, String trainId, int seats, double price){
+    public Users.Booking booktrain(String userId, String trainId, int seats, double price, double unitPrice){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Train> trainOptional =trainRepository.findById(trainId);
         if(usersOptional.isPresent() && trainOptional.isPresent()){
@@ -141,13 +159,14 @@ public class BookingService {
                 train.setAvailableSeats(train.getAvailableSeats()- seats);
                 trainRepository.save(train);
                 dynamicPricingService.recalculate(DynamicPricingService.TRAIN, trainId);
+                double finalPrice = resolveFinalPrice(userId, DynamicPricingService.TRAIN, trainId, seats, unitPrice, price);
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Train");
                 booking.setBookingId(trainId);
                 booking.setDate(LocalDate.now().toString());
                 booking.setQuantity(seats);
-                booking.setTotalPrice(price);
+                booking.setTotalPrice(finalPrice);
                 user.getBookings().add(booking);
                 userRepository.save(user);
                 return booking;
@@ -158,7 +177,7 @@ public class BookingService {
         throw new RuntimeException("User or train not found");
     }
 
-    public Users.Booking bookbus(String userId, String busId, int seats, double price){
+    public Users.Booking bookbus(String userId, String busId, int seats, double price, double unitPrice){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Bus> busOptional =busRepository.findById(busId);
         if(usersOptional.isPresent() && busOptional.isPresent()){
@@ -168,13 +187,14 @@ public class BookingService {
                 bus.setAvailableSeats(bus.getAvailableSeats()- seats);
                 busRepository.save(bus);
                 dynamicPricingService.recalculate(DynamicPricingService.BUS, busId);
+                double finalPrice = resolveFinalPrice(userId, DynamicPricingService.BUS, busId, seats, unitPrice, price);
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Bus");
                 booking.setBookingId(busId);
                 booking.setDate(LocalDate.now().toString());
                 booking.setQuantity(seats);
-                booking.setTotalPrice(price);
+                booking.setTotalPrice(finalPrice);
                 user.getBookings().add(booking);
                 userRepository.save(user);
                 return booking;
@@ -185,7 +205,7 @@ public class BookingService {
         throw new RuntimeException("User or bus not found");
     }
 
-    public Users.Booking bookcab(String userId, String cabId, int seats, double price){
+    public Users.Booking bookcab(String userId, String cabId, int seats, double price, double unitPrice){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Cab> cabOptional =cabRepository.findById(cabId);
         if(usersOptional.isPresent() && cabOptional.isPresent()){
@@ -195,13 +215,14 @@ public class BookingService {
                 cab.setAvailableSeats(cab.getAvailableSeats()- seats);
                 cabRepository.save(cab);
                 dynamicPricingService.recalculate(DynamicPricingService.CAB, cabId);
+                double finalPrice = resolveFinalPrice(userId, DynamicPricingService.CAB, cabId, seats, unitPrice, price);
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Cab");
                 booking.setBookingId(cabId);
                 booking.setDate(LocalDate.now().toString());
                 booking.setQuantity(seats);
-                booking.setTotalPrice(price);
+                booking.setTotalPrice(finalPrice);
                 user.getBookings().add(booking);
                 userRepository.save(user);
                 return booking;
@@ -212,7 +233,7 @@ public class BookingService {
         throw new RuntimeException("User or cab not found");
     }
 
-    public Users.Booking bookhomestay(String userId, String homestayId, int rooms, double price){
+    public Users.Booking bookhomestay(String userId, String homestayId, int rooms, double price, double unitPrice){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Homestay> homestayOptional = homestayRepository.findById(homestayId);
         if(usersOptional.isPresent() && homestayOptional.isPresent()){
@@ -222,13 +243,14 @@ public class BookingService {
                 homestay.setAvailableRooms(homestay.getAvailableRooms()- rooms);
                 homestayRepository.save(homestay);
                 dynamicPricingService.recalculate(DynamicPricingService.HOMESTAY, homestayId);
+                double finalPrice = resolveFinalPrice(userId, DynamicPricingService.HOMESTAY, homestayId, rooms, unitPrice, price);
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Homestay");
                 booking.setBookingId(homestayId);
                 booking.setDate(LocalDate.now().toString());
                 booking.setQuantity(rooms);
-                booking.setTotalPrice(price);
+                booking.setTotalPrice(finalPrice);
                 user.getBookings().add(booking);
                 userRepository.save(user);
                 return booking;

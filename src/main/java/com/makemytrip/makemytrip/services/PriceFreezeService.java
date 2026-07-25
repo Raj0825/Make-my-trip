@@ -54,7 +54,24 @@ public class PriceFreezeService {
                 .filter(PriceFreeze::isActive);
     }
 
-    /** Call this once the freeze has actually been used to complete a booking. */
+    /**
+     * Call this at the moment of booking (not display time). Resolves the price the
+     * user should actually be charged - their active freeze if any, else the live
+     * engine price - and consumes the freeze so it can't be reused for another booking.
+     */
+    public double resolveAndConsumePrice(String userId, String entityType, String entityId) {
+        if (userId == null) {
+            return dynamicPricingService.getCurrentPrice(entityType, entityId);
+        }
+        Optional<PriceFreeze> active = getActiveFreeze(userId, entityType, entityId);
+        if (active.isPresent()) {
+            PriceFreeze freeze = active.get();
+            consume(freeze);
+            return freeze.getFrozenPrice();
+        }
+        return dynamicPricingService.getCurrentPrice(entityType, entityId);
+    }
+
     public void consume(PriceFreeze freeze) {
         freeze.setConsumed(true);
         priceFreezeRepository.save(freeze);

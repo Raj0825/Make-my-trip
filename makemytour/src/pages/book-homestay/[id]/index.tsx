@@ -81,7 +81,8 @@ const BookHomestayPage = () => {
         user?.id,
         homestay?.id,
         quantity,
-        grandTotal
+        grandTotal,
+        homestay?.pricePerNight
       );
       const updateuser = {
         ...user,

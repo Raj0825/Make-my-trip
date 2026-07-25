@@ -100,7 +100,8 @@ const BookTrainPage = () => {
         user?.id,
         train?.id,
         quantity,
-        grandTotal
+        grandTotal,
+        train?.price
       );
       const updateuser = {
         ...user,

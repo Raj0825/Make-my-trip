@@ -134,6 +134,7 @@ const BookHotelPage = () => {
          hotel?.id,
          quantity,
          grandTotal,
+         selectedRoomType?.pricePerNight ?? hotel?.pricePerNight,
          selectedRoomType.id,
          selectedRoomType.name
        );

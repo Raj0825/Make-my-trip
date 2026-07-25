@@ -100,7 +100,8 @@ const BookBusPage = () => {
         user?.id,
         bus?.id,
         quantity,
-        grandTotal
+        grandTotal,
+        bus?.price
       );
       const updateuser = {
         ...user,
