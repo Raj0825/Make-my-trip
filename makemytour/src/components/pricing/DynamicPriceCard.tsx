@@ -9,9 +9,16 @@ interface Props {
   entityType: "FLIGHT" | "HOTEL" | "TRAIN" | "BUS" | "CAB" | "HOMESTAY";
   entityId: string;
   userId?: string;
+  /** Called whenever the live price changes, so the parent page can update its fare summary. */
   onPriceChange?: (price: number) => void;
 }
 
+/**
+ * Drop this into any booking detail page to show the Dynamic Pricing Engine's
+ * live price, why it is what it is, a price-history graph, and a price-freeze
+ * option. Prices update in real time over WebSocket as soon as the engine
+ * recalculates (on its schedule, or right after a booking changes demand).
+ */
 export default function DynamicPriceCard({ entityType, entityId, userId, onPriceChange }: Props) {
   const [pricing, setPricing] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
@@ -103,7 +110,15 @@ export default function DynamicPriceCard({ entityType, entityId, userId, onPrice
 
       {showHistory && (
         <div className="mt-3">
-          <PriceHistoryChart history={history} />
+          <PriceHistoryChart
+            history={history}
+            current={{
+              price: pricing.currentPrice,
+              basePrice: pricing.basePrice,
+              timestamp: pricing.lastUpdated,
+              reason: pricing.seasonalReason,
+            }}
+          />
         </div>
       )}
 
