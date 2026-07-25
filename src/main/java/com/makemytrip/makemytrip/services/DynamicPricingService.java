@@ -137,7 +137,7 @@ public class DynamicPricingService {
     }
 
     /** Engine tick: re-prices every known item. Runs every 5 minutes. */
-    @Scheduled(fixedRate = 1 * 60 * 1000)
+    @Scheduled(fixedRate = 5 * 60 * 1000)
     public void engineTick() {
         for (PricingProfile profile : pricingProfileRepository.findAll()) {
             try {
@@ -231,6 +231,7 @@ public class DynamicPricingService {
         if (!seasonal.reason.isEmpty()) sb.append(seasonal.reason);
         if (demandFactor > 0.20) sb.append(sb.length() > 0 ? " + " : "").append("very high demand");
         else if (demandFactor > 0.10) sb.append(sb.length() > 0 ? " + " : "").append("elevated demand");
+        else if (demandFactor > 0.01) sb.append(sb.length() > 0 ? " + " : "").append("slightly higher demand");
         return sb.length() == 0 ? "Standard pricing" : sb.toString();
     }
 

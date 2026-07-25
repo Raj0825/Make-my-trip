@@ -70,7 +70,7 @@ export default function DynamicPriceCard({ entityType, entityId, userId, onPrice
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold">₹{pricing.currentPrice.toLocaleString()}</span>
+            <span className="text-2xl font-bold">₹{Math.round(pricing.currentPrice).toLocaleString("en-IN")}</span>
             {isSurged && (
               <span className="flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
                 <TrendingUp size={12} />

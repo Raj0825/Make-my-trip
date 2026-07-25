@@ -29,6 +29,7 @@ public class CancellationService {
     @Autowired private BusRepository busRepository;
     @Autowired private CabRepository cabRepository;
     @Autowired private HomestayRepository homestayRepository;
+    @Autowired private DynamicPricingService dynamicPricingService;
 
     private static final int REFUND_COMPLETION_DAYS = 7;
 
@@ -174,6 +175,7 @@ public class CancellationService {
                 if (booking.getSeatNumbers() != null && !booking.getSeatNumbers().isEmpty()) {
                     flightSeatService.releaseSeats(bookingId, booking.getSeatNumbers());
                 }
+                dynamicPricingService.recalculate(DynamicPricingService.FLIGHT, bookingId);
             }
             case "Hotel" -> {
                 hotelRepository.findById(bookingId).ifPresent(h -> {
@@ -183,23 +185,36 @@ public class CancellationService {
                 if (booking.getRoomType() != null) {
                     roomTypeService.releaseRoomByName(bookingId, booking.getRoomType(), quantity);
                 }
+                dynamicPricingService.recalculate(DynamicPricingService.HOTEL, bookingId);
             }
-            case "Train" -> trainRepository.findById(bookingId).ifPresent(t -> {
-                t.setAvailableSeats(t.getAvailableSeats() + quantity);
-                trainRepository.save(t);
-            });
-            case "Bus" -> busRepository.findById(bookingId).ifPresent(b -> {
-                b.setAvailableSeats(b.getAvailableSeats() + quantity);
-                busRepository.save(b);
-            });
-            case "Cab" -> cabRepository.findById(bookingId).ifPresent(c -> {
-                c.setAvailableSeats(c.getAvailableSeats() + quantity);
-                cabRepository.save(c);
-            });
-            case "Homestay" -> homestayRepository.findById(bookingId).ifPresent(hs -> {
-                hs.setAvailableRooms(hs.getAvailableRooms() + quantity);
-                homestayRepository.save(hs);
-            });
+            case "Train" -> {
+                trainRepository.findById(bookingId).ifPresent(t -> {
+                    t.setAvailableSeats(t.getAvailableSeats() + quantity);
+                    trainRepository.save(t);
+                });
+                dynamicPricingService.recalculate(DynamicPricingService.TRAIN, bookingId);
+            }
+            case "Bus" -> {
+                busRepository.findById(bookingId).ifPresent(b -> {
+                    b.setAvailableSeats(b.getAvailableSeats() + quantity);
+                    busRepository.save(b);
+                });
+                dynamicPricingService.recalculate(DynamicPricingService.BUS, bookingId);
+            }
+            case "Cab" -> {
+                cabRepository.findById(bookingId).ifPresent(c -> {
+                    c.setAvailableSeats(c.getAvailableSeats() + quantity);
+                    cabRepository.save(c);
+                });
+                dynamicPricingService.recalculate(DynamicPricingService.CAB, bookingId);
+            }
+            case "Homestay" -> {
+                homestayRepository.findById(bookingId).ifPresent(hs -> {
+                    hs.setAvailableRooms(hs.getAvailableRooms() + quantity);
+                    homestayRepository.save(hs);
+                });
+                dynamicPricingService.recalculate(DynamicPricingService.HOMESTAY, bookingId);
+            }
         }
     }
 }

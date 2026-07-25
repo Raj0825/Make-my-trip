@@ -66,13 +66,14 @@ export default function PriceHistoryChart({ history, current }: Props) {
     return cleaned;
   }, [history, current]);
 
-  const { points, minP, maxP, width, height, padding, midP } = useMemo(() => {
+  const { points, minP, maxP, width, height, padding, padBottom, midP } = useMemo(() => {
     const width = 600;
-    const height = 220;
-    const padding = 44;
+    const height = 240;
+    const padding = 44;   // top/left/right padding
+    const padBottom = 56; // extra room at the bottom for the axis line + date labels
 
     if (data.length === 0) {
-      return { points: [] as any[], minP: 0, maxP: 0, midP: 0, width, height, padding };
+      return { points: [] as any[], minP: 0, maxP: 0, midP: 0, width, height, padding, padBottom };
     }
 
     const prices = data.map((h) => h.price);
@@ -86,11 +87,11 @@ export default function PriceHistoryChart({ history, current }: Props) {
 
     const points = data.map((h, i) => {
       const x = data.length === 1 ? width / 2 : padding + (i / (data.length - 1)) * (width - padding * 2);
-      const y = height - padding - ((h.price - effMin) / effRange) * (height - padding * 2);
+      const y = padding + (1 - (h.price - effMin) / effRange) * (height - padding - padBottom);
       return { x, y, ...h, index: i };
     });
 
-    return { points, minP, maxP, midP, width, height, padding };
+    return { points, minP, maxP, midP, width, height, padding, padBottom };
   }, [data]);
 
   if (points.length === 0) {
@@ -104,7 +105,7 @@ export default function PriceHistoryChart({ history, current }: Props) {
   const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
   const areaPath =
     points.length > 1
-      ? `${linePath} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`
+      ? `${linePath} L ${points[points.length - 1].x} ${height - padBottom} L ${points[0].x} ${height - padBottom} Z`
       : "";
 
   const gridLines = [minP, midP, maxP];
@@ -136,7 +137,7 @@ export default function PriceHistoryChart({ history, current }: Props) {
           const effMin = minP - range * 0.15;
           const effMax = maxP + range * 0.15;
           const effRange = effMax - effMin || 1;
-          const y = height - padding - ((val - effMin) / effRange) * (height - padding * 2);
+          const y = padding + (1 - (val - effMin) / effRange) * (height - padding - padBottom);
           return (
             <g key={i}>
               <line x1={padding - 6} y1={y} x2={width - padding + 6} y2={y} stroke="#f1f5f9" strokeWidth={1} />
@@ -150,9 +151,9 @@ export default function PriceHistoryChart({ history, current }: Props) {
         {/* baseline axis */}
         <line
           x1={padding}
-          y1={height - padding}
+          y1={height - padBottom}
           x2={width - padding}
-          y2={height - padding}
+          y2={height - padBottom}
           stroke="#cbd5e1"
           strokeWidth={1.5}
         />
@@ -176,7 +177,7 @@ export default function PriceHistoryChart({ history, current }: Props) {
                 strokeWidth={isActive ? 2.5 : 1.5}
               />
               {isNow && (
-                <text x={p.x} y={height - padding + 20} fontSize="11" fill="#dc2626" fontWeight="600" textAnchor="middle">
+                <text x={p.x} y={height - padBottom + 22} fontSize="11" fill="#dc2626" fontWeight="600" textAnchor="middle">
                   Now
                 </text>
               )}
@@ -185,11 +186,11 @@ export default function PriceHistoryChart({ history, current }: Props) {
         })}
 
         {/* x-axis start/end date labels */}
-        <text x={points[0].x} y={height - 6} fontSize="11" fill="#9ca3af" textAnchor="start">
+        <text x={points[0].x} y={height - padBottom + 40} fontSize="11" fill="#9ca3af" textAnchor="start">
           {formatDateShort(points[0].timestamp)}
         </text>
         {points.length > 1 && (
-          <text x={points[points.length - 1].x} y={height - 6} fontSize="11" fill="#9ca3af" textAnchor="end">
+          <text x={points[points.length - 1].x} y={height - padBottom + 40} fontSize="11" fill="#9ca3af" textAnchor="end">
             {formatDateShort(points[points.length - 1].timestamp)}
           </text>
         )}
