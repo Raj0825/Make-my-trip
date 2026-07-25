@@ -743,11 +743,6 @@ const BookFlightPage = () => {
                     <TrackFlightButton flightId={id as string} />
                 </div>
 
-              {/* Dynamic Pricing: live price, breakdown, history graph, price freeze */}
-              <div className="mt-4">
-                <DynamicPriceCard entityType="FLIGHT" entityId={id as string} userId={user?.id} />
-              </div>
-
               {/* Promo Codes */}
               <div className="mt-8">
                 <div className="bg-[#FFF8E7] p-6 rounded-xl">
@@ -791,6 +786,9 @@ const BookFlightPage = () => {
               </div>
             </div>
           </div>
+        </div>
+        <div className="mb-4">
+          <DynamicPriceCard entityType="FLIGHT" entityId={id as string} userId={user?.id} />
         </div>
         <ReviewSection serviceType="Flight" serviceId={id as string} />
       </div>
