@@ -49,6 +49,7 @@ public class Users {
         // Seat / room selection fields
         private java.util.List<String> seatNumbers; // e.g. ["12A", "12B"] — flights only
         private String roomType;                    // e.g. "Deluxe Room" — hotels only
+        private String travelClass;                 // e.g. "Business" — flights only
 
         // Getters and Setters — original fields
         public String getType() { return type; }
@@ -81,5 +82,7 @@ public class Users {
         public void setSeatNumbers(java.util.List<String> seatNumbers) { this.seatNumbers = seatNumbers; }
         public String getRoomType() { return roomType; }
         public void setRoomType(String roomType) { this.roomType = roomType; }
+        public String getTravelClass() { return travelClass; }
+        public void setTravelClass(String travelClass) { this.travelClass = travelClass; }
     }
 }

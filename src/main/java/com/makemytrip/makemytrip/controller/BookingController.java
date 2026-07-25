@@ -14,9 +14,10 @@ public class BookingController {
 
     @PostMapping("/flight")
     public ResponseEntity<?> bookFlight(@RequestParam String userId, @RequestParam String flightId, @RequestParam int seats, @RequestParam double price, @RequestParam double unitPrice,
-                                        @RequestParam(required = false) String seatNumbers){
+                                        @RequestParam(required = false) String seatNumbers,
+                                        @RequestParam(required = false) String travelClass){
         try {
-            return ResponseEntity.ok(bookingService.bookFlight(userId,flightId,seats,price,unitPrice,seatNumbers));
+            return ResponseEntity.ok(bookingService.bookFlight(userId,flightId,seats,price,unitPrice,seatNumbers,travelClass));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

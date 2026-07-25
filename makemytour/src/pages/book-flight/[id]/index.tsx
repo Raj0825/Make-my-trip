@@ -55,6 +55,15 @@ const BookFlightPage = () => {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
     const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+    const [travelClass, setTravelClass] = useState("Economy");
+
+    const CLASS_OPTIONS = [
+      { name: "Economy", multiplier: 1, blurb: "Standard seat & baggage" },
+      { name: "Premium Economy", multiplier: 1.5, blurb: "Extra legroom, priority boarding" },
+      { name: "Business", multiplier: 2.75, blurb: "Lie-flat seat, lounge access" },
+      { name: "First Class", multiplier: 4, blurb: "Private suite, chauffeur pickup" },
+    ];
+    const classMultiplier = CLASS_OPTIONS.find((c) => c.name === travelClass)?.multiplier ?? 1;
     const [seatSurcharge, setSeatSurcharge] = useState(0);
     const [rememberSeatPref, setRememberSeatPref] = useState(false);
   const [open, setopem] = useState(false);
@@ -183,7 +192,8 @@ const BookFlightPage = () => {
     );
   };
 
-  const totalPrice = flight?.price * quantity;
+  const classUnitPrice = (flight?.price ?? 0) * classMultiplier;
+  const totalPrice = classUnitPrice * quantity;
   const totalTaxes = fareSummary?.taxes * quantity;
   const totalOtherServices = fareSummary?.otherServices * quantity;
   const totalDiscounts = fareSummary?.discounts * quantity;
@@ -202,8 +212,9 @@ const BookFlightPage = () => {
           flight?.id,
           quantity,
           grandTotal,
-          flight?.price,
-          selectedSeats
+          classUnitPrice,
+          selectedSeats,
+          travelClass
         );
         const updateuser = {
           ...user,
@@ -279,6 +290,35 @@ const BookFlightPage = () => {
               value={new Date(flight.arrivalTime).toLocaleString()}
               readOnly
             />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label className="flex items-center">
+              <Plane className="w-4 h-4 mr-2" />
+              Cabin Class
+            </Label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {CLASS_OPTIONS.map((c) => {
+                const isSelected = travelClass === c.name;
+                return (
+                  <button
+                    key={c.name}
+                    type="button"
+                    onClick={() => setTravelClass(c.name)}
+                    className={`text-left rounded-lg border p-3 transition-colors ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="text-sm font-semibold text-gray-800">{c.name}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{c.blurb}</div>
+                    <div className="text-sm font-medium text-gray-800 mt-2">
+                      ₹{Math.round((flight?.price ?? 0) * c.multiplier).toLocaleString()}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="quantity" className="flex items-center">

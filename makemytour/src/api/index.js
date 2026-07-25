@@ -218,11 +218,14 @@ export const edithotel = async (
   }
 };
 
-export const handleflightbooking = async (userId, flightId, seats, price, unitPrice, seatNumbers) => {
+export const handleflightbooking = async (userId, flightId, seats, price, unitPrice, seatNumbers, travelClass) => {
   try {
     let url = `${BACKEND_URL}/booking/flight?userId=${userId}&flightId=${flightId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;
     if (seatNumbers && seatNumbers.length > 0) {
       url += `&seatNumbers=${encodeURIComponent(seatNumbers.join(","))}`;
+    }
+    if (travelClass) {
+      url += `&travelClass=${encodeURIComponent(travelClass)}`;
     }
     const res = await axios.post(url);
     const data = res.data;

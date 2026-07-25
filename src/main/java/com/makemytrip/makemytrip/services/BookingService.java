@@ -58,14 +58,36 @@ public class BookingService {
      * and substitute it into the total - so taxes/fees the client computed are preserved,
      * but the actual base fare charged always comes from the server, not the browser.
      */
+    /**
+     * Cabin class markups, applied on top of the engine's (economy-anchor) price.
+     * Kept server-side so a client can't just claim "Business" and pay economy price.
+     */
+    private static final java.util.Map<String, Double> FLIGHT_CLASS_MULTIPLIERS = java.util.Map.of(
+            "ECONOMY", 1.0,
+            "PREMIUM ECONOMY", 1.5,
+            "BUSINESS", 2.75,
+            "FIRST CLASS", 4.0
+    );
+
+    private double classMultiplierFor(String travelClass) {
+        if (travelClass == null) return 1.0;
+        return FLIGHT_CLASS_MULTIPLIERS.getOrDefault(travelClass.trim().toUpperCase(), 1.0);
+    }
+
     private double resolveFinalPrice(String userId, String entityType, String entityId,
                                      int quantity, double clientUnitPrice, double clientTotal) {
-        double authoritativeUnitPrice = priceFreezeService.resolveAndConsumePrice(userId, entityType, entityId);
+        return resolveFinalPrice(userId, entityType, entityId, quantity, clientUnitPrice, clientTotal, 1.0);
+    }
+
+    private double resolveFinalPrice(String userId, String entityType, String entityId,
+                                     int quantity, double clientUnitPrice, double clientTotal,
+                                     double classMultiplier) {
+        double authoritativeUnitPrice = priceFreezeService.resolveAndConsumePrice(userId, entityType, entityId) * classMultiplier;
         double delta = (authoritativeUnitPrice - clientUnitPrice) * quantity;
         return Math.max(0, clientTotal + delta);
     }
 
-    public Users.Booking bookFlight(String userId, String flightId, int seats, double price, double unitPrice, String seatNumbersCsv){
+    public Users.Booking bookFlight(String userId, String flightId, int seats, double price, double unitPrice, String seatNumbersCsv, String travelClass){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Flight> flightOptional =flightRepository.findById(flightId);
         if(usersOptional.isPresent() && flightOptional.isPresent()){
@@ -94,7 +116,7 @@ public class BookingService {
                 flight.setAvailableSeats(flight.getAvailableSeats()- seats);
                 flightRepository.save(flight);
                 dynamicPricingService.recalculate(DynamicPricingService.FLIGHT, flightId);
-                double finalPrice = resolveFinalPrice(userId, DynamicPricingService.FLIGHT, flightId, seats, unitPrice, price);
+                double finalPrice = resolveFinalPrice(userId, DynamicPricingService.FLIGHT, flightId, seats, unitPrice, price, classMultiplierFor(travelClass));
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Flight");
@@ -103,6 +125,7 @@ public class BookingService {
                 booking.setQuantity(seats);
                 booking.setTotalPrice(finalPrice);
                 if (seatNumbers != null) booking.setSeatNumbers(seatNumbers);
+                booking.setTravelClass(travelClass != null && !travelClass.isBlank() ? travelClass : "Economy");
 
                 user.getBookings().add(booking);
                 userRepository.save(user);
