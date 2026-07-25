@@ -683,6 +683,35 @@ const BookFlightPage = () => {
                                             readOnly
                                           />
                                         </div>
+                                        <div className="space-y-2 md:col-span-2">
+                                          <Label className="flex items-center">
+                                            <Plane className="w-4 h-4 mr-2" />
+                                            Cabin Class
+                                          </Label>
+                                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            {CLASS_OPTIONS.map((c) => {
+                                              const isSelected = travelClass === c.name;
+                                              return (
+                                                <button
+                                                  key={c.name}
+                                                  type="button"
+                                                  onClick={() => setTravelClass(c.name)}
+                                                  className={`text-left rounded-lg border p-3 transition-colors ${
+                                                    isSelected
+                                                      ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+                                                      : "border-gray-200 hover:border-gray-300"
+                                                  }`}
+                                                >
+                                                  <div className="text-sm font-semibold text-gray-800">{c.name}</div>
+                                                  <div className="text-xs text-gray-500 mt-0.5">{c.blurb}</div>
+                                                  <div className="text-sm font-medium text-gray-800 mt-2">
+                                                    ₹{Math.round((flight?.price ?? 0) * c.multiplier).toLocaleString()}
+                                                  </div>
+                                                </button>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
                                         <div className="space-y-2">
                                           <Label htmlFor="quantity" className="flex items-center">
                                             <Ticket className="w-4 h-4 mr-2" />
