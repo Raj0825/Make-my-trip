@@ -376,6 +376,66 @@ const BookHotelPage = () => {
                 <button className="text-blue-500">+ 31 Amenities</button>
               </div>
             </div>
+
+            {/* Hotel Highlights */}
+            <div className="mb-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { icon: "🛎️", label: "Free cancellation", sub: "Up to 24h before check-in" },
+                { icon: "💳", label: "Pay at hotel", sub: "No prepayment needed" },
+                { icon: "📶", label: "Free WiFi", sub: "Throughout the property" },
+                { icon: "🚗", label: "Free parking", sub: "On-site, self parking" },
+              ].map((h, i) => (
+                <div key={i} className="bg-gray-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl mb-1">{h.icon}</div>
+                  <div className="text-sm font-semibold text-gray-800">{h.label}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{h.sub}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Dynamic Pricing: live price, breakdown, history graph, price freeze */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4">Price Insights</h2>
+              <DynamicPriceCard entityType="HOTEL" entityId={id as string} userId={user?.id} />
+            </div>
+
+            {/* Nearby Attractions */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4">Nearby Attractions</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  {
+                    name: "City Landmark",
+                    distance: "1.2 km away",
+                    img: "https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=600",
+                  },
+                  {
+                    name: "Central Market",
+                    distance: "2.5 km away",
+                    img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600",
+                  },
+                  {
+                    name: "Riverside Promenade",
+                    distance: "3.8 km away",
+                    img: "https://images.unsplash.com/photo-1519677100203-a0e668c92439?auto=format&fit=crop&w=600",
+                  },
+                ].map((place, i) => (
+                  <div key={i} className="rounded-lg overflow-hidden group cursor-pointer">
+                    <div className="relative h-32 overflow-hidden">
+                      <img
+                        src={place.img}
+                        alt={place.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    </div>
+                    <div className="pt-2">
+                      <div className="text-sm font-semibold text-gray-800">{place.name}</div>
+                      <div className="text-xs text-gray-500">{place.distance}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Booking Card */}
@@ -466,9 +526,6 @@ const BookHotelPage = () => {
             </div>
 
             {/* Rating Card */}
-            <div className="mb-4">
-              <DynamicPriceCard entityType="HOTEL" entityId={id as string} userId={user?.id} />
-            </div>
             <ReviewSection serviceType="Hotel" serviceId={id as string} />
 
             {/* Location Card */}
