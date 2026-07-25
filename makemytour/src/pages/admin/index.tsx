@@ -306,10 +306,14 @@ interface Flight {
   arrivalTime: string;
   price: number;
   availableSeats: number;
+  firstClassSeats?: number;
+  businessSeats?: number;
+  premiumEconomySeats?: number;
+  economySeats?: number;
 }
 
 function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: () => void }) {
-  const [formData, setFormData] = useState<Flight>({
+  const emptyFlight: Flight = {
     flightName: "",
     from: "",
     to: "",
@@ -317,23 +321,34 @@ function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: (
     arrivalTime: "",
     price: 0,
     availableSeats: 0,
-  });
+    firstClassSeats: 0,
+    businessSeats: 0,
+    premiumEconomySeats: 0,
+    economySeats: 0,
+  };
+  const [formData, setFormData] = useState<Flight>(emptyFlight);
 
   useEffect(() => {
     if (flight) {
-      setFormData(flight);
-    } else {
       setFormData({
-        flightName: "",
-        from: "",
-        to: "",
-        departureTime: "",
-        arrivalTime: "",
-        price: 0,
-        availableSeats: 0,
+        firstClassSeats: 0,
+        businessSeats: 0,
+        premiumEconomySeats: 0,
+        economySeats: 0,
+        ...flight,
       });
+    } else {
+      setFormData(emptyFlight);
     }
   }, [flight]);
+
+  // Total seats is always the sum of the 4 cabin sections - no separate manual entry,
+  // so the two numbers can never drift apart.
+  const totalSeats =
+    Number(formData.firstClassSeats || 0) +
+    Number(formData.businessSeats || 0) +
+    Number(formData.premiumEconomySeats || 0) +
+    Number(formData.economySeats || 0);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -342,8 +357,12 @@ function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: (
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send this data to your backend
-    console.log("Submitting flight data:", formData);
+    const classSeats = {
+      firstClassSeats: Number(formData.firstClassSeats || 0),
+      businessSeats: Number(formData.businessSeats || 0),
+      premiumEconomySeats: Number(formData.premiumEconomySeats || 0),
+      economySeats: Number(formData.economySeats || 0),
+    };
     if (flight) {
       await editflight(
         flight?.id,
@@ -353,7 +372,8 @@ function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: (
         formData.departureTime,
         formData.arrivalTime,
         formData.price,
-        formData.availableSeats
+        totalSeats,
+        classSeats
       );
       onSaved?.();
       return;
@@ -365,19 +385,12 @@ function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: (
       formData.departureTime,
       formData.arrivalTime,
       formData.price,
-      formData.availableSeats
+      totalSeats,
+      classSeats
     );
     onSaved?.();
     if (!flight) {
-      setFormData({
-        flightName: "",
-        from: "",
-        to: "",
-        departureTime: "",
-        arrivalTime: "",
-        price: 0,
-        availableSeats: 0,
-      });
+      setFormData(emptyFlight);
     }
   };
 
@@ -450,15 +463,60 @@ function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: (
         />
       </div>
       <div>
-        <Label htmlFor="availableSeats">Available Seats</Label>
-        <Input
-          id="availableSeats"
-          name="availableSeats"
-          type="number"
-          value={formData.availableSeats}
-          onChange={handleChange}
-          required
-        />
+        <Label>Seats per Cabin Class</Label>
+        <div className="grid grid-cols-2 gap-3 mt-1">
+          <div>
+            <Label htmlFor="economySeats" className="text-xs text-gray-500">Economy</Label>
+            <Input
+              id="economySeats"
+              name="economySeats"
+              type="number"
+              min="0"
+              value={formData.economySeats}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="premiumEconomySeats" className="text-xs text-gray-500">Premium Economy</Label>
+            <Input
+              id="premiumEconomySeats"
+              name="premiumEconomySeats"
+              type="number"
+              min="0"
+              value={formData.premiumEconomySeats}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="businessSeats" className="text-xs text-gray-500">Business</Label>
+            <Input
+              id="businessSeats"
+              name="businessSeats"
+              type="number"
+              min="0"
+              value={formData.businessSeats}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="firstClassSeats" className="text-xs text-gray-500">First Class</Label>
+            <Input
+              id="firstClassSeats"
+              name="firstClassSeats"
+              type="number"
+              min="0"
+              value={formData.firstClassSeats}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Total available seats: <span className="font-semibold text-gray-700">{totalSeats}</span> (calculated automatically)
+        </p>
       </div>
       <Button type="submit">{flight ? "Update Flight" : "Add Flight"}</Button>
     </form>

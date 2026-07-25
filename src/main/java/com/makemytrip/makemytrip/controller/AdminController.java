@@ -68,6 +68,10 @@ public class AdminController {
             flight.setArrivalTime(updatedFlight.getArrivalTime());
             flight.setPrice(updatedFlight.getPrice());
             flight.setAvailableSeats(updatedFlight.getAvailableSeats());
+            flight.setFirstClassSeats(updatedFlight.getFirstClassSeats());
+            flight.setBusinessSeats(updatedFlight.getBusinessSeats());
+            flight.setPremiumEconomySeats(updatedFlight.getPremiumEconomySeats());
+            flight.setEconomySeats(updatedFlight.getEconomySeats());
             flightRepository.save(flight);
             dynamicPricingService.resetBasePrice(DynamicPricingService.FLIGHT, id, updatedFlight.getPrice());
             return  ResponseEntity.ok(flight);

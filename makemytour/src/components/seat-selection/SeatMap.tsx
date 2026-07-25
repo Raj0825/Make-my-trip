@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { Armchair, Info, Check } from "lucide-react";
+import { Armchair, Sofa, BedSingle, BedDouble, Briefcase, Info, Check } from "lucide-react";
 import { getSeatMap, getBookingPreferences } from "@/api";
 
 interface Seat {
@@ -23,6 +23,21 @@ interface Props {
 const COLUMN_ORDER = ["A", "B", "C", "D", "E", "F"];
 const WINDOW_COLS = new Set(["A", "F"]);
 const AISLE_COLS = new Set(["C", "D"]);
+
+// Each cabin gets a visually distinct seat icon so the class you're picking
+// seats in is obvious at a glance, not just a color/label difference.
+function SeatIcon({ seatClass, size = 14 }: { seatClass: Seat["seatClass"]; size?: number }) {
+  switch (seatClass) {
+    case "First Class":
+      return <BedDouble size={size} />; // fully flat suite
+    case "Business":
+      return <BedSingle size={size} />; // lie-flat / convertible recliner
+    case "Premium Economy":
+      return <Sofa size={size} />; // extra cushioned, more room
+    default:
+      return <Armchair size={size} />; // standard economy seat
+  }
+}
 
 // Refresh the seat map periodically so seats taken by other users
 // disappear from availability without needing a manual reload.
@@ -94,7 +109,9 @@ export default function SeatMap({
   const rows = useMemo(() => {
     const byRow: Record<string, Seat[]> = {};
     for (const seat of seatsInClass) {
-      const rowNum = seat.seatNumber.match(/^\d+/)?.[0] || "0";
+      // Seat numbers may have a class prefix (F1A, J1A, W1A) or none (Economy: 1A) -
+      // strip any leading letters before reading the row number.
+      const rowNum = seat.seatNumber.replace(/^[A-Za-z]*/, "").match(/^\d+/)?.[0] || "0";
       if (!byRow[rowNum]) byRow[rowNum] = [];
       byRow[rowNum].push(seat);
     }
@@ -158,7 +175,8 @@ export default function SeatMap({
   return (
     <div className="border border-gray-200 rounded-lg p-4 bg-slate-50">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+          <SeatIcon seatClass={travelClass as Seat["seatClass"]} size={15} />
           {travelClass} — select {quantity} seat{quantity > 1 ? "s" : ""} ({selected.length}/{quantity} selected)
         </span>
         {preferredType && (
@@ -167,6 +185,12 @@ export default function SeatMap({
           </span>
         )}
       </div>
+      <p className="text-xs text-gray-500 mb-3">
+        {travelClass === "First Class" && "Fully flat private suite with dedicated storage compartment."}
+        {travelClass === "Business" && "Lie-flat, convertible recliner seat with extra personal space."}
+        {travelClass === "Premium Economy" && "Wider, extra-cushioned seat with additional legroom."}
+        {travelClass === "Economy" && "Standard seat and baggage allowance."}
+      </p>
 
       {rows.length === 0 ? (
         <div className="text-sm text-gray-500 py-6 text-center border border-dashed rounded-lg">
@@ -197,11 +221,17 @@ export default function SeatMap({
                           }
                         : undefined
                     }
-                    className={`w-8 h-8 rounded border flex items-center justify-center text-[10px] font-medium transition-all ${
+                    className={`relative w-8 h-8 rounded border flex items-center justify-center text-[10px] font-medium transition-all ${
                       isSelected ? "" : seatClasses(seat, COLUMN_ORDER[idx])
                     }`}
                   >
-                    {isSelected ? <Check size={14} /> : <Armchair size={14} />}
+                    {isSelected ? <Check size={14} /> : <SeatIcon seatClass={seat.seatClass} />}
+                    {!isSelected && seat.seatClass === "First Class" && (
+                      <Briefcase
+                        size={9}
+                        className="absolute -top-1.5 -right-1.5 bg-white text-gray-400 rounded-full p-[1px] border border-gray-200"
+                      />
+                    )}
                   </button>
                   {COLUMN_ORDER[idx] === "C" && <span className="w-3" />}
                 </div>

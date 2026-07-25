@@ -14,6 +14,13 @@ public class Flight {
     private double price;
     private int availableSeats;
 
+    // How many seats the admin has configured in each cabin section.
+    // availableSeats above stays the overall total (kept in sync from these).
+    private int firstClassSeats = 0;
+    private int businessSeats = 0;
+    private int premiumEconomySeats = 0;
+    private int economySeats = 0;
+
     // Getters and Setters
 
     public String getId() {
@@ -79,4 +86,16 @@ public class Flight {
     public void setAvailableSeats(int availableSeats) {
         this.availableSeats = availableSeats;
     }
+
+    public int getFirstClassSeats() { return firstClassSeats; }
+    public void setFirstClassSeats(int firstClassSeats) { this.firstClassSeats = firstClassSeats; }
+
+    public int getBusinessSeats() { return businessSeats; }
+    public void setBusinessSeats(int businessSeats) { this.businessSeats = businessSeats; }
+
+    public int getPremiumEconomySeats() { return premiumEconomySeats; }
+    public void setPremiumEconomySeats(int premiumEconomySeats) { this.premiumEconomySeats = premiumEconomySeats; }
+
+    public int getEconomySeats() { return economySeats; }
+    public void setEconomySeats(int economySeats) { this.economySeats = economySeats; }
 }

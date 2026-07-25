@@ -117,7 +117,8 @@ export const addflight = async (
   departureTime,
   arrivalTime,
   price,
-  availableSeats
+  availableSeats,
+  classSeats = {}
 ) => {
   try {
     const res = await axios.post(`${BACKEND_URL}/admin/flight`, {
@@ -128,6 +129,10 @@ export const addflight = async (
       arrivalTime,
       price,
       availableSeats,
+      firstClassSeats: classSeats.firstClassSeats ?? 0,
+      businessSeats: classSeats.businessSeats ?? 0,
+      premiumEconomySeats: classSeats.premiumEconomySeats ?? 0,
+      economySeats: classSeats.economySeats ?? 0,
     });
     const data = res.data;
     return data;
@@ -144,7 +149,8 @@ export const editflight = async (
   departureTime,
   arrivalTime,
   price,
-  availableSeats
+  availableSeats,
+  classSeats = {}
 ) => {
   try {
     const res = await axios.put(`${BACKEND_URL}/admin/flight/${id}`, {
@@ -155,6 +161,10 @@ export const editflight = async (
       arrivalTime,
       price,
       availableSeats,
+      firstClassSeats: classSeats.firstClassSeats ?? 0,
+      businessSeats: classSeats.businessSeats ?? 0,
+      premiumEconomySeats: classSeats.premiumEconomySeats ?? 0,
+      economySeats: classSeats.economySeats ?? 0,
     });
     const data = res.data;
     return data;
