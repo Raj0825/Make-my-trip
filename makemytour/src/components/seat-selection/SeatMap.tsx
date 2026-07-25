@@ -6,7 +6,7 @@ import { getSeatMap, getBookingPreferences } from "@/api";
 interface Seat {
   id: string;
   seatNumber: string;
-  seatClass: "ECONOMY" | "PREMIUM";
+  seatClass: "Economy" | "Premium Economy" | "Business" | "First Class";
   surcharge: number;
   status: "AVAILABLE" | "BOOKED";
 }
@@ -14,6 +14,7 @@ interface Seat {
 interface Props {
   flightId: string;
   quantity: number;
+  travelClass: string;
   onChange: (seatNumbers: string[], surcharge: number) => void;
   rememberPreference: boolean;
   onRememberPreferenceChange: (checked: boolean) => void;
@@ -30,6 +31,7 @@ const POLL_INTERVAL_MS = 30 * 1000;
 export default function SeatMap({
   flightId,
   quantity,
+  travelClass,
   onChange,
   rememberPreference,
   onRememberPreferenceChange,
@@ -76,9 +78,22 @@ export default function SeatMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quantity]);
 
+  // Reset seat selection whenever the chosen cabin class changes - a seat
+  // picked in one section of the plane isn't valid once you switch cabins.
+  useEffect(() => {
+    setSelected([]);
+    onChange([], 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [travelClass]);
+
+  const seatsInClass = useMemo(
+    () => seats.filter((s) => s.seatClass === travelClass),
+    [seats, travelClass]
+  );
+
   const rows = useMemo(() => {
     const byRow: Record<string, Seat[]> = {};
-    for (const seat of seats) {
+    for (const seat of seatsInClass) {
       const rowNum = seat.seatNumber.match(/^\d+/)?.[0] || "0";
       if (!byRow[rowNum]) byRow[rowNum] = [];
       byRow[rowNum].push(seat);
@@ -91,7 +106,7 @@ export default function SeatMap({
           Boolean
         ) as Seat[],
       }));
-  }, [seats]);
+  }, [seatsInClass]);
 
   const toggleSeat = (seat: Seat) => {
     if (seat.status !== "AVAILABLE") return;
@@ -132,8 +147,6 @@ export default function SeatMap({
     if (seat.status === "BOOKED") return "bg-gray-200 text-gray-400 cursor-not-allowed";
     if (selected.includes(seat.seatNumber))
       return "bg-blue-600 text-white border-blue-600 ring-2 ring-blue-300 ring-offset-1 scale-110";
-    if (seat.seatClass === "PREMIUM")
-      return "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100";
     if (isRecommended(col)) return "bg-green-50 text-green-700 border-green-300 hover:bg-green-100";
     return "bg-white text-gray-700 border-gray-300 hover:border-blue-400";
   };
@@ -144,9 +157,9 @@ export default function SeatMap({
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 bg-slate-50">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <span className="text-sm font-medium text-gray-700">
-          Select {quantity} seat{quantity > 1 ? "s" : ""} ({selected.length}/{quantity} selected)
+          {travelClass} — select {quantity} seat{quantity > 1 ? "s" : ""} ({selected.length}/{quantity} selected)
         </span>
         {preferredType && (
           <span className="text-xs text-green-700 flex items-center gap-1">
@@ -155,6 +168,11 @@ export default function SeatMap({
         )}
       </div>
 
+      {rows.length === 0 ? (
+        <div className="text-sm text-gray-500 py-6 text-center border border-dashed rounded-lg">
+          This flight doesn't have a {travelClass} cabin. Choose a different class above to select seats.
+        </div>
+      ) : (
       <div className="space-y-1.5">
         {rows.map(({ rowNum, seats: rowSeats }) => (
           <div key={rowNum} className="flex items-center gap-1.5 justify-center">
@@ -167,11 +185,7 @@ export default function SeatMap({
                     type="button"
                     disabled={seat.status !== "AVAILABLE"}
                     onClick={() => toggleSeat(seat)}
-                    title={
-                      seat.seatClass === "PREMIUM"
-                        ? `${seat.seatNumber} — Premium (+₹${seat.surcharge})`
-                        : seat.seatNumber
-                    }
+                    title={seat.seatNumber}
                     style={
                       isSelected
                         ? {
@@ -196,6 +210,7 @@ export default function SeatMap({
           </div>
         ))}
       </div>
+      )}
 
       <div className="flex items-center gap-4 mt-4 text-[11px] text-gray-500 flex-wrap">
         <span className="flex items-center gap-1">
@@ -205,8 +220,7 @@ export default function SeatMap({
           <span className="w-3 h-3 rounded bg-blue-600 inline-block" /> Selected
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-amber-50 border border-amber-300 inline-block" /> Premium
-          (+₹500)
+          <span className="w-3 h-3 rounded bg-green-50 border border-green-300 inline-block" /> Matches your preference
         </span>
         <span className="flex items-center gap-1">
           <span className="w-3 h-3 rounded bg-gray-200 inline-block" /> Booked

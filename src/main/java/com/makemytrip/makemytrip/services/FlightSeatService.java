@@ -17,30 +17,57 @@ public class FlightSeatService {
     @Autowired private FlightRepository flightRepository;
 
     private static final String[] COLUMNS = {"A", "B", "C", "D", "E", "F"};
-    private static final double PREMIUM_SURCHARGE = 500;
-    private static final int PREMIUM_ROWS = 3; // first 3 rows are premium (extra legroom)
+
+    // Cabin sections, front to back of the plane - names match the Cabin Class
+    // picker on the booking page exactly, so the seat map can be filtered by it.
+    private static final String FIRST = "First Class";
+    private static final String BUSINESS = "Business";
+    private static final String PREMIUM_ECONOMY = "Premium Economy";
+    private static final String ECONOMY = "Economy";
+    private static final java.util.Set<String> KNOWN_CLASSES =
+            java.util.Set.of(FIRST, BUSINESS, PREMIUM_ECONOMY, ECONOMY);
 
     // Returns the seat map for a flight, generating it the first time it's requested.
     // The number of rows is sized off the flight's configured seat count so it
-    // stays consistent with whatever the admin set up.
+    // stays consistent with whatever the admin set up. Rows are carved front-to-back
+    // into cabin sections proportional to total rows, so smaller flights simply have
+    // fewer (or no) seats in the premium sections rather than breaking.
     public List<FlightSeat> getOrCreateSeatMap(String flightId) {
         List<FlightSeat> existing = flightSeatRepository.findByFlightId(flightId);
-        if (!existing.isEmpty()) return existing;
+        boolean usesOldScheme = existing.stream().anyMatch(s -> !KNOWN_CLASSES.contains(s.getSeatClass()));
+        if (!existing.isEmpty() && !usesOldScheme) return existing;
+        if (usesOldScheme) {
+            flightSeatRepository.deleteAll(existing); // self-heal seat maps generated before cabin classes existed
+        }
 
         int totalSeats = flightRepository.findById(flightId)
                 .map(Flight::getAvailableSeats)
                 .orElse(60);
         int rows = Math.max(1, (int) Math.ceil(totalSeats / (double) COLUMNS.length));
 
+        int firstRows = (int) Math.round(rows * 0.10);
+        int businessRows = (int) Math.round(rows * 0.20);
+        int premiumEconomyRows = (int) Math.round(rows * 0.20);
+        // whatever's left (always >= 0 since the three ratios above sum to 0.5) is Economy
+
         List<FlightSeat> seats = new ArrayList<>();
         for (int row = 1; row <= rows; row++) {
-            boolean isPremium = row <= PREMIUM_ROWS;
+            String seatClass;
+            if (row <= firstRows) {
+                seatClass = FIRST;
+            } else if (row <= firstRows + businessRows) {
+                seatClass = BUSINESS;
+            } else if (row <= firstRows + businessRows + premiumEconomyRows) {
+                seatClass = PREMIUM_ECONOMY;
+            } else {
+                seatClass = ECONOMY;
+            }
             for (String col : COLUMNS) {
                 FlightSeat seat = new FlightSeat();
                 seat.setFlightId(flightId);
                 seat.setSeatNumber(row + col);
-                seat.setSeatClass(isPremium ? "PREMIUM" : "ECONOMY");
-                seat.setSurcharge(isPremium ? PREMIUM_SURCHARGE : 0);
+                seat.setSeatClass(seatClass);
+                seat.setSurcharge(0); // cabin pricing is handled by the class multiplier at booking, not a per-seat surcharge
                 seat.setStatus("AVAILABLE");
                 seats.add(seat);
             }

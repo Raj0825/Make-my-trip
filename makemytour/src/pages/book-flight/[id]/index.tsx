@@ -339,6 +339,7 @@ const BookFlightPage = () => {
                     <SeatMap
                       flightId={flight?.id}
                       quantity={quantity}
+                      travelClass={travelClass}
                       onChange={(seatNumbers, surcharge) => {
                         setSelectedSeats(seatNumbers);
                         setSeatSurcharge(surcharge);
@@ -731,6 +732,7 @@ const BookFlightPage = () => {
                                       <SeatMap
                                         flightId={flight?.id}
                                         quantity={quantity}
+                                        travelClass={travelClass}
                                         onChange={(seatNumbers, surcharge) => {
                                           setSelectedSeats(seatNumbers);
                                           setSeatSurcharge(surcharge);
