@@ -39,26 +39,41 @@ public class FlightSeatService {
         };
     }
 
-    // Returns the seat map for a flight, generating it the first time it's requested.
-    // Uses the exact per-class seat counts the admin configured on the flight. If an
-    // older flight never had those set (all zero), falls back to a proportional split
-    // of its total seat count so nothing breaks for pre-existing data.
+    // Returns the seat map for a flight, generating it the first time it's requested,
+    // and regenerating it whenever the admin's configured per-class counts have changed
+    // since it was last built - so editing seat counts always takes effect, not just
+    // on a flight's very first view.
     public List<FlightSeat> getOrCreateSeatMap(String flightId) {
         List<FlightSeat> existing = flightSeatRepository.findByFlightId(flightId);
-        boolean usesOldScheme = existing.stream().anyMatch(s -> !KNOWN_CLASSES.contains(s.getSeatClass()));
-        if (!existing.isEmpty() && !usesOldScheme) return existing;
-        if (usesOldScheme) {
-            flightSeatRepository.deleteAll(existing); // self-heal seat maps generated before cabin classes existed
-        }
-
         Flight flight = flightRepository.findById(flightId).orElse(null);
+
+        boolean usesOldScheme = existing.stream().anyMatch(s -> !KNOWN_CLASSES.contains(s.getSeatClass()));
 
         int firstCount = flight != null ? flight.getFirstClassSeats() : 0;
         int businessCount = flight != null ? flight.getBusinessSeats() : 0;
         int premiumEconomyCount = flight != null ? flight.getPremiumEconomySeats() : 0;
         int economyCount = flight != null ? flight.getEconomySeats() : 0;
-
         boolean adminConfigured = firstCount + businessCount + premiumEconomyCount + economyCount > 0;
+
+        boolean countsStale = false;
+        if (!existing.isEmpty() && !usesOldScheme && adminConfigured) {
+            long existingFirst = existing.stream().filter(s -> FIRST.equals(s.getSeatClass())).count();
+            long existingBusiness = existing.stream().filter(s -> BUSINESS.equals(s.getSeatClass())).count();
+            long existingPremium = existing.stream().filter(s -> PREMIUM_ECONOMY.equals(s.getSeatClass())).count();
+            long existingEconomy = existing.stream().filter(s -> ECONOMY.equals(s.getSeatClass())).count();
+            countsStale = existingFirst != firstCount || existingBusiness != businessCount
+                    || existingPremium != premiumEconomyCount || existingEconomy != economyCount;
+        }
+
+        if (!existing.isEmpty() && !usesOldScheme && !countsStale) return existing;
+
+        if (!existing.isEmpty()) {
+            // Regenerating clears any BOOKED status from the old layout - acceptable here since
+            // an admin changing the cabin configuration is expected to invalidate old seat
+            // assignments; the flight's availableSeats/bookings themselves aren't touched.
+            flightSeatRepository.deleteAll(existing);
+        }
+
         if (!adminConfigured) {
             // Legacy fallback: no per-class counts set, split the total proportionally.
             int totalSeats = flight != null ? flight.getAvailableSeats() : 60;
