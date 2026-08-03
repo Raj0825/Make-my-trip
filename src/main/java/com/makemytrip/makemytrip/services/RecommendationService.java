@@ -111,27 +111,25 @@ public class RecommendationService {
     // ---------------------------------------------------------------------
 
     public List<Recommendation> getRecommendations(String userId, int limit) {
-        List<UserTagAffinity> affinities = userId != null
-                ? userTagAffinityRepository.findByUserId(userId)
-                : List.of();
+        if (userId == null) return List.of();
 
-        Set<String> alreadySeen = userId != null
-                ? userInteractionRepository.findByUserId(userId).stream()
+        // Gate recommendations behind an actual booking - browsing/viewing alone (or a
+        // brand-new account) should not surface anything yet.
+        List<UserInteraction> interactions = userInteractionRepository.findByUserId(userId);
+        boolean hasBooked = interactions.stream().anyMatch(i -> "BOOKED".equals(i.getAction()));
+        if (!hasBooked) return List.of();
+
+        List<UserTagAffinity> affinities = userTagAffinityRepository.findByUserId(userId);
+
+        Set<String> alreadySeen = interactions.stream()
                 .map(i -> i.getEntityType() + ":" + i.getEntityId())
-                .collect(Collectors.toSet())
-                : Set.of();
+                .collect(Collectors.toSet());
 
-        Set<String> suppressed = userId != null
-                ? recommendationFeedbackRepository.findByUserIdAndFeedback(userId, "IRRELEVANT").stream()
+        Set<String> suppressed = recommendationFeedbackRepository.findByUserIdAndFeedback(userId, "IRRELEVANT").stream()
                 .map(f -> f.getEntityType() + ":" + f.getEntityId())
-                .collect(Collectors.toSet())
-                : Set.of();
+                .collect(Collectors.toSet());
 
         List<Listing> allListings = allListings();
-
-        if (affinities.isEmpty()) {
-            return trending(allListings, alreadySeen, suppressed, limit);
-        }
 
         // Top tags this user has a positive affinity for (content-based signal)
         List<String> topTags = affinities.stream()
@@ -141,8 +139,10 @@ public class RecommendationService {
                 .limit(3)
                 .toList();
 
+        // No positive affinity tags yet (shouldn't normally happen once hasBooked is true,
+        // since booking always bumps affinities) - nothing relevant to show.
         if (topTags.isEmpty()) {
-            return trending(allListings, alreadySeen, suppressed, limit);
+            return List.of();
         }
 
         // Collaborative signal: other users who also have a strong affinity for the same top tag
@@ -168,17 +168,14 @@ public class RecommendationService {
             List<String> matchedTags = listing.tags().stream().filter(topTags::contains).toList();
             boolean collaborativeMatch = collaborativeEntityKeys.contains(key);
 
-            if (matchedTags.isEmpty() && !collaborativeMatch) continue;
+            // Require an actual tag match to what the user booked - collaborative signal is only
+            // used as a tie-breaker/boost below, never as a reason to show something unrelated.
+            if (matchedTags.isEmpty()) continue;
 
-            String reason;
-            if (!matchedTags.isEmpty() && collaborativeMatch) {
-                reason = "You liked " + matchedTags.get(0) + "! Try " + listing.location()
-                        + " — also popular with travelers who share your taste.";
-            } else if (!matchedTags.isEmpty()) {
-                reason = "You liked " + matchedTags.get(0) + "! Try " + listing.location() + ".";
-            } else {
-                reason = "Popular with travelers who liked similar destinations to you.";
-            }
+            String reason = collaborativeMatch
+                    ? "You liked " + matchedTags.get(0) + "! Try " + listing.location()
+                    + " — also popular with travelers who share your taste."
+                    : "You liked " + matchedTags.get(0) + "! Try " + listing.location() + ".";
 
             results.add(new Recommendation(listing.entityType(), listing.entityId(), listing.name(),
                     listing.location(), listing.price(), reason, matchedTags));
@@ -194,31 +191,9 @@ public class RecommendationService {
             return Double.compare(a.price(), b.price());
         });
 
-        List<Recommendation> topResults = results.stream().limit(limit).toList();
-        if (!topResults.isEmpty()) return topResults;
-        return trending(allListings, alreadySeen, suppressed, limit);
-    }
-
-    /** Fallback for new users with no history yet, or once personalized candidates run out. */
-    private List<Recommendation> trending(List<Listing> allListings, Set<String> alreadySeen,
-                                          Set<String> suppressed, int limit) {
-        Map<String, Long> bookingCounts = userInteractionRepository.findByAction("BOOKED").stream()
-                .collect(Collectors.groupingBy(i -> i.getEntityType() + ":" + i.getEntityId(), Collectors.counting()));
-
-        return allListings.stream()
-                .filter(l -> {
-                    String key = l.entityType() + ":" + l.entityId();
-                    return !alreadySeen.contains(key) && !suppressed.contains(key);
-                })
-                .sorted((a, b) -> {
-                    long ca = bookingCounts.getOrDefault(a.entityType() + ":" + a.entityId(), 0L);
-                    long cb = bookingCounts.getOrDefault(b.entityType() + ":" + b.entityId(), 0L);
-                    return Long.compare(cb, ca);
-                })
-                .limit(limit)
-                .map(l -> new Recommendation(l.entityType(), l.entityId(), l.name(), l.location(), l.price(),
-                        "Trending now with other travelers.", List.of()))
-                .toList();
+        // If personalized candidates run out, return whatever we found (possibly empty) -
+        // never fall back to unrelated "trending" listings.
+        return results.stream().limit(limit).toList();
     }
 
     // ---------------------------------------------------------------------
