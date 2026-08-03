@@ -26,7 +26,7 @@ export default function RecommendationsSection({ userId }: { userId?: string }) 
     setRecs((prev) => prev.filter((r) => !(r.entityType === entityType && r.entityId === entityId)));
   };
 
-  if (!userId || loading || recs.length === 0) return null;
+  if (!userId) return null; // only signed-in users get recommendations at all
 
   return (
     <section className="max-w-7xl mx-auto px-4 py-8">
@@ -37,16 +37,30 @@ export default function RecommendationsSection({ userId }: { userId?: string }) 
       <p className="text-sm text-gray-500 mb-4">
         Based on your bookings and browsing history — tell us what's useful so we can do better.
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {recs.map((rec) => (
-          <RecommendationCard
-            key={`${rec.entityType}-${rec.entityId}`}
-            rec={rec}
-            userId={userId}
-            onFeedback={handleFeedback}
-          />
-        ))}
-      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="border rounded-xl p-4 bg-gray-50 animate-pulse h-40" />
+          ))}
+        </div>
+      ) : recs.length === 0 ? (
+        <div className="text-sm text-gray-500 py-6 text-center border border-dashed rounded-lg">
+          Nothing to recommend yet — browse or book a hotel, flight, or homestay and we'll start
+          tailoring suggestions to you.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {recs.map((rec) => (
+            <RecommendationCard
+              key={`${rec.entityType}-${rec.entityId}`}
+              rec={rec}
+              userId={userId}
+              onFeedback={handleFeedback}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
