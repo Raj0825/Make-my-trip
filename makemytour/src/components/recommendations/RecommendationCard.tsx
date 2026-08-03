@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/router";
 import { Info, ThumbsUp, ThumbsDown, Plane, Hotel as HotelIcon, Home as HomeIcon } from "lucide-react";
 import { sendRecommendationFeedback } from "@/api";
@@ -19,7 +19,7 @@ const ROUTE_BY_TYPE: Record<string, string> = {
   HOMESTAY: "/book-homestay",
 };
 
-const ICON_BY_TYPE: Record<string, JSX.Element> = {
+const ICON_BY_TYPE: Record<string, ReactNode> = {
   FLIGHT: <Plane size={14} />,
   HOTEL: <HotelIcon size={14} />,
   HOMESTAY: <HomeIcon size={14} />,
