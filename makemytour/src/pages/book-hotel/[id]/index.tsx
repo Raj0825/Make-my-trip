@@ -16,7 +16,7 @@ import {
   Home,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { gethotel, handlehotelbooking } from "@/api";
+import { gethotel, handlehotelbooking, trackInteraction } from "@/api";
 interface Hotel {
   id: string; // Unique identifier for the hotel
   hotelName: string; // Name of the hotel
@@ -53,6 +53,10 @@ const BookHotelPage = () => {
   const user = useSelector((state: any) => state.user.user);
   const [open, setopem] = useState(false);
   const dispatch = useDispatch();
+  useEffect(() => {
+    if (!id || !user?.id) return;
+    trackInteraction(user.id, "HOTEL", id as string, "VIEWED");
+  }, [id, user?.id]);
   useEffect(() => {
     const fetchhotels = async () => {
       try {

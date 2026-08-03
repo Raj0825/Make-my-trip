@@ -3,7 +3,7 @@ import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 import ReviewSection from "@/components/reviews/ReviewSection";
 import { HomeIcon, MapPin, CreditCard, Ticket } from "lucide-react";
 import { useEffect, useState } from "react";
-import { gethomestay, handlehomestaybooking } from "@/api";
+import { gethomestay, handlehomestaybooking, trackInteraction } from "@/api";
 interface Homestay {
   id: string;
   homestayName: string;
@@ -36,6 +36,11 @@ const BookHomestayPage = () => {
   const user = useSelector((state: any) => state.user.user);
   const [open, setopem] = useState(false);
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (!id || !user?.id) return;
+    trackInteraction(user.id, "HOMESTAY", id as string, "VIEWED");
+  }, [id, user?.id]);
 
   useEffect(() => {
     const fetchhomestays = async () => {

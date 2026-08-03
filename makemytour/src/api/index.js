@@ -765,7 +765,48 @@ export const getTrackedFlights = async (userId) => {
   }
 };
 
-// ---------------- Dynamic Pricing Engine ----------------
+// ---------------- Personalized Recommendations ----------------
+
+export const getRecommendations = async (userId, limit = 6) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/api/recommendations/${userId}`, {
+      params: { limit },
+    });
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const trackInteraction = async (userId, entityType, entityId, action = "VIEWED") => {
+  if (!userId) return;
+  try {
+    await axios.post(`${BACKEND_URL}/api/recommendations/track`, {
+      userId,
+      entityType,
+      entityId,
+      action,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const sendRecommendationFeedback = async (userId, entityType, entityId, feedback) => {
+  try {
+    await axios.post(`${BACKEND_URL}/api/recommendations/feedback`, {
+      userId,
+      entityType,
+      entityId,
+      feedback,
+    });
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
 
 export const getCurrentPricing = async (entityType, entityId) => {
   try {

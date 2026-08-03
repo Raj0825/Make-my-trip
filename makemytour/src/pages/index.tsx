@@ -1,4 +1,5 @@
 import { getflight, gethotel, gettrain, getbus, getcab, gethomestay } from "@/api";
+import RecommendationsSection from "@/components/recommendations/RecommendationsSection";
 import Loader from "@/components/Loader";
 import { SearchSelect } from "@/components/SearchSelect";
 import SignupDialog from "@/components/SignupDialog";
@@ -548,6 +549,8 @@ export default function Home() {
               ))}
             </div>
           </section>
+
+          <RecommendationsSection userId={user?.id} />
 
           {/* Download App Section */}
           <DownloadApp />

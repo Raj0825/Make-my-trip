@@ -50,6 +50,9 @@ public class BookingService {
     @Autowired
     private PriceFreezeService priceFreezeService;
 
+    @Autowired
+    private RecommendationService recommendationService;
+
     /**
      * The frontend sends the total it computed (base fare + taxes + fees - discounts, etc.)
      * along with the per-unit base price it used to compute that total. We never trust the
@@ -117,6 +120,7 @@ public class BookingService {
                 flightRepository.save(flight);
                 dynamicPricingService.recalculate(DynamicPricingService.FLIGHT, flightId);
                 double finalPrice = resolveFinalPrice(userId, DynamicPricingService.FLIGHT, flightId, seats, unitPrice, price, classMultiplierFor(travelClass));
+                recommendationService.recordInteraction(userId, DynamicPricingService.FLIGHT, flightId, "BOOKED");
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Flight");
@@ -152,6 +156,7 @@ public class BookingService {
                 }
 
                 double finalPrice = resolveFinalPrice(userId, DynamicPricingService.HOTEL, hotelId, rooms, unitPrice, price);
+                recommendationService.recordInteraction(userId, DynamicPricingService.HOTEL, hotelId, "BOOKED");
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Hotel");
@@ -183,6 +188,7 @@ public class BookingService {
                 trainRepository.save(train);
                 dynamicPricingService.recalculate(DynamicPricingService.TRAIN, trainId);
                 double finalPrice = resolveFinalPrice(userId, DynamicPricingService.TRAIN, trainId, seats, unitPrice, price);
+                recommendationService.recordInteraction(userId, DynamicPricingService.TRAIN, trainId, "BOOKED");
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Train");
@@ -211,6 +217,7 @@ public class BookingService {
                 busRepository.save(bus);
                 dynamicPricingService.recalculate(DynamicPricingService.BUS, busId);
                 double finalPrice = resolveFinalPrice(userId, DynamicPricingService.BUS, busId, seats, unitPrice, price);
+                recommendationService.recordInteraction(userId, DynamicPricingService.BUS, busId, "BOOKED");
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Bus");
@@ -239,6 +246,7 @@ public class BookingService {
                 cabRepository.save(cab);
                 dynamicPricingService.recalculate(DynamicPricingService.CAB, cabId);
                 double finalPrice = resolveFinalPrice(userId, DynamicPricingService.CAB, cabId, seats, unitPrice, price);
+                recommendationService.recordInteraction(userId, DynamicPricingService.CAB, cabId, "BOOKED");
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Cab");
@@ -267,6 +275,7 @@ public class BookingService {
                 homestayRepository.save(homestay);
                 dynamicPricingService.recalculate(DynamicPricingService.HOMESTAY, homestayId);
                 double finalPrice = resolveFinalPrice(userId, DynamicPricingService.HOMESTAY, homestayId, rooms, unitPrice, price);
+                recommendationService.recordInteraction(userId, DynamicPricingService.HOMESTAY, homestayId, "BOOKED");
 
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Homestay");

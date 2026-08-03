@@ -22,7 +22,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getflight, handleflightbooking } from "@/api";
+import { getflight, handleflightbooking, trackInteraction } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
 interface Flight {
   id: string; // Unique identifier for the flight
@@ -84,6 +84,10 @@ const BookFlightPage = () => {
       const interval = setInterval(fetchStatus, 30000);
       return () => clearInterval(interval);
     }, [id]);
+    useEffect(() => {
+      if (!id || !user?.id) return;
+      trackInteraction(user.id, "FLIGHT", id as string, "VIEWED");
+    }, [id, user?.id]);
     useEffect(() => {
       const fetchFlights = async () => {
       try {
