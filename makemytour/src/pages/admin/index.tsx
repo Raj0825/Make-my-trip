@@ -1028,33 +1028,44 @@ interface Homestay {
   pricePerNight: number;
   availableRooms: number;
   amenities: string;
+  checkInTime: string;
+  checkOutTime: string;
 }
 
+const HOMESTAY_TIME_OPTIONS = [
+  "6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM",
+  "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM",
+  "6:00 PM", "7:00 PM", "8:00 PM", "9:00 PM", "10:00 PM",
+];
+
+const EMPTY_HOMESTAY_FORM: Homestay = {
+  homestayName: "",
+  location: "",
+  pricePerNight: 0,
+  availableRooms: 0,
+  amenities: "",
+  checkInTime: "12:00 PM",
+  checkOutTime: "11:00 AM",
+};
+
 function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onSaved?: () => void }) {
-  const [formData, setFormData] = useState<Homestay>({
-    homestayName: "",
-    location: "",
-    pricePerNight: 0,
-    availableRooms: 0,
-    amenities: "",
-  });
+  const [formData, setFormData] = useState<Homestay>(EMPTY_HOMESTAY_FORM);
 
   useEffect(() => {
     if (homestay) {
-      setFormData(homestay);
-    } else {
       setFormData({
-        homestayName: "",
-        location: "",
-        pricePerNight: 0,
-        availableRooms: 0,
-        amenities: "",
+        ...EMPTY_HOMESTAY_FORM,
+        ...homestay,
+        checkInTime: homestay.checkInTime || EMPTY_HOMESTAY_FORM.checkInTime,
+        checkOutTime: homestay.checkOutTime || EMPTY_HOMESTAY_FORM.checkOutTime,
       });
+    } else {
+      setFormData(EMPTY_HOMESTAY_FORM);
     }
   }, [homestay]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -1069,7 +1080,9 @@ function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onS
         formData.location,
         formData.pricePerNight,
         formData.availableRooms,
-        formData.amenities
+        formData.amenities,
+        formData.checkInTime,
+        formData.checkOutTime
       );
       onSaved?.();
       return;
@@ -1079,17 +1092,13 @@ function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onS
       formData.location,
       formData.pricePerNight,
       formData.availableRooms,
-      formData.amenities
+      formData.amenities,
+      formData.checkInTime,
+      formData.checkOutTime
     );
     onSaved?.();
     if (!homestay) {
-      setFormData({
-        homestayName: "",
-        location: "",
-        pricePerNight: 0,
-        availableRooms: 0,
-        amenities: "",
-      });
+      setFormData(EMPTY_HOMESTAY_FORM);
     }
   };
 
@@ -1139,6 +1148,42 @@ function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onS
           onChange={handleChange}
           required
         />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="checkInTime">Check-in Time</Label>
+          <select
+            id="checkInTime"
+            name="checkInTime"
+            value={formData.checkInTime}
+            onChange={handleChange}
+            required
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
+          >
+            {HOMESTAY_TIME_OPTIONS.map((time) => (
+              <option key={time} value={time}>
+                {time}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="checkOutTime">Check-out Time</Label>
+          <select
+            id="checkOutTime"
+            name="checkOutTime"
+            value={formData.checkOutTime}
+            onChange={handleChange}
+            required
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
+          >
+            {HOMESTAY_TIME_OPTIONS.map((time) => (
+              <option key={time} value={time}>
+                {time}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <div>
         <Label htmlFor="amenities">Amenities</Label>

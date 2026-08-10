@@ -22,7 +22,7 @@ import {
   Navigation,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { gethomestay, handlehomestaybooking, trackInteraction } from "@/api";
+import { gethomestay, getReviews, handlehomestaybooking, trackInteraction } from "@/api";
 interface Homestay {
   id: string;
   homestayName: string;
@@ -30,6 +30,8 @@ interface Homestay {
   pricePerNight: number;
   availableRooms: number;
   amenities: string;
+  checkInTime?: string;
+  checkOutTime?: string;
 }
 import {
   Dialog,
@@ -118,8 +120,6 @@ const HOST_PROFILES = [
     name: "Ramesh Deshmukh",
     phone: "+91 98765 43210",
     memberSince: 2019,
-    rating: 4.8,
-    reviews: 142,
     responseTime: "within an hour",
     streetLine: "Plot 14, Near Sunset View Point, Lake Road",
   },
@@ -127,8 +127,6 @@ const HOST_PROFILES = [
     name: "Anjali Kulkarni",
     phone: "+91 91234 56780",
     memberSince: 2021,
-    rating: 4.6,
-    reviews: 87,
     responseTime: "within 2 hours",
     streetLine: "House No. 27, Old Market Lane, Riverside Colony",
   },
@@ -136,15 +134,12 @@ const HOST_PROFILES = [
     name: "Suresh & Meera Patil",
     phone: "+91 90909 12345",
     memberSince: 2017,
-    rating: 4.9,
-    reviews: 231,
     responseTime: "within 30 minutes",
     streetLine: "Bungalow 3, Hilltop Road, Near Bus Stand",
   },
 ];
 
-const HOUSE_RULES = [
-  "Check-in from 12:00 PM, Check-out by 11:00 AM",
+const HOUSE_RULES_BASE = [
   "ID proof mandatory for all guests at check-in",
   "No smoking inside the rooms",
   "Pets allowed on request — please inform the host in advance",
@@ -218,11 +213,34 @@ const BookHomestayPage = () => {
   const [selectedRoomKey, setSelectedRoomKey] = useState<string>(
     ROOM_OPTIONS_TEMPLATE[1].key
   );
+  const [reviewStats, setReviewStats] = useState<{ count: number; average: number }>({
+    count: 0,
+    average: 0,
+  });
 
   useEffect(() => {
     if (!id || !user?.id) return;
     trackInteraction(user.id, "HOMESTAY", id as string, "VIEWED");
   }, [id, user?.id]);
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchReviewStats = async () => {
+      try {
+        const data = await getReviews("Homestay", id as string);
+        const list = Array.isArray(data) ? data : [];
+        const count = list.length;
+        const average =
+          count > 0
+            ? list.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / count
+            : 0;
+        setReviewStats({ count, average });
+      } catch (error) {
+        console.error("Error fetching review stats:", error);
+      }
+    };
+    fetchReviewStats();
+  }, [id]);
 
   useEffect(() => {
     const fetchhomestays = async () => {
@@ -242,6 +260,7 @@ const BookHomestayPage = () => {
   }, [id, user]);
 
   const homestay = homestays[0];
+  const hasReviews = reviewStats.count > 0;
 
   // Derive photos, host profile, room pricing, and amenity flags from the
   // homestay id/data so every homestay page renders rich, distinct, and
@@ -260,8 +279,8 @@ const BookHomestayPage = () => {
     : foodAvailable
     ? "Meals available on request (chargeable)"
     : "No meals provided — self cooking / nearby restaurants only";
-  const checkInTime = "12:00 PM";
-  const checkOutTime = "11:00 AM";
+  const checkInTime = homestay?.checkInTime || "12:00 PM";
+  const checkOutTime = homestay?.checkOutTime || "11:00 AM";
 
   const roomOptions = ROOM_OPTIONS_TEMPLATE;
   const selectedRoom = roomOptions.find((r) => r.key === selectedRoomKey) || roomOptions[0];
@@ -435,12 +454,16 @@ const BookHomestayPage = () => {
           ₹ {effectivePricePerNight.toLocaleString()}
           <span className="text-sm font-normal text-gray-500"> / night</span>
         </div>
-        <span className="flex items-center gap-1 text-sm font-semibold text-amber-600">
-          <Star size={14} className="fill-amber-500 text-amber-500" />
-          {host.rating}
-        </span>
+        {hasReviews && (
+          <span className="flex items-center gap-1 text-sm font-semibold text-amber-600">
+            <Star size={14} className="fill-amber-500 text-amber-500" />
+            {reviewStats.average.toFixed(1)}
+          </span>
+        )}
       </div>
-      <p className="text-xs text-gray-500 mb-4">{host.reviews} reviews</p>
+      <p className="text-xs text-gray-500 mb-4">
+        {hasReviews ? `${reviewStats.count} review${reviewStats.count > 1 ? "s" : ""}` : "No reviews yet"}
+      </p>
 
       <div className="flex items-center justify-between text-sm mb-4 border-y border-gray-100 py-3">
         <div>
@@ -515,10 +538,12 @@ const BookHomestayPage = () => {
                   </p>
                 </div>
               </div>
-              <span className="hidden sm:flex items-center gap-1 text-sm font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
-                <Star size={14} className="fill-amber-500 text-amber-500" />
-                {host.rating} · {host.reviews} reviews
-              </span>
+              {hasReviews && (
+                <span className="hidden sm:flex items-center gap-1 text-sm font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
+                  <Star size={14} className="fill-amber-500 text-amber-500" />
+                  {reviewStats.average.toFixed(1)} · {reviewStats.count} review{reviewStats.count > 1 ? "s" : ""}
+                </span>
+              )}
             </div>
 
             <PhotoGallery photos={photos} name={homestay.homestayName} />
@@ -682,7 +707,10 @@ const BookHomestayPage = () => {
             <div className="mb-2">
               <h4 className="text-gray-800 font-semibold mb-3">House Rules</h4>
               <ul className="space-y-2">
-                {HOUSE_RULES.map((rule) => (
+                {[
+                  `Check-in from ${checkInTime}, Check-out by ${checkOutTime}`,
+                  ...HOUSE_RULES_BASE,
+                ].map((rule) => (
                   <li key={rule} className="flex items-start gap-2 text-sm text-gray-600">
                     <Check size={15} className="text-green-600 mt-0.5 shrink-0" />
                     {rule}

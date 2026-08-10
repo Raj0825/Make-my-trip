@@ -505,7 +505,9 @@ export const addhomestay = async (
   location,
   pricePerNight,
   availableRooms,
-  amenities
+  amenities,
+  checkInTime,
+  checkOutTime
 ) => {
   try {
     const res = await axios.post(`${BACKEND_URL}/admin/homestay`, {
@@ -514,6 +516,8 @@ export const addhomestay = async (
       pricePerNight,
       availableRooms,
       amenities,
+      checkInTime,
+      checkOutTime,
     });
     const data = res.data;
     return data;
@@ -528,7 +532,9 @@ export const edithomestay = async (
   location,
   pricePerNight,
   availableRooms,
-  amenities
+  amenities,
+  checkInTime,
+  checkOutTime
 ) => {
   try {
     const res = await axios.put(`${BACKEND_URL}/admin/homestay/${id}`, {
@@ -537,6 +543,8 @@ export const edithomestay = async (
       pricePerNight,
       availableRooms,
       amenities,
+      checkInTime,
+      checkOutTime,
     });
     const data = res.data;
     return data;

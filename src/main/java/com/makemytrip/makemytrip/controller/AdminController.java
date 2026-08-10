@@ -182,6 +182,8 @@ public class AdminController {
             homestay.setAvailableRooms(updatedHomestay.getAvailableRooms());
             homestay.setPricePerNight(updatedHomestay.getPricePerNight());
             homestay.setamenities(updatedHomestay.getamenities());
+            homestay.setCheckInTime(updatedHomestay.getCheckInTime());
+            homestay.setCheckOutTime(updatedHomestay.getCheckOutTime());
             homestayRepository.save(homestay);
             dynamicPricingService.resetBasePrice(DynamicPricingService.HOMESTAY, id, updatedHomestay.getPricePerNight());
             return ResponseEntity.ok(homestay);

@@ -11,6 +11,8 @@ public class Homestay {
     private double pricePerNight;
     private int availableRooms;
     private String amenities;
+    private String checkInTime;
+    private String checkOutTime;
     // Getters and Setters
     public String getId() {
         return _id;
@@ -58,5 +60,21 @@ public class Homestay {
 
     public void setPricePerNight(double pricePerNight) {
         this.pricePerNight = pricePerNight;
+    }
+
+    public String getCheckInTime() {
+        return checkInTime;
+    }
+
+    public void setCheckInTime(String checkInTime) {
+        this.checkInTime = checkInTime;
+    }
+
+    public String getCheckOutTime() {
+        return checkOutTime;
+    }
+
+    public void setCheckOutTime(String checkOutTime) {
+        this.checkOutTime = checkOutTime;
     }
 }
