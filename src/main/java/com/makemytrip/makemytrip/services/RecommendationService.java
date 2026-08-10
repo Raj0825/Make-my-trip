@@ -111,25 +111,27 @@ public class RecommendationService {
     // ---------------------------------------------------------------------
 
     public List<Recommendation> getRecommendations(String userId, int limit) {
-        if (userId == null) return List.of();
+        List<UserTagAffinity> affinities = userId != null
+                ? userTagAffinityRepository.findByUserId(userId)
+                : List.of();
 
-        // Gate recommendations behind an actual booking - browsing/viewing alone (or a
-        // brand-new account) should not surface anything yet.
-        List<UserInteraction> interactions = userInteractionRepository.findByUserId(userId);
-        boolean hasBooked = interactions.stream().anyMatch(i -> "BOOKED".equals(i.getAction()));
-        if (!hasBooked) return List.of();
-
-        List<UserTagAffinity> affinities = userTagAffinityRepository.findByUserId(userId);
-
-        Set<String> alreadySeen = interactions.stream()
+        Set<String> alreadySeen = userId != null
+                ? userInteractionRepository.findByUserId(userId).stream()
                 .map(i -> i.getEntityType() + ":" + i.getEntityId())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toSet())
+                : Set.of();
 
-        Set<String> suppressed = recommendationFeedbackRepository.findByUserIdAndFeedback(userId, "IRRELEVANT").stream()
+        Set<String> suppressed = userId != null
+                ? recommendationFeedbackRepository.findByUserIdAndFeedback(userId, "IRRELEVANT").stream()
                 .map(f -> f.getEntityType() + ":" + f.getEntityId())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toSet())
+                : Set.of();
 
         List<Listing> allListings = allListings();
+
+        if (affinities.isEmpty()) {
+            return List.of(); // no history yet - nothing to base a recommendation on
+        }
 
         // Top tags this user has a positive affinity for (content-based signal)
         List<String> topTags = affinities.stream()
@@ -139,10 +141,8 @@ public class RecommendationService {
                 .limit(3)
                 .toList();
 
-        // No positive affinity tags yet (shouldn't normally happen once hasBooked is true,
-        // since booking always bumps affinities) - nothing relevant to show.
         if (topTags.isEmpty()) {
-            return List.of();
+            return List.of(); // only negative/neutral affinities so far - nothing confident to suggest
         }
 
         // Collaborative signal: other users who also have a strong affinity for the same top tag
@@ -168,14 +168,17 @@ public class RecommendationService {
             List<String> matchedTags = listing.tags().stream().filter(topTags::contains).toList();
             boolean collaborativeMatch = collaborativeEntityKeys.contains(key);
 
-            // Require an actual tag match to what the user booked - collaborative signal is only
-            // used as a tie-breaker/boost below, never as a reason to show something unrelated.
-            if (matchedTags.isEmpty()) continue;
+            if (matchedTags.isEmpty() && !collaborativeMatch) continue;
 
-            String reason = collaborativeMatch
-                    ? "You liked " + matchedTags.get(0) + "! Try " + listing.location()
-                    + " — also popular with travelers who share your taste."
-                    : "You liked " + matchedTags.get(0) + "! Try " + listing.location() + ".";
+            String reason;
+            if (!matchedTags.isEmpty() && collaborativeMatch) {
+                reason = "You liked " + matchedTags.get(0) + "! Try " + listing.location()
+                        + " — also popular with travelers who share your taste.";
+            } else if (!matchedTags.isEmpty()) {
+                reason = "You liked " + matchedTags.get(0) + "! Try " + listing.location() + ".";
+            } else {
+                reason = "Popular with travelers who liked similar destinations to you.";
+            }
 
             results.add(new Recommendation(listing.entityType(), listing.entityId(), listing.name(),
                     listing.location(), listing.price(), reason, matchedTags));
@@ -191,9 +194,8 @@ public class RecommendationService {
             return Double.compare(a.price(), b.price());
         });
 
-        // If personalized candidates run out, return whatever we found (possibly empty) -
-        // never fall back to unrelated "trending" listings.
-        return results.stream().limit(limit).toList();
+        List<Recommendation> topResults = results.stream().limit(limit).toList();
+        return topResults; // strictly based on this user's own history - no trending fallback
     }
 
     // ---------------------------------------------------------------------
