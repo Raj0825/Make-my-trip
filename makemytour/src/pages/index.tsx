@@ -511,6 +511,9 @@ export default function Home() {
             )}
           </div>
         </div>
+
+        <RecommendationsSection userId={user?.id} />
+
         <div className="max-w-7xl mx-auto px-4">
           {/* Offers Section */}
           <section className="my-16">
@@ -549,8 +552,6 @@ export default function Home() {
               ))}
             </div>
           </section>
-
-          <RecommendationsSection userId={user?.id} />
 
           {/* Download App Section */}
           <DownloadApp />
