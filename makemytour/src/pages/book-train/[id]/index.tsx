@@ -1114,20 +1114,21 @@ const BookTrainPage = () => {
         </div>
       </div>
 
-      {ticketData && (
-        <ETicket
-          train={train}
-          coachClass={ticketData.coachClass}
-          seats={ticketData.seats}
-          quota={ticketData.quota}
-          pnr={ticketData.pnr}
-          grandTotal={ticketData.grandTotal}
-          onClose={() => {
-            setTicketData(null);
-            router.push("/profile");
-          }}
-        />
-      )}
+     {ticketData && (
+       <ETicket
+         train={train}
+         coachClass={ticketData.coachClass}
+         seats={ticketData.seats}
+         quota={ticketData.quota}
+         pnr={ticketData.pnr}
+         grandTotal={ticketData.grandTotal}
+         foodItems={ticketData.foodItems}
+         onClose={() => {
+           setTicketData(null);
+           router.push("/profile");
+         }}
+       />
+     )}
     </div>
   );
 };
