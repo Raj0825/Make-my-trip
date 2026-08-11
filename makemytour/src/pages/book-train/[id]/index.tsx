@@ -74,7 +74,7 @@ const COACH_CLASSES: CoachClass[] = [
   { key: "3ac", code: "3A", label: "AC 3 Tier", multiplier: 2.4, berth: true, coachPrefix: "B", coachCount: 4, units: 8 },
   { key: "2ac", code: "2A", label: "AC 2 Tier", multiplier: 3.3, berth: true, coachPrefix: "A", coachCount: 2, units: 8 },
   { key: "1ac", code: "1A", label: "AC First Class", multiplier: 5, berth: true, coachPrefix: "H", coachCount: 1, units: 6 },
-  { key: "fc", code: "FC", label: "First Class", multiplier: 3.6, berth: false, coachPrefix: "FC", coachCount: 2, units: 6 },
+  { key: "fc", code: "CC", label: "Chair Car", multiplier: 3.6, berth: false, coachPrefix: "FC", coachCount: 2, units: 6 },
 ];
 
 // A "bay" pattern is one compartment as seen in a real coach: a set of
