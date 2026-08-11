@@ -74,7 +74,7 @@ const COACH_CLASSES: CoachClass[] = [
   { key: "3ac", code: "3A", label: "AC 3 Tier", multiplier: 2.4, berth: true, coachPrefix: "B", coachCount: 4, units: 8 },
   { key: "2ac", code: "2A", label: "AC 2 Tier", multiplier: 3.3, berth: true, coachPrefix: "A", coachCount: 2, units: 8 },
   { key: "1ac", code: "1A", label: "AC First Class", multiplier: 5, berth: true, coachPrefix: "H", coachCount: 1, units: 6 },
-  { key: "fc", code: "CC", label: "Chair Car", multiplier: 3.6, berth: false, coachPrefix: "FC", coachCount: 2, units: 6 },
+  { key: "Cc", code: "CC", label: "Chair Car", multiplier: 3.6, berth: false, coachPrefix: "FC", coachCount: 2, units: 6 },
 ];
 
 // A "bay" pattern is one compartment as seen in a real coach: a set of
@@ -186,13 +186,23 @@ interface FoodItem {
 
 const FOOD_MENU: FoodItem[] = [
   { id: "f1", name: "Poha with Sev & Chai", category: "Breakfast", veg: true, price: 90 },
-  { id: "f2", name: "Masala Omelette with Toast", category: "Breakfast", veg: false, price: 120 },
-  { id: "f3", name: "Veg Thali (Dal, Sabzi, Rice, Roti)", category: "Lunch", veg: true, price: 180 },
-  { id: "f4", name: "Chicken Biryani", category: "Lunch", veg: false, price: 240 },
-  { id: "f5", name: "Paneer Butter Masala with Rice", category: "Dinner", veg: true, price: 210 },
-  { id: "f6", name: "Egg Curry with Rice", category: "Dinner", veg: false, price: 190 },
-  { id: "f7", name: "Veg Sandwich", category: "Snacks & Beverages", veg: true, price: 70 },
-  { id: "f8", name: "Tea / Coffee", category: "Snacks & Beverages", veg: true, price: 25 },
+  { id: "f2", name: "Idli Sambhar", category: "Breakfast", veg: true, price: 100 },
+  { id: "f3", name: "Masala Omelette with Toast", category: "Breakfast", veg: false, price: 120 },
+  { id: "f4", name: "Keema Paratha", category: "Breakfast", veg: false, price: 140 },
+  { id: "f5", name: "Veg Thali (Dal, Sabzi, Rice, Roti)", category: "Lunch", veg: true, price: 180 },
+  { id: "f6", name: "Rajma Chawal", category: "Lunch", veg: true, price: 150 },
+  { id: "f7", name: "Chicken Biryani", category: "Lunch", veg: false, price: 240 },
+  { id: "f8", name: "Mutton Curry with Rice", category: "Lunch", veg: false, price: 280 },
+  { id: "f9", name: "Paneer Butter Masala with Rice", category: "Dinner", veg: true, price: 210 },
+  { id: "f10", name: "Veg Pulao with Raita", category: "Dinner", veg: true, price: 170 },
+  { id: "f11", name: "Egg Curry with Rice", category: "Dinner", veg: false, price: 190 },
+  { id: "f12", name: "Chicken Curry with Roti", category: "Dinner", veg: false, price: 230 },
+  { id: "f13", name: "Veg Sandwich", category: "Snacks & Beverages", veg: true, price: 70 },
+  { id: "f14", name: "Samosa (2 pcs)", category: "Snacks & Beverages", veg: true, price: 40 },
+  { id: "f15", name: "Chicken Sandwich", category: "Snacks & Beverages", veg: false, price: 100 },
+  { id: "f16", name: "Chicken Roll", category: "Snacks & Beverages", veg: false, price: 120 },
+  { id: "f17", name: "Tea / Coffee", category: "Snacks & Beverages", veg: true, price: 25 },
+  { id: "f18", name: "Packaged Drinking Water", category: "Snacks & Beverages", veg: true, price: 20 },
 ];
 
 function hashToIndex(id: string | undefined, mod: number) {
@@ -312,6 +322,7 @@ function ETicket({
   quota,
   pnr,
   grandTotal,
+  foodItems,
   onClose,
 }: {
   train: Train;
@@ -320,11 +331,17 @@ function ETicket({
   quota: "general" | "tatkal";
   pnr: string;
   grandTotal: number;
+  foodItems: { name: string; veg: boolean; qty: number; price: number }[];
   onClose: () => void;
 }) {
   const handlePrint = () => window.print();
 
   const handleDownload = () => {
+    const foodRows = foodItems.length
+      ? `<tr><td class="label">Meals Ordered</td><td>${foodItems
+          .map((f) => `${f.name} × ${f.qty} (${f.veg ? "Veg" : "Non-Veg"}) — ₹${f.price * f.qty}`)
+          .join("<br/>")}</td></tr>`
+      : "";
     const html = `<!doctype html><html><head><meta charset="utf-8" />
       <title>E-Ticket ${pnr}</title>
       <style>
@@ -333,8 +350,8 @@ function ETicket({
         h1{font-size:18px;margin:0 0 4px}
         .muted{color:#6b7280;font-size:12px}
         table{width:100%;border-collapse:collapse;margin-top:12px}
-        td{padding:6px 0;font-size:13px}
-        .label{color:#6b7280}
+        td{padding:6px 0;font-size:13px;vertical-align:top}
+        .label{color:#6b7280;white-space:nowrap;padding-right:12px}
         .total{font-size:16px;font-weight:bold;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:8px}
       </style></head><body>
       <div class="card">
@@ -348,6 +365,7 @@ function ETicket({
           <tr><td class="label">Class</td><td>${coachClass.label} (${coachClass.code})</td></tr>
           <tr><td class="label">Quota</td><td>${quota === "tatkal" ? "Tatkal" : "General"}</td></tr>
           <tr><td class="label">Seats</td><td>${seats.map((s) => `${s.number} (${s.type})`).join(", ")}</td></tr>
+          ${foodRows}
         </table>
         <p class="total">Total Paid: ₹ ${grandTotal.toLocaleString()}</p>
       </div>
@@ -414,6 +432,27 @@ function ETicket({
             </div>
           </div>
 
+          {foodItems.length > 0 && (
+            <div className="mb-4">
+              <p className="text-gray-400 text-[11px] uppercase mb-1.5">Meals Ordered</p>
+              <div className="space-y-1">
+                {foodItems.map((f) => (
+                  <div key={f.name} className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-1.5 text-gray-700">
+                      {f.veg ? (
+                        <Leaf size={12} className="text-green-600" />
+                      ) : (
+                        <Drumstick size={12} className="text-red-500" />
+                      )}
+                      {f.name} × {f.qty}
+                    </span>
+                    <span className="text-gray-500">₹{f.price * f.qty}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-between items-center border-t border-gray-100 pt-3 mb-5">
             <span className="text-gray-600 text-sm">Total Paid</span>
             <span className="text-xl font-bold">₹ {grandTotal.toLocaleString()}</span>
@@ -448,12 +487,14 @@ const BookTrainPage = () => {
   const [passengerCount, setPassengerCount] = useState(1);
   const [foodEnabled, setFoodEnabled] = useState(false);
   const [foodCart, setFoodCart] = useState<Record<string, number>>({});
+  const [foodFilter, setFoodFilter] = useState<"all" | "veg" | "nonveg">("all");
   const [ticketData, setTicketData] = useState<{
     coachClass: CoachClass;
     seats: Seat[];
     quota: "general" | "tatkal";
     pnr: string;
     grandTotal: number;
+    foodItems: { name: string; veg: boolean; qty: number; price: number }[];
   } | null>(null);
 
   useEffect(() => {
@@ -571,12 +612,19 @@ const BookTrainPage = () => {
       dispatch(setUser(updateuser));
       setopem(false);
       const bookedSeats = seats.filter((s) => selectedSeats.includes(s.number));
+      const orderedFoodItems = Object.entries(foodCart)
+        .map(([fid, qty]) => {
+          const item = FOOD_MENU.find((f) => f.id === fid);
+          return item ? { name: item.name, veg: item.veg, qty, price: item.price } : null;
+        })
+        .filter((f): f is { name: string; veg: boolean; qty: number; price: number } => f !== null);
       setTicketData({
         coachClass,
         seats: bookedSeats,
         quota,
         pnr: generatePNR(data?.id),
         grandTotal,
+        foodItems: orderedFoodItems,
       });
     } catch (error) {
       console.log(error);
