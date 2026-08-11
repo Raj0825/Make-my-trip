@@ -62,41 +62,116 @@ interface CoachClass {
   label: string;
   multiplier: number;
   berth: boolean;
-  seatsPerCoach: number;
+  coachPrefix: string;
+  coachCount: number;
+  units: number; // bays (berth classes) or rows (seat classes)
 }
 
 const COACH_CLASSES: CoachClass[] = [
-  { key: "general", code: "GEN", label: "General", multiplier: 0.45, berth: false, seatsPerCoach: 90 },
-  { key: "local", code: "2S", label: "Local / Passenger", multiplier: 0.3, berth: false, seatsPerCoach: 100 },
-  { key: "sleeper", code: "SL", label: "Sleeper", multiplier: 1, berth: true, seatsPerCoach: 72 },
-  { key: "3ac", code: "3A", label: "AC 3 Tier", multiplier: 2.4, berth: true, seatsPerCoach: 64 },
-  { key: "2ac", code: "2A", label: "AC 2 Tier", multiplier: 3.3, berth: true, seatsPerCoach: 48 },
-  { key: "1ac", code: "1A", label: "AC First Class", multiplier: 5, berth: true, seatsPerCoach: 24 },
-  { key: "fc", code: "FC", label: "First Class", multiplier: 3.6, berth: false, seatsPerCoach: 36 },
+  { key: "general", code: "GEN", label: "General", multiplier: 0.45, berth: false, coachPrefix: "GS", coachCount: 3, units: 9 },
+  { key: "local", code: "2S", label: "Local / Passenger", multiplier: 0.3, berth: false, coachPrefix: "D", coachCount: 4, units: 10 },
+  { key: "sleeper", code: "SL", label: "Sleeper", multiplier: 1, berth: true, coachPrefix: "S", coachCount: 5, units: 9 },
+  { key: "3ac", code: "3A", label: "AC 3 Tier", multiplier: 2.4, berth: true, coachPrefix: "B", coachCount: 4, units: 8 },
+  { key: "2ac", code: "2A", label: "AC 2 Tier", multiplier: 3.3, berth: true, coachPrefix: "A", coachCount: 2, units: 8 },
+  { key: "1ac", code: "1A", label: "AC First Class", multiplier: 5, berth: true, coachPrefix: "H", coachCount: 1, units: 6 },
+  { key: "fc", code: "FC", label: "First Class", multiplier: 3.6, berth: false, coachPrefix: "FC", coachCount: 2, units: 6 },
 ];
 
-const BERTH_PATTERN = ["Lower", "Middle", "Upper", "Side Lower", "Side Upper"];
-const SEAT_PATTERN = ["Window", "Middle", "Aisle"];
+// A "bay" pattern is one compartment as seen in a real coach: a set of
+// facing berths plus the two side berths running along the corridor.
+interface BerthSlot {
+  type: string;
+  side: boolean;
+}
+
+const BAY_8: BerthSlot[] = [
+  { type: "Lower", side: false },
+  { type: "Middle", side: false },
+  { type: "Upper", side: false },
+  { type: "Lower", side: false },
+  { type: "Middle", side: false },
+  { type: "Upper", side: false },
+  { type: "Side Lower", side: true },
+  { type: "Side Upper", side: true },
+];
+const BAY_6: BerthSlot[] = [
+  { type: "Lower", side: false },
+  { type: "Upper", side: false },
+  { type: "Lower", side: false },
+  { type: "Upper", side: false },
+  { type: "Side Lower", side: true },
+  { type: "Side Upper", side: true },
+];
+const CABIN_4: BerthSlot[] = [
+  { type: "Lower", side: false },
+  { type: "Upper", side: false },
+  { type: "Lower", side: false },
+  { type: "Upper", side: false },
+];
+// A "row" is one bench across the aisle, as in general/chair-car coaches.
+const ROW_6: BerthSlot[] = [
+  { type: "Window", side: false },
+  { type: "Middle", side: false },
+  { type: "Aisle", side: false },
+  { type: "Aisle", side: false },
+  { type: "Middle", side: false },
+  { type: "Window", side: false },
+];
+
+function bayPatternFor(coachClass: CoachClass): BerthSlot[] {
+  if (!coachClass.berth) return ROW_6;
+  if (coachClass.key === "2ac") return BAY_6;
+  if (coachClass.key === "1ac") return CABIN_4;
+  return BAY_8;
+}
 
 interface Seat {
   number: string;
   type: string;
   booked: boolean;
+  side: boolean;
+  bay: number;
 }
 
-function generateSeats(coachClass: CoachClass, trainId: string): Seat[] {
-  const pattern = coachClass.berth ? BERTH_PATTERN : SEAT_PATTERN;
-  const count = Math.min(coachClass.seatsPerCoach, 40); // cap for a readable seat map
-  const seed = (trainId || "").length + coachClass.key.length;
-  const seats: Seat[] = [];
-  for (let i = 1; i <= count; i++) {
-    const type = pattern[(i - 1) % pattern.length];
-    // deterministic "already booked" pattern so the map looks realistic
-    const booked = (i * 7 + seed) % 5 === 0;
-    seats.push({ number: `${coachClass.code}-${i}`, type, booked });
-  }
-  return seats;
+interface Coach {
+  number: string;
+  seats: Seat[];
+  berth: boolean;
+  unitLabel: string; // "Bay" or "Row"
 }
+
+function generateCoaches(coachClass: CoachClass, trainId: string): Coach[] {
+  const pattern = bayPatternFor(coachClass);
+  const seed = (trainId || "").length + coachClass.key.length;
+  const coaches: Coach[] = [];
+
+  for (let c = 1; c <= coachClass.coachCount; c++) {
+    const coachNumber = `${coachClass.coachPrefix}${c}`;
+    const seats: Seat[] = [];
+    let seatNum = 1;
+    for (let u = 1; u <= coachClass.units; u++) {
+      pattern.forEach((slot) => {
+        const booked = (seatNum * 7 + seed + c * 3) % 5 === 0;
+        seats.push({
+          number: `${coachNumber}-${seatNum}`,
+          type: slot.type,
+          booked,
+          side: slot.side,
+          bay: u,
+        });
+        seatNum++;
+      });
+    }
+    coaches.push({
+      number: coachNumber,
+      seats,
+      berth: coachClass.berth,
+      unitLabel: coachClass.berth ? "Bay" : "Row",
+    });
+  }
+  return coaches;
+}
+
 
 // ---------------------------------------------------------------------------
 // Food menu for e-catering during the journey
@@ -399,15 +474,23 @@ const BookTrainPage = () => {
   const coachClass = COACH_CLASSES.find((c) => c.key === coachKey) || COACH_CLASSES[2];
   const train = trains[0];
 
-  const seats = useMemo(() => {
+  const coaches = useMemo(() => {
     if (!train) return [];
-    return generateSeats(coachClass, train.id);
+    return generateCoaches(coachClass, train.id);
   }, [train, coachClass]);
 
-  // reset seat selection whenever the class changes, since seat numbers differ
+  const [activeCoachNumber, setActiveCoachNumber] = useState<string>("");
+  useEffect(() => {
+    if (coaches.length > 0) setActiveCoachNumber(coaches[0].number);
+  }, [coaches]);
+
+  const activeCoach = coaches.find((c) => c.number === activeCoachNumber) || coaches[0];
+  const seats = activeCoach?.seats || [];
+
+  // reset seat selection whenever the class, quota, or active coach changes
   useEffect(() => {
     setSelectedSeats([]);
-  }, [coachKey, quota]);
+  }, [coachKey, quota, activeCoachNumber]);
 
   if (loading) {
     return <Loader />;
@@ -529,7 +612,7 @@ const BookTrainPage = () => {
               <Armchair className="w-4 h-4 mr-2" />
               Class & Quota
             </Label>
-            <Input value={`${coachClass.label} (${coachClass.code}) · ${quota === "tatkal" ? "Tatkal" : "General"}`} readOnly />
+            <Input value={`${coachClass.label} (${coachClass.code}) · Coach ${activeCoachNumber} · ${quota === "tatkal" ? "Tatkal" : "General"}`} readOnly />
           </div>
           <div className="space-y-2">
             <Label className="flex items-center">
@@ -730,42 +813,121 @@ const BookTrainPage = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 mb-3 text-[11px] text-gray-500">
+            {/* Coach tabs */}
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+              {coaches.map((c) => (
+                <button
+                  key={c.number}
+                  type="button"
+                  onClick={() => setActiveCoachNumber(c.number)}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-semibold transition-all ${
+                    activeCoachNumber === c.number
+                      ? "bg-blue-600 border-blue-600 text-white"
+                      : "bg-white border-gray-300 text-gray-600 hover:border-blue-400"
+                  }`}
+                >
+                  <TrainFront size={14} />
+                  Coach {c.number}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-4 mb-4 text-[11px] text-gray-500">
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-white border border-gray-300 inline-block" /> Available</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-600 inline-block" /> Selected</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-300 inline-block" /> Booked</span>
             </div>
 
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-2">
-              {seats.map((seat) => {
-                const isSelected = selectedSeats.includes(seat.number);
-                return (
-                  <button
-                    key={seat.number}
-                    type="button"
-                    disabled={seat.booked}
-                    onClick={() => toggleSeat(seat)}
-                    title={`${seat.number} · ${seat.type}`}
-                    className={`rounded-lg border text-[10px] py-2 px-1 flex flex-col items-center transition-all ${
-                      seat.booked
-                        ? "bg-gray-200 border-gray-200 text-gray-400 cursor-not-allowed"
-                        : isSelected
-                        ? "bg-blue-600 border-blue-600 text-white"
-                        : "bg-white border-gray-300 text-gray-600 hover:border-blue-400"
-                    }`}
-                  >
-                    <Armchair size={14} />
-                    <span className="font-medium mt-0.5">{seat.number}</span>
-                    <span className="text-[9px] opacity-80">{seat.type}</span>
-                  </button>
-                );
-              })}
-            </div>
+            {activeCoach && (
+              <div className="border border-gray-200 rounded-xl p-4 bg-gray-50/60 mb-2 overflow-x-auto">
+                <p className="text-xs font-semibold text-gray-500 mb-3">
+                  Coach {activeCoach.number} layout
+                  {activeCoach.berth ? " — facing berths + side berths per bay" : " — bench seating either side of the aisle"}
+                </p>
+
+                <div className="space-y-3 min-w-[420px]">
+                  {Array.from(new Set(seats.map((s) => s.bay))).map((bayNum) => {
+                    const baySeats = seats.filter((s) => s.bay === bayNum);
+                    const mainSeats = baySeats.filter((s) => !s.side);
+                    const sideSeats = baySeats.filter((s) => s.side);
+
+                    const SeatBtn = ({ seat }: { seat: Seat }) => {
+                      const isSelected = selectedSeats.includes(seat.number);
+                      return (
+                        <button
+                          type="button"
+                          disabled={seat.booked}
+                          onClick={() => toggleSeat(seat)}
+                          title={`${seat.number} · ${seat.type}`}
+                          className={`rounded-lg border text-[10px] py-2 px-1 w-full flex flex-col items-center transition-all ${
+                            seat.booked
+                              ? "bg-gray-200 border-gray-200 text-gray-400 cursor-not-allowed"
+                              : isSelected
+                              ? "bg-blue-600 border-blue-600 text-white"
+                              : "bg-white border-gray-300 text-gray-600 hover:border-blue-400"
+                          }`}
+                        >
+                          <Armchair size={13} />
+                          <span className="font-medium mt-0.5">{seat.number.split("-")[1]}</span>
+                          <span className="text-[9px] opacity-80 leading-tight text-center">{seat.type}</span>
+                        </button>
+                      );
+                    };
+
+                    if (activeCoach.berth) {
+                      return (
+                        <div key={bayNum} className="flex items-stretch gap-2 bg-white rounded-lg border border-gray-100 p-2">
+                          <span className="text-[10px] text-gray-400 font-medium self-center w-8 shrink-0">Bay {bayNum}</span>
+                          <div
+                            className="grid gap-1.5 flex-1"
+                            style={{ gridTemplateColumns: `repeat(${mainSeats.length / 2}, minmax(0, 1fr))` }}
+                          >
+                            {mainSeats.map((seat) => (
+                              <SeatBtn key={seat.number} seat={seat} />
+                            ))}
+                          </div>
+                          {sideSeats.length > 0 && (
+                            <div className="flex flex-col gap-1.5 w-16 shrink-0 border-l border-dashed border-gray-200 pl-2">
+                              {sideSeats.map((seat) => (
+                                <SeatBtn key={seat.number} seat={seat} />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    // Non-berth: bench row with an aisle gap down the middle
+                    const left = mainSeats.slice(0, mainSeats.length / 2);
+                    const right = mainSeats.slice(mainSeats.length / 2);
+                    return (
+                      <div key={bayNum} className="flex items-stretch gap-2 bg-white rounded-lg border border-gray-100 p-2">
+                        <span className="text-[10px] text-gray-400 font-medium self-center w-8 shrink-0">Row {bayNum}</span>
+                        <div className="grid grid-cols-3 gap-1.5 flex-1">
+                          {left.map((seat) => (
+                            <SeatBtn key={seat.number} seat={seat} />
+                          ))}
+                        </div>
+                        <div className="w-4 shrink-0 flex items-center justify-center">
+                          <div className="w-px h-full border-l border-dashed border-gray-200" />
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5 flex-1">
+                          {right.map((seat) => (
+                            <SeatBtn key={seat.number} seat={seat} />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <p className="text-xs text-gray-400 flex items-center gap-1">
               <Info size={12} />
               {seatsReady
-                ? `${selectedSeats.length} seat(s) selected.`
-                : `Select ${passengerCount} seat(s) — ${selectedSeats.length} chosen so far.`}
+                ? `${selectedSeats.length} seat(s) selected in Coach ${activeCoachNumber}.`
+                : `Select ${passengerCount} seat(s) in Coach ${activeCoachNumber} — ${selectedSeats.length} chosen so far.`}
             </p>
           </div>
 
