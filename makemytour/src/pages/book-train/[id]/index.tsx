@@ -74,7 +74,7 @@ const COACH_CLASSES: CoachClass[] = [
   { key: "3ac", code: "3A", label: "AC 3 Tier", multiplier: 2.4, berth: true, coachPrefix: "B", coachCount: 4, units: 8 },
   { key: "2ac", code: "2A", label: "AC 2 Tier", multiplier: 3.3, berth: true, coachPrefix: "A", coachCount: 2, units: 8 },
   { key: "1ac", code: "1A", label: "AC First Class", multiplier: 5, berth: true, coachPrefix: "H", coachCount: 1, units: 6 },
-  { key: "Cc", code: "CC", label: "Chair Car", multiplier: 3.6, berth: false, coachPrefix: "FC", coachCount: 2, units: 6 },
+  { key: "fc", code: "FC", label: "First Class", multiplier: 3.6, berth: false, coachPrefix: "FC", coachCount: 2, units: 6 },
 ];
 
 // A "bay" pattern is one compartment as seen in a real coach: a set of
@@ -999,52 +999,90 @@ const BookTrainPage = () => {
 
             {foodEnabled && (
               <div className="space-y-4">
-                {["Breakfast", "Lunch", "Dinner", "Snacks & Beverages"].map((cat) => (
-                  <div key={cat}>
-                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{cat}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {FOOD_MENU.filter((f) => f.category === cat).map((item) => {
-                        const qty = foodCart[item.id] || 0;
-                        return (
-                          <div
-                            key={item.id}
-                            className="flex items-center justify-between border border-gray-100 rounded-lg p-2.5"
-                          >
-                            <div className="flex items-start gap-2">
-                              {item.veg ? (
-                                <Leaf size={14} className="text-green-600 mt-0.5" />
-                              ) : (
-                                <Drumstick size={14} className="text-red-500 mt-0.5" />
-                              )}
-                              <div>
-                                <p className="text-sm font-medium leading-tight">{item.name}</p>
-                                <p className="text-xs text-gray-500">₹{item.price}</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFoodFilter("all")}
+                    className={`text-xs font-medium px-3 py-1.5 rounded-full border ${
+                      foodFilter === "all" ? "bg-gray-800 text-white border-gray-800" : "border-gray-300 text-gray-600"
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFoodFilter("veg")}
+                    className={`flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border ${
+                      foodFilter === "veg" ? "bg-green-600 text-white border-green-600" : "border-gray-300 text-gray-600"
+                    }`}
+                  >
+                    <Leaf size={12} /> Veg
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFoodFilter("nonveg")}
+                    className={`flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border ${
+                      foodFilter === "nonveg" ? "bg-red-500 text-white border-red-500" : "border-gray-300 text-gray-600"
+                    }`}
+                  >
+                    <Drumstick size={12} /> Non-Veg
+                  </button>
+                </div>
+
+                {["Breakfast", "Lunch", "Dinner", "Snacks & Beverages"].map((cat) => {
+                  const items = FOOD_MENU.filter(
+                    (f) =>
+                      f.category === cat &&
+                      (foodFilter === "all" || (foodFilter === "veg" ? f.veg : !f.veg))
+                  );
+                  if (items.length === 0) return null;
+                  return (
+                    <div key={cat}>
+                      <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{cat}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {items.map((item) => {
+                          const qty = foodCart[item.id] || 0;
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between border border-gray-100 rounded-lg p-2.5"
+                            >
+                              <div className="flex items-start gap-2">
+                                {item.veg ? (
+                                  <Leaf size={14} className="text-green-600 mt-0.5" />
+                                ) : (
+                                  <Drumstick size={14} className="text-red-500 mt-0.5" />
+                                )}
+                                <div>
+                                  <p className="text-sm font-medium leading-tight">{item.name}</p>
+                                  <p className="text-xs text-gray-500">₹{item.price}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => changeFoodQty(item.id, -1)}
+                                  className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-30"
+                                  disabled={qty === 0}
+                                >
+                                  <Minus size={12} />
+                                </button>
+                                <span className="w-4 text-center text-sm">{qty}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => changeFoodQty(item.id, 1)}
+                                  className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center"
+                                >
+                                  <Plus size={12} />
+                                </button>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => changeFoodQty(item.id, -1)}
-                                className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-30"
-                                disabled={qty === 0}
-                              >
-                                <Minus size={12} />
-                              </button>
-                              <span className="w-4 text-center text-sm">{qty}</span>
-                              <button
-                                type="button"
-                                onClick={() => changeFoodQty(item.id, 1)}
-                                className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center"
-                              >
-                                <Plus size={12} />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1114,21 +1152,21 @@ const BookTrainPage = () => {
         </div>
       </div>
 
-     {ticketData && (
-       <ETicket
-         train={train}
-         coachClass={ticketData.coachClass}
-         seats={ticketData.seats}
-         quota={ticketData.quota}
-         pnr={ticketData.pnr}
-         grandTotal={ticketData.grandTotal}
-         foodItems={ticketData.foodItems}
-         onClose={() => {
-           setTicketData(null);
-           router.push("/profile");
-         }}
-       />
-     )}
+      {ticketData && (
+        <ETicket
+          train={train}
+          coachClass={ticketData.coachClass}
+          seats={ticketData.seats}
+          quota={ticketData.quota}
+          pnr={ticketData.pnr}
+          grandTotal={ticketData.grandTotal}
+          foodItems={ticketData.foodItems}
+          onClose={() => {
+            setTicketData(null);
+            router.push("/profile");
+          }}
+        />
+      )}
     </div>
   );
 };
