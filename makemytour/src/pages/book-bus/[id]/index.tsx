@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
+import SeatTypeChart from "@/components/pricing/SeatTypeChart";
 import ReviewSection from "@/components/reviews/ReviewSection";
 import {
   Bus as BusIcon,
@@ -980,6 +981,15 @@ const BookBusPage = () => {
               </Dialog>
               <p className="text-[11px] text-gray-400 text-center mt-3">Free cancellation up to 6 hours before departure</p>
             </div>
+            <SeatTypeChart
+              title="Price by Bus Type"
+              selectedKey={busClassKey}
+              options={BUS_CLASSES.map((c) => ({
+                key: c.key,
+                label: c.label,
+                price: Math.round(bus.price * c.multiplier),
+              }))}
+            />
             <DynamicPriceCard entityType="BUS" entityId={id as string} userId={user?.id} />
           </div>
         </div>

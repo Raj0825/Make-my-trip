@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
+import SeatTypeChart from "@/components/pricing/SeatTypeChart";
 import ReviewSection from "@/components/reviews/ReviewSection";
 import {
   Car as CarIcon,
@@ -35,6 +36,15 @@ import { Label } from "@/components/ui/label";
 import SignupDialog from "@/components/SignupDialog";
 import Loader from "@/components/Loader";
 import { setUser } from "@/store";
+
+// Typical cab tiers and their fare multiplier relative to a Sedan (baseline),
+// used to show a price comparison chart across cab types.
+const CAB_TIERS = [
+  { key: "Mini", multiplier: 0.75 },
+  { key: "Sedan", multiplier: 1 },
+  { key: "SUV", multiplier: 1.4 },
+  { key: "Prime", multiplier: 1.8 },
+];
 
 const BookCabPage = () => {
   const router = useRouter();
@@ -269,6 +279,27 @@ const BookCabPage = () => {
               </DialogContent>
             )}
           </Dialog>
+        </div>
+        <div className="mb-4">
+          <SeatTypeChart
+            title="Price by Cab Type"
+            selectedKey={
+              CAB_TIERS.find((t) => t.key.toLowerCase() === (cab.cabType || "").toLowerCase())?.key || cab.cabType
+            }
+            options={(() => {
+              const matchedTier = CAB_TIERS.find((t) => t.key.toLowerCase() === (cab.cabType || "").toLowerCase());
+              const basePrice = matchedTier ? cab.price / matchedTier.multiplier : cab.price;
+              const opts = CAB_TIERS.map((t) => ({
+                key: t.key,
+                label: t.key,
+                price: Math.round(basePrice * t.multiplier),
+              }));
+              if (!matchedTier) {
+                opts.push({ key: cab.cabType, label: cab.cabType, price: Math.round(cab.price) });
+              }
+              return opts;
+            })()}
+          />
         </div>
         <div className="mb-4">
           <DynamicPriceCard entityType="CAB" entityId={id as string} userId={user?.id} />

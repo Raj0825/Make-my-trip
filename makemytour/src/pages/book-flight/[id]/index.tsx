@@ -3,6 +3,7 @@ import ReviewSection from "@/components/reviews/ReviewSection";
 import TrackFlightButton from "@/components/flight-tracking/TrackFlightButton";
 import FlightStatusBadge from "@/components/flight-tracking/FlightStatusBadge";
 import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
+import SeatTypeChart from "@/components/pricing/SeatTypeChart";
 import { getFlightStatus } from "@/api";
 import SeatMap from "@/components/seat-selection/SeatMap";
 import { saveBookingPreferences } from "@/api";
@@ -861,6 +862,18 @@ const BookFlightPage = () => {
               </div>
             </div>
           </div>
+        </div>
+        <div className="mb-4">
+          <SeatTypeChart
+            title="Price by Cabin Class"
+            selectedKey={travelClass}
+            options={CLASS_OPTIONS.map((c) => ({
+              key: c.name,
+              label: c.name,
+              sublabel: c.blurb,
+              price: Math.round((flight?.price ?? 0) * c.multiplier),
+            }))}
+          />
         </div>
         <div className="mb-4">
           <DynamicPriceCard entityType="FLIGHT" entityId={id as string} userId={user?.id} />

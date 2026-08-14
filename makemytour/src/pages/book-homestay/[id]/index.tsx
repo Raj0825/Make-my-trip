@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
+import SeatTypeChart from "@/components/pricing/SeatTypeChart";
 import ReviewSection from "@/components/reviews/ReviewSection";
 import {
   HomeIcon,
@@ -720,6 +721,18 @@ const BookHomestayPage = () => {
             </div>
           </div>
 
+          <div className="mt-4">
+            <SeatTypeChart
+              title="Price by Room Type"
+              selectedKey={selectedRoomKey}
+              options={roomOptions.map((room) => ({
+                key: room.key,
+                label: room.name,
+                sublabel: `${room.beds} bed${room.beds > 1 ? "s" : ""}`,
+                price: Math.max(0, homestay.pricePerNight + room.priceDelta),
+              }))}
+            />
+          </div>
           <div className="mt-4">
             <DynamicPriceCard entityType="HOMESTAY" entityId={id as string} userId={user?.id} />
           </div>
