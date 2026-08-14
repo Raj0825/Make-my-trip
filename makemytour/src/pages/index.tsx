@@ -58,18 +58,21 @@ export default function Home() {
       description: "Get up to 20% off on domestic flights",
       imageUrl:
         "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800",
+      bookingType: "flights",
     },
     {
       title: "International Hotels",
       description: "Book luxury hotels worldwide",
       imageUrl:
         "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800",
+      bookingType: "hotels",
     },
     {
       title: "Holiday Packages",
       description: "Exclusive deals on holiday packages",
       imageUrl:
         "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800",
+      bookingType: "homestays",
     },
   ];
 
@@ -235,6 +238,12 @@ export default function Home() {
       router.push(`/book-homestay/${id}`);
     }
   };
+  const handleOfferBookNow = (type: string) => {
+    setbookingtype(type);
+    setTimeout(() => {
+      document.getElementById("search-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat"
@@ -244,7 +253,7 @@ export default function Home() {
       }}
     >
       <main className="container mx-auto px-4 py-6">
-        <nav className="bg-white rounded-xl shadow-lg mx-auto max-w-5xl mb-6 p-4 overflow-x-auto">
+        <nav className="bg-white rounded-xl shadow-lg mx-auto max-w-5xl mb-6 p-4 overflow-x-auto animate-fade-in-up">
           <div className="flex justify-between items-center min-w-max space-x-8">
             <NavItem
               icon={<Plane />}
@@ -288,8 +297,8 @@ export default function Home() {
           </div>
         </nav>
 
-        <div className="bg-white rounded-xl shadow-lg mx-auto max-w-5xl p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div id="search-section" className="bg-white rounded-xl shadow-lg mx-auto max-w-5xl p-6 animate-fade-in-up">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {(bookingtype === "flights" ||
               bookingtype === "trains" ||
               bookingtype === "buses" ||
@@ -356,11 +365,14 @@ export default function Home() {
                 type="number"
               />
             </div>
-
-            <Button className="col-span-1 h-full" onClick={handlesearch}>
-              SEARCH
-            </Button>
           </div>
+
+          <Button
+            className="w-full mt-4 py-6 text-base font-semibold tracking-wide rounded-lg transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]"
+            onClick={handlesearch}
+          >
+            SEARCH
+          </Button>
           <div className="mt-6">
             <h2 className="text-xl font-semibold mb-4 text-white">
               Search Results
@@ -520,7 +532,7 @@ export default function Home() {
             <h2 className="text-2xl font-bold mb-8 text-white">Best Offers</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {offers.map((offer, index) => (
-                <OfferCard key={index} {...offer} />
+                <OfferCard key={index} {...offer} onBookNow={() => handleOfferBookNow(offer.bookingType)} />
               ))}
             </div>
           </section>
@@ -560,14 +572,23 @@ export default function Home() {
     </div>
   );
 }
-const OfferCard = ({ title, description, imageUrl }: any) => {
+const OfferCard = ({ title, description, imageUrl, onBookNow }: any) => {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <img src={imageUrl} alt={title} className="w-full h-48 object-cover" />
+    <div className="bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
+      <div className="overflow-hidden">
+        <img
+          src={imageUrl}
+          alt={title}
+          className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
+        />
+      </div>
       <div className="p-4">
         <h3 className="font-semibold text-lg mb-2">{title}</h3>
         <p className="text-gray-600 text-sm">{description}</p>
-        <button className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+        <button
+          onClick={onBookNow}
+          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        >
           Book Now
         </button>
       </div>
@@ -648,7 +669,7 @@ const WonderCard = ({ title, imageUrl }: any) => {
 function NavItem({ icon, text, active = false, onClick }: any) {
   return (
     <button
-      className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+      className={`flex flex-col items-center p-2 rounded-lg transition-all duration-200 hover:scale-105 ${
         active ? "text-blue-500" : "text-gray-600 hover:text-blue-500"
       }`}
       onClick={onClick}
