@@ -99,6 +99,7 @@ const ProfilePage = () => {
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelError, setCancelError] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "active" | "cancelled">("all");
+  const [detailsBooking, setDetailsBooking] = useState<any>(null);
 
   const logout = () => { dispatch(clearUser()); router.push("/"); };
 
@@ -142,10 +143,16 @@ const ProfilePage = () => {
   };
 
   const allBookings = (user?.bookings || []).filter((b: any) => b != null);
+  const sortedBookings = [...allBookings].sort((a: any, b: any) => {
+    const dateA = new Date(a?.date).getTime();
+    const dateB = new Date(b?.date).getTime();
+    if (isNaN(dateA) || isNaN(dateB)) return 0;
+    return dateB - dateA; // latest first
+  });
   const filteredBookings =
-    activeTab === "active"    ? allBookings.filter((b: any) => !b.cancelled) :
-    activeTab === "cancelled" ? allBookings.filter((b: any) => b.cancelled) :
-    allBookings;
+    activeTab === "active"    ? sortedBookings.filter((b: any) => !b.cancelled) :
+    activeTab === "cancelled" ? sortedBookings.filter((b: any) => b.cancelled) :
+    sortedBookings;
 
   const activeCount    = allBookings.filter((b: any) => !b.cancelled).length;
   const cancelledCount = allBookings.filter((b: any) =>  b.cancelled).length;
@@ -232,33 +239,6 @@ const ProfilePage = () => {
                 <p className="text-xs text-gray-500 mt-0.5">Cancelled</p>
               </div>
             </div>
-
-            {/* Cancellation policy */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h3 className="font-bold text-sm text-gray-700 mb-3 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-orange-500" /> Cancellation Policy
-              </h3>
-              <div className="space-y-2.5">
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-3 h-3 text-green-600" />
-                  </div>
-                  <p className="text-xs text-gray-600"><span className="font-semibold text-gray-800">50% refund</span> if cancelled within 24 hrs of booking</p>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
-                    <X className="w-3 h-3 text-red-500" />
-                  </div>
-                  <p className="text-xs text-gray-600"><span className="font-semibold text-gray-800">No refund</span> after 24 hrs of booking</p>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                    <Clock className="w-3 h-3 text-blue-500" />
-                  </div>
-                  <p className="text-xs text-gray-600">Refunds processed within <span className="font-semibold text-gray-800">7 working days</span></p>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Right — Bookings */}
@@ -296,7 +276,10 @@ const ProfilePage = () => {
 
                     return (
                       <div key={index}
-                        className={`rounded-xl border transition-all ${
+                        onClick={() => setDetailsBooking(booking)}
+                        role="button"
+                        tabIndex={0}
+                        className={`rounded-xl border transition-all cursor-pointer ${
                           booking.cancelled
                             ? "border-gray-200 bg-gray-50"
                             : "border-gray-200 hover:border-blue-200 hover:shadow-md bg-white"
@@ -376,6 +359,7 @@ const ProfilePage = () => {
                               {/* Track Refund button */}
                               {booking.refundStatus && booking.refundStatus !== "NO_REFUND" && (
                                 <Link href={`/refund/${booking.bookingId}`}
+                                  onClick={(e) => e.stopPropagation()}
                                   className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
                                   Track Refund →
                                 </Link>
@@ -397,7 +381,7 @@ const ProfilePage = () => {
                                   </p>
                                 )}
                               </div>
-                              <button onClick={() => openCancelDialog(booking)}
+                              <button onClick={(e) => { e.stopPropagation(); openCancelDialog(booking); }}
                                 className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600 font-semibold transition-colors">
                                 <XCircle className="w-4 h-4" /> Cancel
                               </button>
@@ -499,6 +483,114 @@ const ProfilePage = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Booking Details Dialog */}
+      <Dialog open={!!detailsBooking} onOpenChange={(open) => !open && setDetailsBooking(null)}>
+        <DialogContent className="sm:max-w-[480px] bg-white rounded-2xl">
+          {detailsBooking && (() => {
+            const cfg = getConfig(detailsBooking.type);
+            const Icon = cfg.icon;
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-bold flex items-center gap-2 text-gray-800">
+                    <div className={`w-8 h-8 rounded-full ${cfg.bg} flex items-center justify-center`}>
+                      <Icon className={`w-4 h-4 ${cfg.accent}`} />
+                    </div>
+                    {detailsBooking.type} Booking
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 mt-1">
+                  <div className="flex items-center gap-2">
+                    {detailsBooking.cancelled ? (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-red-600">Cancelled</span>
+                    ) : (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-green-100 text-green-600">Active</span>
+                    )}
+                    <span className="text-xs text-gray-400 font-mono">{detailsBooking.bookingId}</span>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-2.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Booking Date</span>
+                      <span className="font-semibold text-gray-800">{formatDate(detailsBooking.date)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Quantity</span>
+                      <span className="font-semibold text-gray-800">{detailsBooking.quantity}</span>
+                    </div>
+                    {detailsBooking.travelClass && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Class</span>
+                        <span className="font-semibold text-gray-800">{detailsBooking.travelClass}</span>
+                      </div>
+                    )}
+                    {detailsBooking.roomType && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Room Type</span>
+                        <span className="font-semibold text-gray-800">{detailsBooking.roomType}</span>
+                      </div>
+                    )}
+                    {detailsBooking.seatNumbers && detailsBooking.seatNumbers.length > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Seats</span>
+                        <span className="font-semibold text-gray-800">{detailsBooking.seatNumbers.join(", ")}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-2 border-t border-gray-200">
+                      <span className="text-gray-500">Total Paid</span>
+                      <span className="font-bold text-gray-900 flex items-center gap-0.5">
+                        <IndianRupee className="w-3.5 h-3.5" />{detailsBooking.totalPrice?.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  </div>
+
+                  {detailsBooking.cancelled && (
+                    <div className="bg-red-50 border border-red-100 rounded-xl p-4 space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-red-600 font-semibold">
+                        <XCircle className="w-4 h-4" /> Cancelled
+                      </div>
+                      {detailsBooking.cancellationReason && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Reason</span>
+                          <span className="font-semibold text-gray-700">{detailsBooking.cancellationReason}</span>
+                        </div>
+                      )}
+                      {detailsBooking.cancelledAt && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Cancelled On</span>
+                          <span className="font-semibold text-gray-700">{detailsBooking.cancelledAt}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Refund</span>
+                        {detailsBooking.refundAmount > 0 ? (
+                          <span className="font-semibold text-emerald-600 flex items-center gap-0.5">
+                            <IndianRupee className="w-3.5 h-3.5" />{detailsBooking.refundAmount?.toLocaleString("en-IN")}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">No refund</span>
+                        )}
+                      </div>
+                      {detailsBooking.refundStatus && detailsBooking.refundStatus !== "NO_REFUND" && (
+                        <Link href={`/refund/${detailsBooking.bookingId}`}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+                          Track Refund →
+                        </Link>
+                      )}
+                    </div>
+                  )}
+
+                  <Button onClick={() => setDetailsBooking(null)} variant="outline"
+                    className="w-full rounded-xl font-semibold border-gray-200">
+                    Close
+                  </Button>
+                </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
