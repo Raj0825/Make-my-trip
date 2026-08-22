@@ -160,6 +160,8 @@ public class AdminController {
             cab.setArrivalTime(updatedCab.getArrivalTime());
             cab.setPrice(updatedCab.getPrice());
             cab.setAvailableSeats(updatedCab.getAvailableSeats());
+            cab.setDistanceKm(updatedCab.getDistanceKm());
+            cab.setEstimatedDuration(updatedCab.getEstimatedDuration());
             cabRepository.save(cab);
             dynamicPricingService.resetBasePrice(DynamicPricingService.CAB, id, updatedCab.getPrice());
             return ResponseEntity.ok(cab);

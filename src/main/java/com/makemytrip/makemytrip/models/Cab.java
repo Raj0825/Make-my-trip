@@ -13,6 +13,8 @@ public class Cab {
     private String arrivalTime;
     private double price;
     private int availableSeats;
+    private double distanceKm;
+    private String estimatedDuration;
 
     // Getters and Setters
 
@@ -78,5 +80,21 @@ public class Cab {
 
     public void setAvailableSeats(int availableSeats) {
         this.availableSeats = availableSeats;
+    }
+
+    public double getDistanceKm() {
+        return distanceKm;
+    }
+
+    public void setDistanceKm(double distanceKm) {
+        this.distanceKm = distanceKm;
+    }
+
+    public String getEstimatedDuration() {
+        return estimatedDuration;
+    }
+
+    public void setEstimatedDuration(String estimatedDuration) {
+        this.estimatedDuration = estimatedDuration;
     }
 }

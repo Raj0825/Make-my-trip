@@ -45,6 +45,8 @@ interface Cab {
   arrivalTime: string;
   price: number;
   availableSeats: number;
+  distanceKm?: number;
+  estimatedDuration?: string;
 }
 import {
   Dialog,
@@ -381,9 +383,13 @@ const BookCabPage = () => {
     return hashToIndex(cab?.id, 4) !== 0; // ~3/4 of unlabeled cabs default to AC
   }, [cab]);
 
-  const distanceKm = useMemo(() => 12 + hashToIndex(cab?.id, 38), [cab]); // deterministic 12-49 km
+  const distanceKm = useMemo(() => {
+    if (cab?.distanceKm && cab.distanceKm > 0) return cab.distanceKm;
+    return 12 + hashToIndex(cab?.id, 38); // fallback deterministic 12-49 km
+  }, [cab]);
   const durationLabel = useMemo(() => {
     if (!cab) return null;
+    if (cab.estimatedDuration && cab.estimatedDuration.trim() !== "") return cab.estimatedDuration;
     const ms = new Date(cab.arrivalTime).getTime() - new Date(cab.departureTime).getTime();
     if (isNaN(ms) || ms <= 0) return null;
     const hrs = Math.floor(ms / 3600000);

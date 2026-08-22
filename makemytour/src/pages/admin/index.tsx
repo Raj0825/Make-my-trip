@@ -864,32 +864,30 @@ interface Cab {
   arrivalTime: string;
   price: number;
   availableSeats: number;
+  distanceKm: number;
+  estimatedDuration: string;
 }
 
+const EMPTY_CAB_FORM: Cab = {
+  cabType: "",
+  from: "",
+  to: "",
+  departureTime: "",
+  arrivalTime: "",
+  price: 0,
+  availableSeats: 0,
+  distanceKm: 0,
+  estimatedDuration: "",
+};
+
 function AddEditCab({ cab, onSaved }: { cab: Cab | null; onSaved?: () => void }) {
-  const [formData, setFormData] = useState<Cab>({
-    cabType: "",
-    from: "",
-    to: "",
-    departureTime: "",
-    arrivalTime: "",
-    price: 0,
-    availableSeats: 0,
-  });
+  const [formData, setFormData] = useState<Cab>(EMPTY_CAB_FORM);
 
   useEffect(() => {
     if (cab) {
-      setFormData(cab);
+      setFormData({ ...EMPTY_CAB_FORM, ...cab });
     } else {
-      setFormData({
-        cabType: "",
-        from: "",
-        to: "",
-        departureTime: "",
-        arrivalTime: "",
-        price: 0,
-        availableSeats: 0,
-      });
+      setFormData(EMPTY_CAB_FORM);
     }
   }, [cab]);
 
@@ -909,7 +907,9 @@ function AddEditCab({ cab, onSaved }: { cab: Cab | null; onSaved?: () => void })
         formData.departureTime,
         formData.arrivalTime,
         formData.price,
-        formData.availableSeats
+        formData.availableSeats,
+        formData.distanceKm,
+        formData.estimatedDuration
       );
       onSaved?.();
       return;
@@ -921,19 +921,13 @@ function AddEditCab({ cab, onSaved }: { cab: Cab | null; onSaved?: () => void })
       formData.departureTime,
       formData.arrivalTime,
       formData.price,
-      formData.availableSeats
+      formData.availableSeats,
+      formData.distanceKm,
+      formData.estimatedDuration
     );
     onSaved?.();
     if (!cab) {
-      setFormData({
-        cabType: "",
-        from: "",
-        to: "",
-        departureTime: "",
-        arrivalTime: "",
-        price: 0,
-        availableSeats: 0,
-      });
+      setFormData(EMPTY_CAB_FORM);
     }
   };
 
@@ -1015,6 +1009,32 @@ function AddEditCab({ cab, onSaved }: { cab: Cab | null; onSaved?: () => void })
           onChange={handleChange}
           required
         />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="distanceKm">Distance (km)</Label>
+          <Input
+            id="distanceKm"
+            name="distanceKm"
+            type="number"
+            step="0.1"
+            min="0"
+            value={formData.distanceKm}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="estimatedDuration">Estimated Time</Label>
+          <Input
+            id="estimatedDuration"
+            name="estimatedDuration"
+            placeholder="e.g. 1h 20m"
+            value={formData.estimatedDuration}
+            onChange={handleChange}
+            required
+          />
+        </div>
       </div>
       <Button type="submit">{cab ? "Update Cab" : "Add Cab"}</Button>
     </form>

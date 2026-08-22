@@ -431,7 +431,9 @@ export const addcab = async (
   departureTime,
   arrivalTime,
   price,
-  availableSeats
+  availableSeats,
+  distanceKm,
+  estimatedDuration
 ) => {
   try {
     const res = await axios.post(`${BACKEND_URL}/admin/cab`, {
@@ -442,6 +444,8 @@ export const addcab = async (
       arrivalTime,
       price,
       availableSeats,
+      distanceKm,
+      estimatedDuration,
     });
     const data = res.data;
     return data;
@@ -458,7 +462,9 @@ export const editcab = async (
   departureTime,
   arrivalTime,
   price,
-  availableSeats
+  availableSeats,
+  distanceKm,
+  estimatedDuration
 ) => {
   try {
     const res = await axios.put(`${BACKEND_URL}/admin/cab/${id}`, {
@@ -469,6 +475,8 @@ export const editcab = async (
       arrivalTime,
       price,
       availableSeats,
+      distanceKm,
+      estimatedDuration,
     });
     const data = res.data;
     return data;
