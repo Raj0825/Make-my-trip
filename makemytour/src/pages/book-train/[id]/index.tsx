@@ -1,6 +1,5 @@
 import { useRouter } from "next/router";
 import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
-import SeatTypeChart from "@/components/pricing/SeatTypeChart";
 import ReviewSection from "@/components/reviews/ReviewSection";
 import {
   TrainFront,
@@ -1148,17 +1147,13 @@ const BookTrainPage = () => {
                 )}
               </Dialog>
             </div>
-            <SeatTypeChart
-              title="Price by Class"
-              selectedKey={coachKey}
-              options={COACH_CLASSES.map((c) => ({
-                key: c.key,
-                label: c.code,
-                sublabel: c.label,
-                price: Math.round(train.price * c.multiplier * (quota === "tatkal" ? 1.3 : 1)),
-              }))}
+            <DynamicPriceCard
+              entityType="TRAIN"
+              entityId={id as string}
+              userId={user?.id}
+              variantLabel={`${coachClass.label} (${coachClass.code})`}
+              variantPrice={perSeatFare + tatkalPremium}
             />
-            <DynamicPriceCard entityType="TRAIN" entityId={id as string} userId={user?.id} />
           </div>
         </div>
       </div>
