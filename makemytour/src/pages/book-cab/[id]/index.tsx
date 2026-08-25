@@ -766,7 +766,5 @@ const BookCabPage = () => {
       )}
     </div>
   );
-
 };
-
 export default BookCabPage;
