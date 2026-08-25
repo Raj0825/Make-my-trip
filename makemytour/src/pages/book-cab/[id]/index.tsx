@@ -36,6 +36,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { getcab, getReviews, handlecabbooking, trackInteraction } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
+import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
 interface Cab {
   id: string;
   cabType: string;
@@ -184,6 +185,7 @@ function RideStatusModal({
   otp,
   grandTotal,
   paymentMethod,
+  insured,
   onClose,
 }: {
   cab: Cab;
@@ -192,8 +194,10 @@ function RideStatusModal({
   otp: string;
   grandTotal: number;
   paymentMethod: PaymentMethod;
+  insured: boolean;
   onClose: () => void;
 }) {
+  const insurancePolicyNo = useMemo(() => (insured ? generateInsurancePolicyNo(pnr) : ""), [insured, pnr]);
   const [bookedAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -206,6 +210,7 @@ function RideStatusModal({
 
   const handlePrint = () => window.print();
   const handleDownload = () => {
+    const insuranceRow = insured ? `<tr><td class="label">Travel Insurance</td><td>Policy ${insurancePolicyNo} · ₹${INSURANCE_PREMIUM}</td></tr>` : "";
     const html = `<!doctype html><html><head><meta charset="utf-8" />
       <title>Cab Receipt ${pnr}</title>
       <style>body{font-family:Arial,sans-serif;padding:24px;color:#111}.card{border:1px solid #e5e7eb;border-radius:12px;padding:20px;max-width:520px}
@@ -218,6 +223,7 @@ function RideStatusModal({
         <tr><td class="label">Pickup</td><td>${new Date(cab.departureTime).toLocaleString()}</td></tr>
         <tr><td class="label">Driver</td><td>${driver.name} · ${driver.vehicleModel} (${driver.vehicleNumber})</td></tr>
         <tr><td class="label">Payment</td><td>${paymentMethod.label}</td></tr>
+        ${insuranceRow}
       </table><p class="total">Total Paid: ₹ ${grandTotal.toLocaleString()}</p></div></body></html>`;
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
