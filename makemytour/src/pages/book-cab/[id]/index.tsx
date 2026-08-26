@@ -305,6 +305,8 @@ function RideStatusModal({
             </div>
           </div>
 
+          {insured && <InsuranceReceiptBlock policyNo={insurancePolicyNo} />}
+
           <div className="flex justify-between items-center border-t border-gray-100 pt-3 mb-5 text-sm">
             <span className="text-gray-600">Payment · {paymentMethod.label}</span>
             <span className="text-xl font-bold">₹ {grandTotal.toLocaleString()}</span>
@@ -334,8 +336,9 @@ const BookCabPage = () => {
   const user = useSelector((state: any) => state.user.user);
   const dispatch = useDispatch();
   const [paymentKey, setPaymentKey] = useState<string>("upi");
+  const [insured, setInsured] = useState(false);
   const [reviewStats, setReviewStats] = useState<{ count: number; average: number }>({ count: 0, average: 0 });
-  const [rideData, setRideData] = useState<{ driver: Driver; pnr: string; otp: string; grandTotal: number; paymentMethod: PaymentMethod } | null>(null);
+  const [rideData, setRideData] = useState<{ driver: Driver; pnr: string; otp: string; grandTotal: number; paymentMethod: PaymentMethod; insured: boolean } | null>(null);
 
   useEffect(() => {
     if (!id || !user?.id) return;
@@ -427,7 +430,8 @@ const BookCabPage = () => {
   const perCabFare = cab.price + nightCharge;
   const totalPrice = perCabFare * quantity;
   const taxes = Math.round(totalPrice * 0.05);
-  const grandTotal = totalPrice + taxes;
+  const insuranceFee = insured ? INSURANCE_PREMIUM : 0;
+  const grandTotal = totalPrice + taxes + insuranceFee;
   const paymentMethod = PAYMENT_METHODS.find((p) => p.key === paymentKey) || PAYMENT_METHODS[0];
 
   const handlebooking = async (e: React.FormEvent) => {
@@ -444,6 +448,7 @@ const BookCabPage = () => {
         otp: Math.floor(1000 + Math.random() * 8999).toString(),
         grandTotal,
         paymentMethod,
+        insured,
       });
     } catch (error) {
       console.log(error);
@@ -503,6 +508,8 @@ const BookCabPage = () => {
           </div>
         </div>
 
+        <InsuranceAddOn checked={insured} onChange={setInsured} />
+
         <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center"><CreditCard className="w-5 h-5 mr-2" />Fare Summary</h3>
           <div className="space-y-2">
@@ -518,6 +525,12 @@ const BookCabPage = () => {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Night Charge</span>
                 <span className="font-medium">₹ {(nightCharge * quantity).toLocaleString()}</span>
+              </div>
+            )}
+            {insured && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Travel Insurance</span>
+                <span className="font-medium">₹ {insuranceFee.toLocaleString()}</span>
               </div>
             )}
             <div className="flex justify-between items-center">
@@ -758,6 +771,7 @@ const BookCabPage = () => {
           otp={rideData.otp}
           grandTotal={rideData.grandTotal}
           paymentMethod={rideData.paymentMethod}
+          insured={rideData.insured}
           onClose={() => {
             setRideData(null);
             router.push("/profile");
@@ -767,4 +781,5 @@ const BookCabPage = () => {
     </div>
   );
 };
+
 export default BookCabPage;

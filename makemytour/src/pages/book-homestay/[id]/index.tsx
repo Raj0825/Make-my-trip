@@ -47,6 +47,7 @@ import { useDispatch, useSelector } from "react-redux";
 import SignupDialog from "@/components/SignupDialog";
 import Loader from "@/components/Loader";
 import { setUser } from "@/store";
+import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
 
 // ---------------------------------------------------------------------------
 // Static homestay photo bank. In absence of a photoUrls field on the backend
@@ -210,6 +211,9 @@ const BookHomestayPage = () => {
   const user = useSelector((state: any) => state.user.user);
   const [open, setopem] = useState(false);
   const dispatch = useDispatch();
+  const [insured, setInsured] = useState(false);
+  const [policyNo, setPolicyNo] = useState<string>("");
+  const [showInsuranceReceipt, setShowInsuranceReceipt] = useState(false);
   const [selectedRoomKey, setSelectedRoomKey] = useState<string>(
     ROOM_OPTIONS_TEMPLATE[1].key
   );
@@ -312,7 +316,8 @@ const BookHomestayPage = () => {
   );
   const totalPrice = effectivePricePerNight * quantity;
   const taxes = Math.round(totalPrice * 0.05);
-  const grandTotal = totalPrice + taxes;
+  const insuranceFee = insured ? INSURANCE_PREMIUM : 0;
+  const grandTotal = totalPrice + taxes + insuranceFee;
 
   const handlebooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -331,7 +336,12 @@ const BookHomestayPage = () => {
       dispatch(setUser(updateuser));
       setopem(false);
       setQuantity(1);
-      router.push("/profile");
+      if (insured) {
+        setPolicyNo(generateInsurancePolicyNo(data?.id));
+        setShowInsuranceReceipt(true);
+      } else {
+        router.push("/profile");
+      }
     } catch (error) {
       console.log(error);
     }
@@ -413,6 +423,9 @@ const BookHomestayPage = () => {
             />
           </div>
         </div>
+
+        <InsuranceAddOn checked={insured} onChange={setInsured} />
+
         <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
@@ -425,6 +438,12 @@ const BookHomestayPage = () => {
                 ₹ {totalPrice.toLocaleString()}
               </span>
             </div>
+            {insured && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Travel Insurance</span>
+                <span className="font-medium">₹ {insuranceFee.toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Taxes and Fees</span>
               <span className="font-medium">₹ {taxes.toLocaleString()}</span>
@@ -741,6 +760,33 @@ const BookHomestayPage = () => {
           </div>
         </div>
       </div>
+
+      {showInsuranceReceipt && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full shadow-2xl overflow-hidden">
+            <div className="bg-blue-600 text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 font-semibold">
+                <Check size={20} /> Booking Confirmed
+              </div>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-600 mb-3">
+                Your stay at <span className="font-semibold text-gray-800">{homestay.homestayName}</span> is booked.
+              </p>
+              <InsuranceReceiptBlock policyNo={policyNo} />
+              <Button
+                className="w-full bg-blue-600 text-white mt-5"
+                onClick={() => {
+                  setShowInsuranceReceipt(false);
+                  router.push("/profile");
+                }}
+              >
+                Go to My Bookings
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

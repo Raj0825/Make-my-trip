@@ -24,6 +24,7 @@ import {
 import { useEffect, useState } from "react";
 import { getflight, handleflightbooking, trackInteraction } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
+import InsuranceAddOn, { INSURANCE_PREMIUM } from "@/components/insurance/InsuranceAddOn";
 interface Flight {
   id: string; // Unique identifier for the flight
   flightName: string; // Name of the flight
@@ -67,6 +68,7 @@ const BookFlightPage = () => {
     const [seatSurcharge, setSeatSurcharge] = useState(0);
     const [rememberSeatPref, setRememberSeatPref] = useState(false);
   const [open, setopem] = useState(false);
+  const [insured, setInsured] = useState(false);
     const [flightStatus, setFlightStatus] = useState<any>(null);
     const user = useSelector((state: any) => state.user.user);
     const dispatch = useDispatch();
@@ -202,7 +204,7 @@ const BookFlightPage = () => {
   const totalOtherServices = fareSummary?.otherServices * quantity;
   const totalDiscounts = fareSummary?.discounts * quantity;
   const grandTotal =
-      totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge;
+      totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge + (insured ? INSURANCE_PREMIUM : 0);
 
   const handlebooking = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -351,6 +353,9 @@ const BookFlightPage = () => {
                       rememberPreference={rememberSeatPref}
                       onRememberPreferenceChange={setRememberSeatPref}
                     />
+
+        <InsuranceAddOn checked={insured} onChange={setInsured} />
+
         <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
@@ -386,6 +391,14 @@ const BookFlightPage = () => {
                             <span className="text-gray-600">Seat Selection</span>
                             <span className="font-medium">
                               ₹ {seatSurcharge.toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                        {insured && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Travel Insurance</span>
+                            <span className="font-medium">
+                              ₹ {INSURANCE_PREMIUM.toLocaleString()}
                             </span>
                           </div>
                         )}
@@ -620,6 +633,14 @@ const BookFlightPage = () => {
                     - ₹ {Math.abs(totalDiscounts).toLocaleString()}
                   </span>
                 </div>
+                {insured && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Travel Insurance</span>
+                    <span className="font-medium">
+                      ₹ {INSURANCE_PREMIUM.toLocaleString()}
+                    </span>
+                  </div>
+                )}
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-lg">Total Amount</span>
@@ -744,6 +765,7 @@ const BookFlightPage = () => {
                                         rememberPreference={rememberSeatPref}
                                         onRememberPreferenceChange={setRememberSeatPref}
                                       />
+                                      <InsuranceAddOn checked={insured} onChange={setInsured} />
                                       <div className="bg-gray-100 rounded-lg p-4">
                                         <h3 className="text-lg font-bold mb-4 flex items-center">
                                           <CreditCard className="w-5 h-5 mr-2" />
@@ -779,6 +801,14 @@ const BookFlightPage = () => {
                                               <span className="text-gray-600">Seat Selection</span>
                                               <span className="font-medium">
                                                 ₹ {seatSurcharge.toLocaleString()}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {insured && (
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-gray-600">Travel Insurance</span>
+                                              <span className="font-medium">
+                                                ₹ {INSURANCE_PREMIUM.toLocaleString()}
                                               </span>
                                             </div>
                                           )}
