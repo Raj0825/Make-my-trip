@@ -151,11 +151,20 @@ public class BookingService {
                 hotelRepository.save(hotel);
                 dynamicPricingService.recalculate(DynamicPricingService.HOTEL, hotelId);
 
+                // The dynamic pricing engine only tracks the hotel's base
+                // pricePerNight, not per-room-type pricing, so the "authoritative"
+                // price it returns must be scaled by how much pricier/cheaper the
+                // selected room type is than that base rate — otherwise picking a
+                // Deluxe/Suite room silently gets billed at the base rate.
+                double roomTypeMultiplier = 1.0;
                 if (roomTypeId != null && !roomTypeId.isBlank()) {
-                    roomTypeService.bookRoom(roomTypeId, rooms);
+                    RoomType rt = roomTypeService.bookRoom(roomTypeId, rooms);
+                    if (rt.getPricePerNight() > 0 && hotel.getPricePerNight() > 0) {
+                        roomTypeMultiplier = rt.getPricePerNight() / hotel.getPricePerNight();
+                    }
                 }
 
-                double finalPrice = resolveFinalPrice(userId, DynamicPricingService.HOTEL, hotelId, rooms, unitPrice, price);
+                double finalPrice = resolveFinalPrice(userId, DynamicPricingService.HOTEL, hotelId, rooms, unitPrice, price, roomTypeMultiplier);
                 recommendationService.recordInteraction(userId, DynamicPricingService.HOTEL, hotelId, "BOOKED");
 
                 Users.Booking booking=new Users.Booking();
