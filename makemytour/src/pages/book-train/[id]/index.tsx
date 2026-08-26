@@ -27,6 +27,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { gettrain, handletrainbooking } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
+import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
 interface Train {
   id: string;
   trainName: string;
@@ -323,6 +324,7 @@ function ETicket({
   pnr,
   grandTotal,
   foodItems,
+  insured,
   onClose,
 }: {
   train: Train;
@@ -332,8 +334,10 @@ function ETicket({
   pnr: string;
   grandTotal: number;
   foodItems: { name: string; veg: boolean; qty: number; price: number }[];
+  insured: boolean;
   onClose: () => void;
 }) {
+  const insurancePolicyNo = useMemo(() => (insured ? generateInsurancePolicyNo(pnr) : ""), [insured, pnr]);
   const handlePrint = () => window.print();
 
   const handleDownload = () => {
@@ -342,6 +346,7 @@ function ETicket({
           .map((f) => `${f.name} × ${f.qty} (${f.veg ? "Veg" : "Non-Veg"}) — ₹${f.price * f.qty}`)
           .join("<br/>")}</td></tr>`
       : "";
+    const insuranceRow = insured ? `<tr><td class="label">Travel Insurance</td><td>Policy ${insurancePolicyNo} · ₹${INSURANCE_PREMIUM}</td></tr>` : "";
     const html = `<!doctype html><html><head><meta charset="utf-8" />
       <title>E-Ticket ${pnr}</title>
       <style>
@@ -366,6 +371,7 @@ function ETicket({
           <tr><td class="label">Quota</td><td>${quota === "tatkal" ? "Tatkal" : "General"}</td></tr>
           <tr><td class="label">Seats</td><td>${seats.map((s) => `${s.number} (${s.type})`).join(", ")}</td></tr>
           ${foodRows}
+          ${insuranceRow}
         </table>
         <p class="total">Total Paid: ₹ ${grandTotal.toLocaleString()}</p>
       </div>
@@ -453,6 +459,8 @@ function ETicket({
             </div>
           )}
 
+          {insured && <InsuranceReceiptBlock policyNo={insurancePolicyNo} />}
+
           <div className="flex justify-between items-center border-t border-gray-100 pt-3 mb-5">
             <span className="text-gray-600 text-sm">Total Paid</span>
             <span className="text-xl font-bold">₹ {grandTotal.toLocaleString()}</span>
@@ -488,6 +496,7 @@ const BookTrainPage = () => {
   const [foodEnabled, setFoodEnabled] = useState(false);
   const [foodCart, setFoodCart] = useState<Record<string, number>>({});
   const [foodFilter, setFoodFilter] = useState<"all" | "veg" | "nonveg">("all");
+  const [insured, setInsured] = useState(false);
   const [ticketData, setTicketData] = useState<{
     coachClass: CoachClass;
     seats: Seat[];
@@ -495,6 +504,7 @@ const BookTrainPage = () => {
     pnr: string;
     grandTotal: number;
     foodItems: { name: string; veg: boolean; qty: number; price: number }[];
+    insured: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -591,7 +601,8 @@ const BookTrainPage = () => {
   }, 0);
   const subtotal = seatFareTotal + foodTotal;
   const taxes = Math.round(subtotal * 0.05);
-  const grandTotal = subtotal + taxes;
+  const insuranceFee = insured ? INSURANCE_PREMIUM : 0;
+  const grandTotal = subtotal + taxes + insuranceFee;
 
   const seatsReady = selectedSeats.length === passengerCount;
 
@@ -625,6 +636,7 @@ const BookTrainPage = () => {
         pnr: generatePNR(data?.id),
         grandTotal,
         foodItems: orderedFoodItems,
+        insured,
       });
     } catch (error) {
       console.log(error);
@@ -703,6 +715,8 @@ const BookTrainPage = () => {
           </div>
         )}
 
+        <InsuranceAddOn checked={insured} onChange={setInsured} />
+
         <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
@@ -717,6 +731,12 @@ const BookTrainPage = () => {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Food & Beverages</span>
                 <span className="font-medium">₹ {foodTotal.toLocaleString()}</span>
+              </div>
+            )}
+            {insured && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Travel Insurance</span>
+                <span className="font-medium">₹ {insuranceFee.toLocaleString()}</span>
               </div>
             )}
             <div className="flex justify-between items-center">
@@ -1167,6 +1187,7 @@ const BookTrainPage = () => {
           pnr={ticketData.pnr}
           grandTotal={ticketData.grandTotal}
           foodItems={ticketData.foodItems}
+          insured={ticketData.insured}
           onClose={() => {
             setTicketData(null);
             router.push("/profile");

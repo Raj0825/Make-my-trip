@@ -292,8 +292,8 @@ export default function Home() {
               active={bookingtype === "cabs"}
               onClick={() => setbookingtype("cabs")}
             />
-            <NavItem icon={<CreditCard />} text="Forex" />
-            <NavItem icon={<Shield />} text="Insurance" />
+            <NavItem icon={<CreditCard />} text="Forex" onClick={() => router.push("/forex")} />
+            <NavItem icon={<Shield />} text="Insurance" onClick={() => router.push("/insurance")} />
           </div>
         </nav>
 
