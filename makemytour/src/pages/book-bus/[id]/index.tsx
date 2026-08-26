@@ -33,6 +33,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { getbus, handlebusbooking } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
+import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
 interface Bus {
   id: string;
   busName: string;
@@ -299,6 +300,7 @@ function ETicket({
   boardingPoint,
   pnr,
   grandTotal,
+  insured,
   onClose,
 }: {
   bus: Bus;
@@ -307,11 +309,14 @@ function ETicket({
   boardingPoint: string;
   pnr: string;
   grandTotal: number;
+  insured: boolean;
   onClose: () => void;
 }) {
+  const insurancePolicyNo = useMemo(() => (insured ? generateInsurancePolicyNo(pnr) : ""), [insured, pnr]);
   const handlePrint = () => window.print();
 
   const handleDownload = () => {
+    const insuranceRow = insured ? `<tr><td class="label">Travel Insurance</td><td>Policy ${insurancePolicyNo} · ₹${INSURANCE_PREMIUM}</td></tr>` : "";
     const html = `<!doctype html><html><head><meta charset="utf-8" />
       <title>Bus Ticket ${pnr}</title>
       <style>
@@ -335,6 +340,7 @@ function ETicket({
           <tr><td class="label">Boarding Point</td><td>${boardingPoint}</td></tr>
           <tr><td class="label">Bus Type</td><td>${busClass.label}</td></tr>
           <tr><td class="label">Seats</td><td>${seats.map((s) => `${s.number} (${s.type})`).join(", ")}</td></tr>
+          ${insuranceRow}
         </table>
         <p class="total">Total Paid: ₹ ${grandTotal.toLocaleString()}</p>
       </div>
@@ -400,6 +406,8 @@ function ETicket({
             </div>
           </div>
 
+          {insured && <InsuranceReceiptBlock policyNo={insurancePolicyNo} />}
+
           <div className="flex justify-between items-center border-t border-gray-100 pt-3 mb-5">
             <span className="text-gray-600 text-sm">Total Paid</span>
             <span className="text-xl font-bold">₹ {grandTotal.toLocaleString()}</span>
@@ -433,12 +441,14 @@ const BookBusPage = () => {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [passengerCount, setPassengerCount] = useState(1);
   const [boardingPoint, setBoardingPoint] = useState<string>("");
+  const [insured, setInsured] = useState(false);
   const [ticketData, setTicketData] = useState<{
     busClass: BusClass;
     seats: BusSeat[];
     boardingPoint: string;
     pnr: string;
     grandTotal: number;
+    insured: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -546,7 +556,8 @@ const BookBusPage = () => {
   const perSeatFare = Math.round(bus.price * busClass.multiplier);
   const seatFareTotal = perSeatFare * passengerCount;
   const taxes = Math.round(seatFareTotal * 0.05);
-  const grandTotal = seatFareTotal + taxes;
+  const insuranceFee = insured ? INSURANCE_PREMIUM : 0;
+  const grandTotal = seatFareTotal + taxes + insuranceFee;
   const seatsReady = selectedSeats.length === passengerCount;
 
   const handlebooking = async (e: React.FormEvent) => {
@@ -563,6 +574,7 @@ const BookBusPage = () => {
         boardingPoint,
         pnr: generatePNR(data?.id),
         grandTotal,
+        insured,
       });
     } catch (error) {
       console.log(error);
@@ -623,6 +635,8 @@ const BookBusPage = () => {
           </div>
         </div>
 
+        <InsuranceAddOn checked={insured} onChange={setInsured} />
+
         <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
@@ -635,6 +649,12 @@ const BookBusPage = () => {
               </span>
               <span className="font-medium">₹ {seatFareTotal.toLocaleString()}</span>
             </div>
+            {insured && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Travel Insurance</span>
+                <span className="font-medium">₹ {insuranceFee.toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Taxes and Fees</span>
               <span className="font-medium">₹ {taxes.toLocaleString()}</span>
@@ -999,6 +1019,7 @@ const BookBusPage = () => {
           boardingPoint={ticketData.boardingPoint}
           pnr={ticketData.pnr}
           grandTotal={ticketData.grandTotal}
+          insured={ticketData.insured}
           onClose={() => {
             setTicketData(null);
             router.push("/profile");
