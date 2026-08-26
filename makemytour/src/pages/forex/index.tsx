@@ -8,8 +8,6 @@ import {
   MapPin,
   Clock,
   Star,
-  Home,
-  Truck,
   ShieldCheck,
   CreditCard,
   Wallet,
@@ -162,7 +160,7 @@ export default function ForexPage() {
   const [fromCode, setFromCode] = useState("INR");
   const [toCode, setToCode] = useState("USD");
   const [fromAmount, setFromAmount] = useState<number>(10000);
-  const [deliveryMode, setDeliveryMode] = useState<"pickup" | "delivery" | "card">("pickup");
+  const [deliveryMode, setDeliveryMode] = useState<"pickup" | "card">("pickup");
   const [selectedCity, setSelectedCity] = useState<string>("All");
   const [order, setOrder] = useState<{ orderId: string } | null>(null);
 
@@ -205,7 +203,7 @@ export default function ForexPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
             <div>
               <Label className="text-xs text-gray-500 mb-1 block">You Pay</Label>
               <div className="flex gap-2">
@@ -216,14 +214,6 @@ export default function ForexPage() {
                 <Input type="number" min={0} value={fromAmount}
                   onChange={(e) => setFromAmount(Math.max(0, Number(e.target.value)))}
                   className="text-lg font-bold" />
-              </div>
-              <div className="flex gap-1.5 mt-2 flex-wrap">
-                {QUICK_AMOUNTS.map((amt) => (
-                  <button key={amt} type="button" onClick={() => setFromAmount(amt)}
-                    className="text-[11px] px-2 py-1 rounded-full border border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors">
-                    {fromCode === "INR" ? `₹${amt.toLocaleString()}` : amt.toLocaleString()}
-                  </button>
-                ))}
               </div>
             </div>
 
@@ -246,17 +236,27 @@ export default function ForexPage() {
             </div>
           </div>
 
-          <p className="text-xs text-gray-500 mt-4 flex items-center gap-1">
+          <div className="flex gap-1.5 mt-3 flex-wrap">
+            {QUICK_AMOUNTS.map((amt) => (
+              <button key={amt} type="button" onClick={() => setFromAmount(amt)}
+                className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+                  fromAmount === amt ? "border-blue-500 text-blue-600 bg-blue-50" : "border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600"
+                }`}>
+                {fromCode === "INR" ? `₹${amt.toLocaleString()}` : amt.toLocaleString()}
+              </button>
+            ))}
+          </div>
+
+          <p className="text-xs text-gray-500 mt-3 flex items-center gap-1">
             <Info size={12} /> 1 {toCode} = ₹{(toCode === "INR" ? 1 : toRate).toFixed(2)} · 1 {fromCode} = ₹{(fromCode === "INR" ? 1 : fromRate).toFixed(2)}
           </p>
 
           {/* Delivery mode + order */}
           <div className="mt-5 border-t border-gray-100 pt-5">
             <p className="text-sm font-semibold text-gray-700 mb-2">How would you like it?</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               {[
                 { key: "pickup", icon: MapPin, label: "Branch Pickup", sub: "Collect cash at a location" },
-                { key: "delivery", icon: Truck, label: "Home Delivery", sub: "Doorstep delivery, 1-2 days" },
                 { key: "card", icon: CreditCard, label: "Forex Card", sub: "Prepaid multi-currency card" },
               ].map((m) => (
                 <button key={m.key} type="button" onClick={() => setDeliveryMode(m.key as any)}
@@ -345,7 +345,7 @@ export default function ForexPage() {
             {[
               { icon: ShieldCheck, label: "RBI Authorized" },
               { icon: TrendingUp, label: "Live Market Rates" },
-              { icon: Truck, label: "Doorstep Delivery" },
+              { icon: Clock, label: "Instant Pickup" },
               { icon: Wallet, label: "Zero Hidden Fees" },
             ].map(({ icon: Icon, label }) => (
               <div key={label} className="flex flex-col items-center text-center bg-gray-50 rounded-lg p-4 border border-gray-100">
@@ -368,7 +368,7 @@ export default function ForexPage() {
           toAmount={convertedAmount}
           toCode={toCode}
           rate={displayRate}
-          deliveryMode={deliveryMode === "pickup" ? "Branch Pickup" : deliveryMode === "delivery" ? "Home Delivery" : "Forex Card"}
+          deliveryMode={deliveryMode === "pickup" ? "Branch Pickup" : "Forex Card"}
           orderId={order.orderId}
           onClose={() => setOrder(null)}
         />
