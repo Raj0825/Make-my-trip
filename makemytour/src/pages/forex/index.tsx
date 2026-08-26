@@ -37,15 +37,15 @@ interface CurrencyDef {
 
 const CURRENCIES: CurrencyDef[] = [
   { code: "INR", name: "Indian Rupee", flag: "🇮🇳", baseRate: 1 },
-  { code: "USD", name: "US Dollar", flag: "🇺🇸", baseRate: 83.12 },
-  { code: "EUR", name: "Euro", flag: "🇪🇺", baseRate: 90.45 },
-  { code: "GBP", name: "British Pound", flag: "🇬🇧", baseRate: 105.3 },
-  { code: "AED", name: "UAE Dirham", flag: "🇦🇪", baseRate: 22.63 },
-  { code: "SGD", name: "Singapore Dollar", flag: "🇸🇬", baseRate: 61.8 },
-  { code: "AUD", name: "Australian Dollar", flag: "🇦🇺", baseRate: 54.2 },
-  { code: "JPY", name: "Japanese Yen", flag: "🇯🇵", baseRate: 0.56 },
-  { code: "THB", name: "Thai Baht", flag: "🇹🇭", baseRate: 2.32 },
-  { code: "CAD", name: "Canadian Dollar", flag: "🇨🇦", baseRate: 60.9 },
+  { code: "USD", name: "US Dollar", flag: "🇺🇸", baseRate: 95 },
+  { code: "EUR", name: "Euro", flag: "🇪🇺", baseRate: 103.4 },
+  { code: "GBP", name: "British Pound", flag: "🇬🇧", baseRate: 120.4 },
+  { code: "AED", name: "UAE Dirham", flag: "🇦🇪", baseRate: 25.87 },
+  { code: "SGD", name: "Singapore Dollar", flag: "🇸🇬", baseRate: 70.6 },
+  { code: "AUD", name: "Australian Dollar", flag: "🇦🇺", baseRate: 61.95 },
+  { code: "JPY", name: "Japanese Yen", flag: "🇯🇵", baseRate: 0.64 },
+  { code: "THB", name: "Thai Baht", flag: "🇹🇭", baseRate: 2.65 },
+  { code: "CAD", name: "Canadian Dollar", flag: "🇨🇦", baseRate: 69.6 },
 ];
 
 const QUICK_AMOUNTS = [100, 500, 1000, 5000, 10000];
