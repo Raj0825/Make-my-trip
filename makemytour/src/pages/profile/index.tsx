@@ -1,20 +1,34 @@
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   User, Phone, Mail, Edit2, Calendar, CreditCard,
   X, Check, LogOut, Plane, Building2, Train, Bus,
   Car, Home, AlertCircle, Clock, CheckCircle2, XCircle,
-  IndianRupee, Tag, ArrowRight,
+  IndianRupee, Tag, ArrowRight, Ticket,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/router";
 import { clearUser, setUser } from "@/store";
-import { editprofile, cancelbooking } from "@/api";
+import {
+  editprofile, cancelbooking,
+  gethotel, getflight, gettrain, getbus, getcab, gethomestay,
+} from "@/api";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+
+// Maps a booking's type to the route + name field on that entity, so we can
+// look up "Taj Palace" / "AI 202" etc. instead of just showing "Hotel".
+const BOOKING_TYPE_META: Record<string, { fetch: () => Promise<any[]>; nameField: string; route: string }> = {
+  Flight:   { fetch: getflight,   nameField: "flightName",   route: "book-flight" },
+  Hotel:    { fetch: gethotel,    nameField: "hotelName",    route: "book-hotel" },
+  Train:    { fetch: gettrain,    nameField: "trainName",    route: "book-train" },
+  Bus:      { fetch: getbus,      nameField: "busName",      route: "book-bus" },
+  Cab:      { fetch: getcab,      nameField: "cabType",      route: "book-cab" },
+  Homestay: { fetch: gethomestay, nameField: "homestayName", route: "book-homestay" },
+};
 
 const CANCELLATION_REASONS = [
   "Change of plans",
@@ -100,6 +114,30 @@ const ProfilePage = () => {
   const [cancelError, setCancelError] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "active" | "cancelled">("all");
   const [detailsBooking, setDetailsBooking] = useState<any>(null);
+  const [entityNames, setEntityNames] = useState<Record<string, Record<string, string>>>({});
+
+  useEffect(() => {
+    // Build a { type: { entityId: name } } lookup once, so booking cards can
+    // show "Taj Palace" / "Rajdhani Express" etc. instead of just the type.
+    const loadNames = async () => {
+      const entries = await Promise.all(
+        Object.entries(BOOKING_TYPE_META).map(async ([type, meta]) => {
+          try {
+            const list = await meta.fetch();
+            const map: Record<string, string> = {};
+            (list || []).forEach((item: any) => {
+              if (item?.id) map[item.id] = item[meta.nameField] || type;
+            });
+            return [type, map] as const;
+          } catch {
+            return [type, {}] as const;
+          }
+        })
+      );
+      setEntityNames(Object.fromEntries(entries));
+    };
+    loadNames();
+  }, []);
 
   const logout = () => { dispatch(clearUser()); router.push("/"); };
 
@@ -108,6 +146,11 @@ const ProfilePage = () => {
     try {
       return new Date(dateString).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
     } catch { return dateString; }
+  };
+
+  const getBookingName = (booking: any) => {
+    const name = entityNames[booking.type]?.[booking.bookingId];
+    return name || getConfig(booking.type).label;
   };
 
   const handleSave = async () => {
@@ -143,7 +186,10 @@ const ProfilePage = () => {
   };
 
   const allBookings = (user?.bookings || []).filter((b: any) => b != null);
-  const sortedBookings = [...allBookings].sort((a: any, b: any) => {
+  // Reverse first so bookings with an identical (or missing/legacy) date tie-break
+  // to "most recently added" rather than silently keeping their original,
+  // oldest-first order after the stable sort below.
+  const sortedBookings = [...allBookings].reverse().sort((a: any, b: any) => {
     const dateA = new Date(a?.date).getTime();
     const dateB = new Date(b?.date).getTime();
     if (isNaN(dateA) || isNaN(dateB)) return 0;
@@ -293,14 +339,14 @@ const ProfilePage = () => {
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <h3 className="font-bold text-gray-800">{booking.type}</h3>
+                                  <h3 className="font-bold text-gray-800">{getBookingName(booking)}</h3>
                                   {booking.cancelled ? (
                                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-red-600">Cancelled</span>
                                   ) : (
                                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-green-100 text-green-600">Active</span>
                                   )}
                                 </div>
-                                <p className="text-xs text-gray-400 font-mono mt-0.5">{booking.bookingId}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">{booking.type} · <span className="font-mono">{booking.bookingId}</span></p>
                               </div>
                             </div>
                             <div className="text-right">
@@ -313,7 +359,7 @@ const ProfilePage = () => {
                           </div>
 
                           {/* Meta row */}
-                          <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
                             <div className="flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5" />
                               <span>{formatDate(booking.date)}</span>
@@ -322,6 +368,15 @@ const ProfilePage = () => {
                               <Tag className="w-3.5 h-3.5" />
                               <span>Qty: {booking.quantity}</span>
                             </div>
+                            {BOOKING_TYPE_META[booking.type] && (
+                              <Link
+                                href={`/${BOOKING_TYPE_META[booking.type].route}/${booking.bookingId}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-medium ml-auto"
+                              >
+                                <Ticket className="w-3.5 h-3.5" /> View Ticket
+                              </Link>
+                            )}
                           </div>
 
                           {/* Cancelled state */}
@@ -499,11 +554,12 @@ const ProfilePage = () => {
                     <div className={`w-8 h-8 rounded-full ${cfg.bg} flex items-center justify-center`}>
                       <Icon className={`w-4 h-4 ${cfg.accent}`} />
                     </div>
-                    {detailsBooking.type} Booking
+                    {getBookingName(detailsBooking)}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 mt-1">
                   <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-gray-500">{detailsBooking.type}</span>
                     {detailsBooking.cancelled ? (
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-red-600">Cancelled</span>
                     ) : (
@@ -583,10 +639,20 @@ const ProfilePage = () => {
                     </div>
                   )}
 
-                  <Button onClick={() => setDetailsBooking(null)} variant="outline"
-                    className="w-full rounded-xl font-semibold border-gray-200">
-                    Close
-                  </Button>
+                  <div className="flex gap-2">
+                    {BOOKING_TYPE_META[detailsBooking.type] && (
+                      <Link
+                        href={`/${BOOKING_TYPE_META[detailsBooking.type].route}/${detailsBooking.bookingId}`}
+                        className="flex-1 flex items-center justify-center gap-1.5 rounded-xl font-semibold bg-blue-600 text-white h-9 text-sm hover:bg-blue-700 transition-colors"
+                      >
+                        <Ticket className="w-4 h-4" /> View Ticket
+                      </Link>
+                    )}
+                    <Button onClick={() => setDetailsBooking(null)} variant="outline"
+                      className="flex-1 rounded-xl font-semibold border-gray-200">
+                      Close
+                    </Button>
+                  </div>
                 </div>
               </>
             );

@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
@@ -49,14 +51,21 @@ public class CancellationService {
             throw new RuntimeException("Booking is already cancelled");
         }
 
-        // Calculate refund: 50% if within 24hrs of booking date, 0% after
+        // Calculate refund: 50% if within 24hrs of the actual booking moment, 0% after.
+        // Bookings now store a precise Instant; older bookings only stored a
+        // calendar date (yyyy-MM-dd), so fall back to treating those as UTC
+        // start-of-day for backward compatibility.
         double refundAmount = 0;
         try {
             String bookingDateStr = targetBooking.getDate();
             if (bookingDateStr != null) {
-                LocalDateTime bookingDateTime = LocalDate.parse(bookingDateStr).atStartOfDay();
-                LocalDateTime now = LocalDateTime.now();
-                long hoursSinceBooking = java.time.Duration.between(bookingDateTime, now).toHours();
+                Instant bookingInstant;
+                try {
+                    bookingInstant = Instant.parse(bookingDateStr);
+                } catch (Exception parseEx) {
+                    bookingInstant = LocalDate.parse(bookingDateStr).atStartOfDay(ZoneOffset.UTC).toInstant();
+                }
+                long hoursSinceBooking = java.time.Duration.between(bookingInstant, Instant.now()).toHours();
                 if (hoursSinceBooking <= 24) {
                     refundAmount = targetBooking.getTotalPrice() * 0.5;
                 }

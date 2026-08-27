@@ -10,7 +10,7 @@ import com.makemytrip.makemytrip.repositories.HomestayRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -125,7 +125,7 @@ public class BookingService {
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Flight");
                 booking.setBookingId(flightId);
-                booking.setDate(LocalDate.now().toString());
+                booking.setDate(Instant.now().toString());
                 booking.setQuantity(seats);
                 booking.setTotalPrice(finalPrice);
                 if (seatNumbers != null) booking.setSeatNumbers(seatNumbers);
@@ -170,7 +170,7 @@ public class BookingService {
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Hotel");
                 booking.setBookingId(hotelId);
-                booking.setDate(LocalDate.now().toString());
+                booking.setDate(Instant.now().toString());
                 booking.setQuantity(rooms);
                 booking.setTotalPrice(finalPrice);
                 if (roomTypeName != null && !roomTypeName.isBlank()) {
@@ -202,7 +202,7 @@ public class BookingService {
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Train");
                 booking.setBookingId(trainId);
-                booking.setDate(LocalDate.now().toString());
+                booking.setDate(Instant.now().toString());
                 booking.setQuantity(seats);
                 booking.setTotalPrice(finalPrice);
                 user.getBookings().add(booking);
@@ -231,7 +231,7 @@ public class BookingService {
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Bus");
                 booking.setBookingId(busId);
-                booking.setDate(LocalDate.now().toString());
+                booking.setDate(Instant.now().toString());
                 booking.setQuantity(seats);
                 booking.setTotalPrice(finalPrice);
                 user.getBookings().add(booking);
@@ -260,7 +260,7 @@ public class BookingService {
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Cab");
                 booking.setBookingId(cabId);
-                booking.setDate(LocalDate.now().toString());
+                booking.setDate(Instant.now().toString());
                 booking.setQuantity(seats);
                 booking.setTotalPrice(finalPrice);
                 user.getBookings().add(booking);
@@ -289,7 +289,7 @@ public class BookingService {
                 Users.Booking booking=new Users.Booking();
                 booking.setType("Homestay");
                 booking.setBookingId(homestayId);
-                booking.setDate(LocalDate.now().toString());
+                booking.setDate(Instant.now().toString());
                 booking.setQuantity(rooms);
                 booking.setTotalPrice(finalPrice);
                 user.getBookings().add(booking);
