@@ -72,7 +72,7 @@ export default function Home() {
       description: "Exclusive deals on holiday packages",
       imageUrl:
         "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800",
-      bookingType: "homestays",
+      bookingType: "holiday",
     },
   ];
 
@@ -239,6 +239,10 @@ export default function Home() {
     }
   };
   const handleOfferBookNow = (type: string) => {
+    if (type === "holiday") {
+      router.push("/holiday");
+      return;
+    }
     setbookingtype(type);
     setTimeout(() => {
       document.getElementById("search-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -273,7 +277,7 @@ export default function Home() {
               active={bookingtype === "homestays"}
               onClick={() => setbookingtype("homestays")}
             />
-            <NavItem icon={<Umbrella />} text="Holiday" />
+            <NavItem icon={<Umbrella />} text="Holiday" onClick={() => router.push("/holiday")} />
             <NavItem
               icon={<Train />}
               text="Trains"
