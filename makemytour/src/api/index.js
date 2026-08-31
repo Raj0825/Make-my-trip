@@ -918,3 +918,37 @@ export const saveBookingPreferences = async (userId, prefs) => {
     throw error;
   }
 };
+
+// ---------------- Wishlist ----------------
+
+export const getWishlist = async (userId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/wishlist/${userId}`);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const addToWishlist = async (userId, type, entityId) => {
+  try {
+    const url = `${BACKEND_URL}/wishlist/add?userId=${userId}&type=${type}&entityId=${entityId}`;
+    const res = await axios.post(url);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const removeFromWishlist = async (userId, type, entityId) => {
+  try {
+    const url = `${BACKEND_URL}/wishlist/remove?userId=${userId}&type=${type}&entityId=${entityId}`;
+    const res = await axios.post(url);
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
