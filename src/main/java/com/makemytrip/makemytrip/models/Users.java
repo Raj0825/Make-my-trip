@@ -15,6 +15,7 @@ public class Users {
     private String role;
     private String phoneNumber;
     private List<Booking> bookings = new ArrayList<>();
+    private List<Favorite> favorites = new ArrayList<>();
 
     public String getFirstName() {return firstName;}
     public String getId() { return _id; }
@@ -30,6 +31,21 @@ public class Users {
     public void setRole(String role) {this.role = role;}
     public List<Booking> getBookings(){return bookings;}
     public void setBookings(List<Booking> bookings){this.bookings=bookings;}
+    public List<Favorite> getFavorites() { return favorites; }
+    public void setFavorites(List<Favorite> favorites) { this.favorites = favorites; }
+
+    public static class Favorite {
+        private String type;     // "Train", "Bus", "Flight", "Cab", "Hotel", "Homestay"
+        private String entityId; // id of the listing
+        private String addedAt;
+
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+        public String getEntityId() { return entityId; }
+        public void setEntityId(String entityId) { this.entityId = entityId; }
+        public String getAddedAt() { return addedAt; }
+        public void setAddedAt(String addedAt) { this.addedAt = addedAt; }
+    }
 
     public static class Booking {
         private String type;
