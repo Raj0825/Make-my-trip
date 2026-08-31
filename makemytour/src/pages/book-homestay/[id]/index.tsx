@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
+import WishlistButton from "@/components/wishlist/WishlistButton";
 import ReviewSection from "@/components/reviews/ReviewSection";
 import {
   HomeIcon,
@@ -563,6 +564,7 @@ const BookHomestayPage = () => {
                   {reviewStats.average.toFixed(1)} · {reviewStats.count} review{reviewStats.count > 1 ? "s" : ""}
                 </span>
               )}
+              <WishlistButton userId={user?.id} type="Homestay" entityId={homestay.id} className="ml-2 shrink-0" />
             </div>
 
             <PhotoGallery photos={photos} name={homestay.homestayName} />

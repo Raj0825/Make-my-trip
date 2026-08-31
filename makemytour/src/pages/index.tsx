@@ -11,6 +11,7 @@ import {
   CreditCard,
   HomeIcon,
   Hotel,
+  LifeBuoy,
   MapPin,
   Plane,
   QrCode,
@@ -298,6 +299,7 @@ export default function Home() {
             />
             <NavItem icon={<CreditCard />} text="Forex" onClick={() => router.push("/forex")} />
             <NavItem icon={<Shield />} text="Insurance" onClick={() => router.push("/insurance")} />
+            <NavItem icon={<LifeBuoy />} text="Help" onClick={() => router.push("/help")} />
           </div>
         </nav>
 

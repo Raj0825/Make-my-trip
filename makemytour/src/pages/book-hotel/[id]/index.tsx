@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
+import WishlistButton from "@/components/wishlist/WishlistButton";
 import {
   Star,
   MapPin,
@@ -302,21 +303,24 @@ const BookHotelPage = () => {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Hotel Title & Rating */}
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold mb-2">{hotel.hotelName}</h1>
-              <div className="flex items-center space-x-1">
-                {[...Array(hotelData.rating)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className="w-5 h-5 text-yellow-400 fill-current"
-                  />
-                ))}
-                {[...Array(hotelData.maxRating - hotelData.rating)].map(
-                  (_, i) => (
-                    <Star key={i} className="w-5 h-5 text-gray-300" />
-                  )
-                )}
+            <div className="mb-6 flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-bold mb-2">{hotel.hotelName}</h1>
+                <div className="flex items-center space-x-1">
+                  {[...Array(hotelData.rating)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className="w-5 h-5 text-yellow-400 fill-current"
+                    />
+                  ))}
+                  {[...Array(hotelData.maxRating - hotelData.rating)].map(
+                    (_, i) => (
+                      <Star key={i} className="w-5 h-5 text-gray-300" />
+                    )
+                  )}
+                </div>
               </div>
+              <WishlistButton userId={user?.id} type="Hotel" entityId={hotel.id} />
             </div>
 
             {/* Image Gallery */}

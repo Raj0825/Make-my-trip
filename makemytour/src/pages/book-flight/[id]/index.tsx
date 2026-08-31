@@ -3,6 +3,7 @@ import ReviewSection from "@/components/reviews/ReviewSection";
 import TrackFlightButton from "@/components/flight-tracking/TrackFlightButton";
 import FlightStatusBadge from "@/components/flight-tracking/FlightStatusBadge";
 import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
+import WishlistButton from "@/components/wishlist/WishlistButton";
 import { getFlightStatus } from "@/api";
 import SeatMap from "@/components/seat-selection/SeatMap";
 import { saveBookingPreferences } from "@/api";
@@ -450,6 +451,7 @@ const BookFlightPage = () => {
                   <Info className="w-4 h-4 mr-1" />
                   View Fare Rules
                 </button>
+                <WishlistButton userId={user?.id} type="Flight" entityId={flight.id} className="ml-2" />
               </div>
 
               <div className="flex items-center space-x-4 mb-6">

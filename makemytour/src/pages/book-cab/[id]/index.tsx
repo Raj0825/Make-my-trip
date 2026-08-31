@@ -37,6 +37,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getcab, getReviews, handlecabbooking, trackInteraction } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
 import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
+import WishlistButton from "@/components/wishlist/WishlistButton";
 interface Cab {
   id: string;
   cabType: string;
@@ -568,6 +569,7 @@ const BookCabPage = () => {
                   {reviewStats.average.toFixed(1)} · {reviewStats.count} review{reviewStats.count > 1 ? "s" : ""}
                 </span>
               )}
+              <WishlistButton userId={user?.id} type="Cab" entityId={cab.id} className="ml-2 shrink-0" />
             </div>
 
             <PhotoGallery photos={photos} name={cab.cabType} />

@@ -28,6 +28,7 @@ import { useEffect, useMemo, useState } from "react";
 import { gettrain, handletrainbooking } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
 import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
+import WishlistButton from "@/components/wishlist/WishlistButton";
 interface Train {
   id: string;
   trainName: string;
@@ -762,14 +763,17 @@ const BookTrainPage = () => {
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center mb-4">
-              <TrainFront className="w-8 h-8 text-blue-600 mr-3" />
-              <div>
-                <h1 className="text-2xl font-bold">{train.trainName}</h1>
-                <p className="text-gray-600">
-                  {train.from} → {train.to}
-                </p>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <TrainFront className="w-8 h-8 text-blue-600 mr-3" />
+                <div>
+                  <h1 className="text-2xl font-bold">{train.trainName}</h1>
+                  <p className="text-gray-600">
+                    {train.from} → {train.to}
+                  </p>
+                </div>
               </div>
+              <WishlistButton userId={user?.id} type="Train" entityId={train.id} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
               <div className="flex items-center text-gray-600 text-sm">

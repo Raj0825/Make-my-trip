@@ -4,7 +4,7 @@ import {
   User, Phone, Mail, Edit2, Calendar, CreditCard,
   X, Check, LogOut, Plane, Building2, Train, Bus,
   Car, Home, AlertCircle, Clock, CheckCircle2, XCircle,
-  IndianRupee, Tag, ArrowRight, Ticket,
+  IndianRupee, Tag, ArrowRight, Ticket, Heart,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/router";
@@ -264,6 +264,10 @@ const ProfilePage = () => {
                         className="w-full flex items-center justify-center gap-2 py-2 border border-blue-200 text-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-colors">
                         <Edit2 className="w-3.5 h-3.5" /> Edit Profile
                       </button>
+                      <Link href="/wishlist"
+                        className="w-full flex items-center justify-center gap-2 py-2 border border-pink-200 text-pink-500 rounded-lg text-sm font-semibold hover:bg-pink-50 transition-colors">
+                        <Heart className="w-3.5 h-3.5" /> My Wishlist
+                      </Link>
                       <button onClick={logout}
                         className="w-full flex items-center justify-center gap-2 py-2 border border-red-200 text-red-500 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors">
                         <LogOut className="w-3.5 h-3.5" /> Sign Out

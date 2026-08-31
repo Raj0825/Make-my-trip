@@ -34,6 +34,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getbus, handlebusbooking } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
 import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
+import WishlistButton from "@/components/wishlist/WishlistButton";
 interface Bus {
   id: string;
   busName: string;
@@ -678,14 +679,17 @@ const BookBusPage = () => {
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center mb-4">
-              <BusIcon className="w-8 h-8 text-blue-600 mr-3" />
-              <div>
-                <h1 className="text-2xl font-bold">{bus.busName}</h1>
-                <p className="text-gray-600">
-                  {bus.from} → {bus.to}
-                </p>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <BusIcon className="w-8 h-8 text-blue-600 mr-3" />
+                <div>
+                  <h1 className="text-2xl font-bold">{bus.busName}</h1>
+                  <p className="text-gray-600">
+                    {bus.from} → {bus.to}
+                  </p>
+                </div>
               </div>
+              <WishlistButton userId={user?.id} type="Bus" entityId={bus.id} />
             </div>
 
             <PhotoGallery photos={photos} name={bus.busName} />
