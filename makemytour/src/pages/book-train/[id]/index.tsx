@@ -29,6 +29,8 @@ import { gettrain, handletrainbooking } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
 import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
 import WishlistButton from "@/components/wishlist/WishlistButton";
+import PromoCodeInput from "@/components/promo/PromoCodeInput";
+import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
 interface Train {
   id: string;
   trainName: string;
@@ -498,6 +500,9 @@ const BookTrainPage = () => {
   const [foodCart, setFoodCart] = useState<Record<string, number>>({});
   const [foodFilter, setFoodFilter] = useState<"all" | "veg" | "nonveg">("all");
   const [insured, setInsured] = useState(false);
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
   const [ticketData, setTicketData] = useState<{
     coachClass: CoachClass;
     seats: Seat[];
@@ -603,9 +608,10 @@ const BookTrainPage = () => {
   const subtotal = seatFareTotal + foodTotal;
   const taxes = Math.round(subtotal * 0.05);
   const insuranceFee = insured ? INSURANCE_PREMIUM : 0;
-  const grandTotal = subtotal + taxes + insuranceFee;
+  const grandTotal = Math.max(0, subtotal + taxes + insuranceFee - promoDiscount);
 
   const seatsReady = selectedSeats.length === passengerCount;
+  const passengersReady = passengers.length === passengerCount && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
 
   const handlebooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -615,7 +621,8 @@ const BookTrainPage = () => {
         train?.id,
         passengerCount,
         grandTotal,
-        perSeatFare + tatkalPremium
+        perSeatFare + tatkalPremium,
+        passengers
       );
       const updateuser = {
         ...user,
@@ -718,6 +725,16 @@ const BookTrainPage = () => {
 
         <InsuranceAddOn checked={insured} onChange={setInsured} />
 
+        <PassengerDetailsForm count={passengerCount} passengers={passengers} onChange={setPassengers} />
+
+        <PromoCodeInput
+          subtotal={subtotal + insuranceFee}
+          appliedCode={promoCode}
+          discount={promoDiscount}
+          onApply={(code, discount) => { setPromoCode(code); setPromoDiscount(discount); }}
+          onRemove={() => { setPromoCode(null); setPromoDiscount(0); }}
+        />
+
         <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
@@ -744,14 +761,20 @@ const BookTrainPage = () => {
               <span className="text-gray-600">Taxes and Fees</span>
               <span className="font-medium">₹ {taxes.toLocaleString()}</span>
             </div>
+            {promoDiscount > 0 && (
+              <div className="flex justify-between items-center text-green-600">
+                <span>Promo ({promoCode})</span>
+                <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
+              </div>
+            )}
             <div className="border-t pt-2 mt-2 flex justify-between items-center">
               <span className="font-bold text-lg">Total Amount</span>
               <span className="font-bold text-lg">₹ {grandTotal.toLocaleString()}</span>
             </div>
           </div>
         </div>
-        <Button className="w-full bg-blue-600 text-white" onClick={handlebooking}>
-          Confirm & Pay
+        <Button className="w-full bg-blue-600 text-white" onClick={handlebooking} disabled={!passengersReady}>
+          {passengersReady ? "Confirm & Pay" : "Enter traveler details to continue"}
         </Button>
       </div>
     </DialogContent>

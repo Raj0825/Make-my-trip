@@ -228,7 +228,7 @@ export const edithotel = async (
   }
 };
 
-export const handleflightbooking = async (userId, flightId, seats, price, unitPrice, seatNumbers, travelClass) => {
+export const handleflightbooking = async (userId, flightId, seats, price, unitPrice, seatNumbers, travelClass, passengers) => {
   try {
     let url = `${BACKEND_URL}/booking/flight?userId=${userId}&flightId=${flightId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;
     if (seatNumbers && seatNumbers.length > 0) {
@@ -236,6 +236,9 @@ export const handleflightbooking = async (userId, flightId, seats, price, unitPr
     }
     if (travelClass) {
       url += `&travelClass=${encodeURIComponent(travelClass)}`;
+    }
+    if (passengers && passengers.length > 0) {
+      url += `&passengersJson=${encodeURIComponent(JSON.stringify(passengers))}`;
     }
     const res = await axios.post(url);
     const data = res.data;
@@ -246,11 +249,14 @@ export const handleflightbooking = async (userId, flightId, seats, price, unitPr
   }
 };
 
-export const handlehotelbooking = async (userId, hotelId, rooms, price, unitPrice, roomTypeId, roomTypeName) => {
+export const handlehotelbooking = async (userId, hotelId, rooms, price, unitPrice, roomTypeId, roomTypeName, passengers) => {
   try {
     let url = `${BACKEND_URL}/booking/hotel?userId=${userId}&hotelId=${hotelId}&rooms=${rooms}&price=${price}&unitPrice=${unitPrice}`;
     if (roomTypeId) url += `&roomTypeId=${roomTypeId}`;
     if (roomTypeName) url += `&roomTypeName=${encodeURIComponent(roomTypeName)}`;
+    if (passengers && passengers.length > 0) {
+      url += `&passengersJson=${encodeURIComponent(JSON.stringify(passengers))}`;
+    }
     const res = await axios.post(url);
     const data = res.data;
     return data;
@@ -325,9 +331,12 @@ export const edittrain = async (
   }
 };
 
-export const handletrainbooking = async (userId, trainId, seats, price, unitPrice) => {
+export const handletrainbooking = async (userId, trainId, seats, price, unitPrice, passengers) => {
   try {
-    const url = `${BACKEND_URL}/booking/train?userId=${userId}&trainId=${trainId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;
+    let url = `${BACKEND_URL}/booking/train?userId=${userId}&trainId=${trainId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;
+    if (passengers && passengers.length > 0) {
+      url += `&passengersJson=${encodeURIComponent(JSON.stringify(passengers))}`;
+    }
     const res = await axios.post(url);
     const data = res.data;
     return data;
@@ -401,9 +410,12 @@ export const editbus = async (
   }
 };
 
-export const handlebusbooking = async (userId, busId, seats, price, unitPrice) => {
+export const handlebusbooking = async (userId, busId, seats, price, unitPrice, passengers) => {
   try {
-    const url = `${BACKEND_URL}/booking/bus?userId=${userId}&busId=${busId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;
+    let url = `${BACKEND_URL}/booking/bus?userId=${userId}&busId=${busId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;
+    if (passengers && passengers.length > 0) {
+      url += `&passengersJson=${encodeURIComponent(JSON.stringify(passengers))}`;
+    }
     const res = await axios.post(url);
     const data = res.data;
     return data;
@@ -485,9 +497,12 @@ export const editcab = async (
   }
 };
 
-export const handlecabbooking = async (userId, cabId, seats, price, unitPrice) => {
+export const handlecabbooking = async (userId, cabId, seats, price, unitPrice, passengers) => {
   try {
-    const url = `${BACKEND_URL}/booking/cab?userId=${userId}&cabId=${cabId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;
+    let url = `${BACKEND_URL}/booking/cab?userId=${userId}&cabId=${cabId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;
+    if (passengers && passengers.length > 0) {
+      url += `&passengersJson=${encodeURIComponent(JSON.stringify(passengers))}`;
+    }
     const res = await axios.post(url);
     const data = res.data;
     return data;
@@ -561,9 +576,12 @@ export const edithomestay = async (
   }
 };
 
-export const handlehomestaybooking = async (userId, homestayId, rooms, price, unitPrice) => {
+export const handlehomestaybooking = async (userId, homestayId, rooms, price, unitPrice, passengers) => {
   try {
-    const url = `${BACKEND_URL}/booking/homestay?userId=${userId}&homestayId=${homestayId}&rooms=${rooms}&price=${price}&unitPrice=${unitPrice}`;
+    let url = `${BACKEND_URL}/booking/homestay?userId=${userId}&homestayId=${homestayId}&rooms=${rooms}&price=${price}&unitPrice=${unitPrice}`;
+    if (passengers && passengers.length > 0) {
+      url += `&passengersJson=${encodeURIComponent(JSON.stringify(passengers))}`;
+    }
     const res = await axios.post(url);
     const data = res.data;
     return data;
@@ -949,6 +967,19 @@ export const removeFromWishlist = async (userId, type, entityId) => {
     return res.data;
   } catch (error) {
     console.log(error);
+    throw error;
+  }
+};
+
+// ---------------- Promo Codes ----------------
+
+export const validatePromoCode = async (code, subtotal) => {
+  try {
+    const url = `${BACKEND_URL}/promo/validate?code=${encodeURIComponent(code)}&subtotal=${subtotal}`;
+    const res = await axios.get(url);
+    return res.data; // { valid, code, discount, description }
+  } catch (error) {
+    if (error?.response?.data) return error.response.data; // { valid: false, message }
     throw error;
   }
 };
