@@ -66,6 +66,7 @@ public class Users {
         private java.util.List<String> seatNumbers; // e.g. ["12A", "12B"] — flights only
         private String roomType;                    // e.g. "Deluxe Room" — hotels only
         private String travelClass;                 // e.g. "Business" — flights only
+        private java.util.List<Passenger> passengers = new ArrayList<>(); // per-traveler name/age
 
         // Getters and Setters — original fields
         public String getType() { return type; }
@@ -100,5 +101,17 @@ public class Users {
         public void setRoomType(String roomType) { this.roomType = roomType; }
         public String getTravelClass() { return travelClass; }
         public void setTravelClass(String travelClass) { this.travelClass = travelClass; }
+        public java.util.List<Passenger> getPassengers() { return passengers; }
+        public void setPassengers(java.util.List<Passenger> passengers) { this.passengers = passengers; }
+
+        public static class Passenger {
+            private String name;
+            private String age;
+
+            public String getName() { return name; }
+            public void setName(String name) { this.name = name; }
+            public String getAge() { return age; }
+            public void setAge(String age) { this.age = age; }
+        }
     }
 }

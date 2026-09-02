@@ -1,4 +1,5 @@
 package com.makemytrip.makemytrip.services;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.makemytrip.makemytrip.models.*;
 import com.makemytrip.makemytrip.repositories.UserRepository;
 import com.makemytrip.makemytrip.repositories.FlightRepository;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +55,8 @@ public class BookingService {
     @Autowired
     private RecommendationService recommendationService;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     /**
      * The frontend sends the total it computed (base fare + taxes + fees - discounts, etc.)
      * along with the per-unit base price it used to compute that total. We never trust the
@@ -90,7 +94,29 @@ public class BookingService {
         return Math.max(0, clientTotal + delta);
     }
 
-    public Users.Booking bookFlight(String userId, String flightId, int seats, double price, double unitPrice, String seatNumbersCsv, String travelClass){
+    /**
+     * Parses the optional passengersJson param (a JSON array like
+     * [{"name":"Asha","age":"29"}, ...]) sent by the frontend's multi-traveler
+     * form. Malformed or absent input just means no passenger details are
+     * stored — it never blocks the booking itself.
+     */
+    private List<Users.Booking.Passenger> parsePassengers(String passengersJson) {
+        List<Users.Booking.Passenger> result = new ArrayList<>();
+        if (passengersJson == null || passengersJson.isBlank()) return result;
+        try {
+            Users.Booking.Passenger[] parsed = objectMapper.readValue(passengersJson, Users.Booking.Passenger[].class);
+            for (Users.Booking.Passenger p : parsed) {
+                if (p.getName() != null && !p.getName().isBlank()) {
+                    result.add(p);
+                }
+            }
+        } catch (Exception e) {
+            // Ignore malformed passenger payloads — booking still proceeds.
+        }
+        return result;
+    }
+
+    public Users.Booking bookFlight(String userId, String flightId, int seats, double price, double unitPrice, String seatNumbersCsv, String travelClass, String passengersJson){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Flight> flightOptional =flightRepository.findById(flightId);
         if(usersOptional.isPresent() && flightOptional.isPresent()){
@@ -130,6 +156,7 @@ public class BookingService {
                 booking.setTotalPrice(finalPrice);
                 if (seatNumbers != null) booking.setSeatNumbers(seatNumbers);
                 booking.setTravelClass(travelClass != null && !travelClass.isBlank() ? travelClass : "Economy");
+                booking.setPassengers(parsePassengers(passengersJson));
 
                 user.getBookings().add(booking);
                 userRepository.save(user);
@@ -140,7 +167,7 @@ public class BookingService {
         }
         throw new RuntimeException("User or flight not found");
     }
-    public Users.Booking bookhotel(String userId, String hotelId, int rooms, double price, double unitPrice, String roomTypeId, String roomTypeName){
+    public Users.Booking bookhotel(String userId, String hotelId, int rooms, double price, double unitPrice, String roomTypeId, String roomTypeName, String passengersJson){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Hotel> hotelOptional = hotelRepository.findById(hotelId);
         if(usersOptional.isPresent() && hotelOptional.isPresent()){
@@ -176,6 +203,7 @@ public class BookingService {
                 if (roomTypeName != null && !roomTypeName.isBlank()) {
                     booking.setRoomType(roomTypeName);
                 }
+                booking.setPassengers(parsePassengers(passengersJson));
                 user.getBookings().add(booking);
                 userRepository.save(user);
                 return booking;
@@ -186,7 +214,7 @@ public class BookingService {
         throw new RuntimeException("User or flight not found");
     }
 
-    public Users.Booking booktrain(String userId, String trainId, int seats, double price, double unitPrice){
+    public Users.Booking booktrain(String userId, String trainId, int seats, double price, double unitPrice, String passengersJson){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Train> trainOptional =trainRepository.findById(trainId);
         if(usersOptional.isPresent() && trainOptional.isPresent()){
@@ -205,6 +233,7 @@ public class BookingService {
                 booking.setDate(Instant.now().toString());
                 booking.setQuantity(seats);
                 booking.setTotalPrice(finalPrice);
+                booking.setPassengers(parsePassengers(passengersJson));
                 user.getBookings().add(booking);
                 userRepository.save(user);
                 return booking;
@@ -215,7 +244,7 @@ public class BookingService {
         throw new RuntimeException("User or train not found");
     }
 
-    public Users.Booking bookbus(String userId, String busId, int seats, double price, double unitPrice){
+    public Users.Booking bookbus(String userId, String busId, int seats, double price, double unitPrice, String passengersJson){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Bus> busOptional =busRepository.findById(busId);
         if(usersOptional.isPresent() && busOptional.isPresent()){
@@ -234,6 +263,7 @@ public class BookingService {
                 booking.setDate(Instant.now().toString());
                 booking.setQuantity(seats);
                 booking.setTotalPrice(finalPrice);
+                booking.setPassengers(parsePassengers(passengersJson));
                 user.getBookings().add(booking);
                 userRepository.save(user);
                 return booking;
@@ -244,7 +274,7 @@ public class BookingService {
         throw new RuntimeException("User or bus not found");
     }
 
-    public Users.Booking bookcab(String userId, String cabId, int seats, double price, double unitPrice){
+    public Users.Booking bookcab(String userId, String cabId, int seats, double price, double unitPrice, String passengersJson){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Cab> cabOptional =cabRepository.findById(cabId);
         if(usersOptional.isPresent() && cabOptional.isPresent()){
@@ -263,6 +293,7 @@ public class BookingService {
                 booking.setDate(Instant.now().toString());
                 booking.setQuantity(seats);
                 booking.setTotalPrice(finalPrice);
+                booking.setPassengers(parsePassengers(passengersJson));
                 user.getBookings().add(booking);
                 userRepository.save(user);
                 return booking;
@@ -273,7 +304,7 @@ public class BookingService {
         throw new RuntimeException("User or cab not found");
     }
 
-    public Users.Booking bookhomestay(String userId, String homestayId, int rooms, double price, double unitPrice){
+    public Users.Booking bookhomestay(String userId, String homestayId, int rooms, double price, double unitPrice, String passengersJson){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Homestay> homestayOptional = homestayRepository.findById(homestayId);
         if(usersOptional.isPresent() && homestayOptional.isPresent()){
@@ -292,6 +323,7 @@ public class BookingService {
                 booking.setDate(Instant.now().toString());
                 booking.setQuantity(rooms);
                 booking.setTotalPrice(finalPrice);
+                booking.setPassengers(parsePassengers(passengersJson));
                 user.getBookings().add(booking);
                 userRepository.save(user);
                 return booking;
