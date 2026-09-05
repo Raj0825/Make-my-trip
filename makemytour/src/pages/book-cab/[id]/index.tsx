@@ -38,6 +38,8 @@ import { getcab, getReviews, handlecabbooking, trackInteraction } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
 import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
 import WishlistButton from "@/components/wishlist/WishlistButton";
+import PromoCodeInput from "@/components/promo/PromoCodeInput";
+import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
 interface Cab {
   id: string;
   cabType: string;
@@ -338,6 +340,9 @@ const BookCabPage = () => {
   const dispatch = useDispatch();
   const [paymentKey, setPaymentKey] = useState<string>("upi");
   const [insured, setInsured] = useState(false);
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
   const [reviewStats, setReviewStats] = useState<{ count: number; average: number }>({ count: 0, average: 0 });
   const [rideData, setRideData] = useState<{ driver: Driver; pnr: string; otp: string; grandTotal: number; paymentMethod: PaymentMethod; insured: boolean } | null>(null);
 
@@ -432,13 +437,14 @@ const BookCabPage = () => {
   const totalPrice = perCabFare * quantity;
   const taxes = Math.round(totalPrice * 0.05);
   const insuranceFee = insured ? INSURANCE_PREMIUM : 0;
-  const grandTotal = totalPrice + taxes + insuranceFee;
+  const grandTotal = Math.max(0, totalPrice + taxes + insuranceFee - promoDiscount);
   const paymentMethod = PAYMENT_METHODS.find((p) => p.key === paymentKey) || PAYMENT_METHODS[0];
+  const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
 
   const handlebooking = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const data = await handlecabbooking(user?.id, cab?.id, quantity, grandTotal, perCabFare);
+      const data = await handlecabbooking(user?.id, cab?.id, quantity, grandTotal, perCabFare, passengers);
       const updateuser = { ...user, bookings: [...user.bookings, data] };
       dispatch(setUser(updateuser));
       setopem(false);
@@ -511,6 +517,16 @@ const BookCabPage = () => {
 
         <InsuranceAddOn checked={insured} onChange={setInsured} />
 
+        <PassengerDetailsForm count={quantity} passengers={passengers} onChange={setPassengers} />
+
+        <PromoCodeInput
+          subtotal={totalPrice + insuranceFee}
+          appliedCode={promoCode}
+          discount={promoDiscount}
+          onApply={(code, discount) => { setPromoCode(code); setPromoDiscount(discount); }}
+          onRemove={() => { setPromoCode(null); setPromoDiscount(0); }}
+        />
+
         <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center"><CreditCard className="w-5 h-5 mr-2" />Fare Summary</h3>
           <div className="space-y-2">
@@ -538,13 +554,21 @@ const BookCabPage = () => {
               <span className="text-gray-600">Taxes and Fees</span>
               <span className="font-medium">₹ {taxes.toLocaleString()}</span>
             </div>
+            {promoDiscount > 0 && (
+              <div className="flex justify-between items-center text-green-600">
+                <span>Promo ({promoCode})</span>
+                <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
+              </div>
+            )}
             <div className="border-t pt-2 mt-2 flex justify-between items-center">
               <span className="font-bold text-lg">Total Amount</span>
               <span className="font-bold text-lg">₹ {grandTotal.toLocaleString()}</span>
             </div>
           </div>
         </div>
-        <Button className="w-full bg-blue-600 text-white" onClick={handlebooking}>Confirm Booking</Button>
+        <Button className="w-full bg-blue-600 text-white" onClick={handlebooking} disabled={!passengersReady}>
+          {passengersReady ? "Confirm Booking" : "Enter traveler details to continue"}
+        </Button>
       </div>
     </DialogContent>
   );

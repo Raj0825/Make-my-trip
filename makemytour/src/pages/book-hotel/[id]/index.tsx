@@ -1,6 +1,8 @@
 import { useRouter } from "next/router";
 import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 import WishlistButton from "@/components/wishlist/WishlistButton";
+import PromoCodeInput from "@/components/promo/PromoCodeInput";
+import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
 import {
   Star,
   MapPin,
@@ -47,6 +49,9 @@ const BookHotelPage = () => {
   const [quantity, setQuantity] = useState(1);
     const [selectedRoomType, setSelectedRoomType] = useState<any>(null);
     const [rememberRoomPref, setRememberRoomPref] = useState(false);
+    const [promoCode, setPromoCode] = useState<string | null>(null);
+    const [promoDiscount, setPromoDiscount] = useState(0);
+    const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
   const router = useRouter();
   const { id } = router.query; // Access the hotel ID from the URL
   const [hotels, sethotels] = useState<Hotel[]>([]);
@@ -126,7 +131,8 @@ const BookHotelPage = () => {
  const totalPrice = (selectedRoomType?.pricePerNight ?? hotel?.pricePerNight) * quantity;
    const totalTaxes = hotelData?.room.taxes * quantity;
    const totalDiscounts = hotelData?.room.discountedPrice * quantity;
-   const grandTotal = totalPrice + totalTaxes - totalDiscounts;
+   const grandTotal = Math.max(0, totalPrice + totalTaxes - totalDiscounts - promoDiscount);
+   const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
    const handlebooking = async (e: React.FormEvent) => {
      e.preventDefault();
      if (!selectedRoomType) {
@@ -141,7 +147,8 @@ const BookHotelPage = () => {
          grandTotal,
          selectedRoomType?.pricePerNight ?? hotel?.pricePerNight,
          selectedRoomType.id,
-         selectedRoomType.name
+         selectedRoomType.name,
+         passengers
        );
        const updateuser = {
          ...user,
@@ -241,6 +248,16 @@ const BookHotelPage = () => {
                   />
                 </div>
 
+                <PassengerDetailsForm count={quantity} passengers={passengers} onChange={setPassengers} />
+
+                <PromoCodeInput
+                  subtotal={totalPrice}
+                  appliedCode={promoCode}
+                  discount={promoDiscount}
+                  onApply={(code, discount) => { setPromoCode(code); setPromoDiscount(discount); }}
+                  onRemove={() => { setPromoCode(null); setPromoDiscount(0); }}
+                />
+
                 <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
@@ -265,6 +282,12 @@ const BookHotelPage = () => {
                 - ₹ {Math.abs(totalDiscounts).toLocaleString()}
               </span>
             </div>
+            {promoDiscount > 0 && (
+              <div className="flex justify-between items-center text-green-600">
+                <span>Promo ({promoCode})</span>
+                <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
+              </div>
+            )}
             <div className="border-t pt-2 mt-2">
               <div className="flex justify-between items-center">
                 <span className="font-bold text-lg">Total Amount</span>
@@ -276,7 +299,9 @@ const BookHotelPage = () => {
           </div>
         </div>
       </div>
-      <Button className="w-full mt-4" onClick={handlebooking}>Proceed to Payment</Button>
+      <Button className="w-full mt-4" onClick={handlebooking} disabled={!passengersReady}>
+        {passengersReady ? "Proceed to Payment" : "Enter traveler details to continue"}
+      </Button>
     </DialogContent>
   );
   return (
