@@ -537,7 +537,7 @@ const BookHotelPage = () => {
                   </button>
                 </DialogTrigger>
                 {user ? (
-                  <HotelContent />
+                  HotelContent()
                 ) : (
                   <DialogContent className="bg-white">
                     <DialogHeader>
