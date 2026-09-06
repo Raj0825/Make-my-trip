@@ -537,7 +537,7 @@ const BookHomestayPage = () => {
           </Button>
         </DialogTrigger>
         {user ? (
-          <HomestayContent />
+          HomestayContent()
         ) : (
           <DialogContent className="bg-white">
             <DialogHeader>
