@@ -766,7 +766,7 @@ const BookCabPage = () => {
                   <Button className="w-full bg-blue-600 text-white py-3">Book Now</Button>
                 </DialogTrigger>
                 {user ? (
-                  <BookingContent />
+                  BookingContent()
                 ) : (
                   <DialogContent className="bg-white">
                     <DialogHeader><DialogTitle>Login Required</DialogTitle></DialogHeader>
