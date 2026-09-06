@@ -1013,7 +1013,7 @@ const BookBusPage = () => {
                   </Button>
                 </DialogTrigger>
                 {user ? (
-                  <BookingContent />
+                  BookingContent()
                 ) : (
                   <DialogContent className="bg-white">
                     <DialogHeader>
