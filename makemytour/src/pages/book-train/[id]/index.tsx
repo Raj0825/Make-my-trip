@@ -222,30 +222,57 @@ function generatePNR(bookingId?: string) {
   return Math.floor(1000000000 + Math.random() * 8999999999).toString();
 }
 
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    return dateString;
+  }
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+  try {
+    return date.toLocaleString("en-US", options);
+  } catch {
+    return dateString;
+  }
+};
+
 // ---------------------------------------------------------------------------
 // Live train tracking — mocked from current time vs departure/arrival, since
 // there is no real GPS feed. Shows progress, current status and next station.
 // ---------------------------------------------------------------------------
+// Live train tracking — mocked from current time vs departure/arrival, since
+// there is no real GPS feed. Shows progress, current status and next station.
 function LiveTracking({ train }: { train: Train }) {
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(t);
   }, []);
 
-  const dep = new Date(train.departureTime).getTime();
-  const arr = new Date(train.arrivalTime).getTime();
-  const cur = now.getTime();
+  if (!train) return null;
+
+  const dep = train.departureTime ? new Date(train.departureTime).getTime() : NaN;
+  const arr = train.arrivalTime ? new Date(train.arrivalTime).getTime() : NaN;
+  const cur = now ? now.getTime() : 0;
 
   let status: "upcoming" | "running" | "completed" = "upcoming";
   let progress = 0;
-  if (cur < dep) status = "upcoming";
-  else if (cur >= dep && cur <= arr) {
-    status = "running";
-    progress = arr > dep ? Math.min(100, Math.max(0, ((cur - dep) / (arr - dep)) * 100)) : 0;
-  } else {
-    status = "completed";
-    progress = 100;
+  if (now && !isNaN(dep) && !isNaN(arr) && arr > dep) {
+    if (cur < dep) status = "upcoming";
+    else if (cur >= dep && cur <= arr) {
+      status = "running";
+      progress = Math.min(100, Math.max(0, ((cur - dep) / (arr - dep)) * 100));
+    } else {
+      status = "completed";
+      progress = 100;
+    }
   }
 
   const stationsCount = 5;
@@ -254,13 +281,14 @@ function LiveTracking({ train }: { train: Train }) {
     Math.floor((progress / 100) * stationsCount)
   );
   const stationNames = [
-    train.from,
+    train.from || "Origin",
     "Junction A",
     "Junction B",
     "Junction C",
-    train.to,
+    train.to || "Destination",
   ];
-  const delayMinutes = hashToIndex(train.id, 3) * 5; // deterministic mock delay: 0, 5 or 10 min
+  const trainIdStr = train.id || (train as any)._id || "";
+  const delayMinutes = hashToIndex(trainIdStr, 3) * 5; // deterministic mock delay: 0, 5 or 10 min
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4">
@@ -367,8 +395,8 @@ function ETicket({
         <table>
           <tr><td class="label">From</td><td>${train.from}</td></tr>
           <tr><td class="label">To</td><td>${train.to}</td></tr>
-          <tr><td class="label">Departure</td><td>${new Date(train.departureTime).toLocaleString()}</td></tr>
-          <tr><td class="label">Arrival</td><td>${new Date(train.arrivalTime).toLocaleString()}</td></tr>
+          <tr><td class="label">Departure</td><td>${formatDate(train.departureTime)}</td></tr>
+          <tr><td class="label">Arrival</td><td>${formatDate(train.arrivalTime)}</td></tr>
           <tr><td class="label">Class</td><td>${coachClass.label} (${coachClass.code})</td></tr>
           <tr><td class="label">Quota</td><td>${quota === "tatkal" ? "Tatkal" : "General"}</td></tr>
           <tr><td class="label">Seats</td><td>${seats.map((s) => `${s.number} (${s.type})`).join(", ")}</td></tr>
@@ -413,12 +441,12 @@ function ETicket({
           <div className="flex items-center justify-between border-y border-dashed border-gray-200 py-3 mb-3">
             <div>
               <p className="text-lg font-bold">{train.from}</p>
-              <p className="text-xs text-gray-500">{new Date(train.departureTime).toLocaleString()}</p>
+              <p className="text-xs text-gray-500">{formatDate(train.departureTime)}</p>
             </div>
             <TrainFront className="text-blue-600" size={20} />
             <div className="text-right">
               <p className="text-lg font-bold">{train.to}</p>
-              <p className="text-xs text-gray-500">{new Date(train.arrivalTime).toLocaleString()}</p>
+              <p className="text-xs text-gray-500">{formatDate(train.arrivalTime)}</p>
             </div>
           </div>
 
@@ -516,7 +544,7 @@ const BookTrainPage = () => {
     const fetchTrains = async () => {
       try {
         const data = await gettrain();
-        const filteredData = data.filter((train: any) => train.id === id);
+        const filteredData = (data || []).filter((train: any) => train.id === id || train._id === id);
         setTrains(filteredData);
       } catch (error) {
         console.error("Error fetching trains:", error);
@@ -524,27 +552,30 @@ const BookTrainPage = () => {
         setLoading(false);
       }
     };
-    fetchTrains();
+    if (id) {
+      fetchTrains();
+    }
   }, [id, user]);
 
   const coachClass = COACH_CLASSES.find((c) => c.key === coachKey) || COACH_CLASSES[2];
   const train = trains[0];
+  const trainIdStr = (train?.id || (train as any)?._id || id || "") as string;
 
   const [realBookedSeats, setRealBookedSeats] = useState<Set<string>>(new Set());
   const refreshBookedSeats = async () => {
-    if (!train) return;
-    const booked = await getBookedSeats("Train", train.id);
+    if (!trainIdStr) return;
+    const booked = await getBookedSeats("Train", trainIdStr);
     setRealBookedSeats(new Set(booked || []));
   };
   useEffect(() => {
     refreshBookedSeats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [train?.id]);
+  }, [trainIdStr]);
 
   const coaches = useMemo(() => {
     if (!train) return [];
-    return generateCoaches(coachClass, train.id, realBookedSeats);
-  }, [train, coachClass, realBookedSeats]);
+    return generateCoaches(coachClass, trainIdStr, realBookedSeats);
+  }, [train, coachClass, realBookedSeats, trainIdStr]);
 
   const [activeCoachNumber, setActiveCoachNumber] = useState<string>("");
   useEffect(() => {
@@ -566,20 +597,10 @@ const BookTrainPage = () => {
     return <div>No train data available for this ID.</div>;
   }
 
-  const formatDate = (dateString: string): string => {
-    const options: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    };
-    const date = new Date(dateString);
-    return date.toLocaleString("en-US", options);
-  };
-
   const durationLabel = (() => {
-    const ms = new Date(train.arrivalTime).getTime() - new Date(train.departureTime).getTime();
+    const depMs = train.departureTime ? new Date(train.departureTime).getTime() : NaN;
+    const arrMs = train.arrivalTime ? new Date(train.arrivalTime).getTime() : NaN;
+    const ms = arrMs - depMs;
     if (isNaN(ms) || ms <= 0) return null;
     const hrs = Math.floor(ms / 3600000);
     const mins = Math.round((ms % 3600000) / 60000);
@@ -629,18 +650,23 @@ const BookTrainPage = () => {
     e.preventDefault();
     setBookingError("");
     try {
+      const userId = user?.id || (user as any)?._id;
       const data = await handletrainbooking(
-        user?.id,
-        train?.id,
+        userId,
+        trainIdStr,
         passengerCount,
         grandTotal,
         perSeatFare + tatkalPremium,
         passengers,
         selectedSeats
       );
+      if (!data) {
+        throw new Error("Failed to book train ticket. Please try again.");
+      }
+      const existingBookings = user?.bookings || [];
       const updateuser = {
         ...user,
-        bookings: [...user.bookings, data],
+        bookings: [...existingBookings, data],
       };
       dispatch(setUser(updateuser));
       setopem(false);
@@ -655,17 +681,15 @@ const BookTrainPage = () => {
         coachClass,
         seats: bookedSeats,
         quota,
-        pnr: generatePNR(data?.id),
+        pnr: generatePNR(data?.id || data?.bookingId || data?._id),
         grandTotal,
         foodItems: orderedFoodItems,
         insured,
       });
     } catch (error: any) {
-      console.log(error);
-      // A seat we thought was free just got taken by someone else — refresh
-      // the real booked-seat list so the map updates, and let the person know.
+      console.error(error);
       setBookingError(
-        error?.response?.data || "One or more selected seats are no longer available. Please choose different seats."
+        error?.response?.data || error?.message || "One or more selected seats are no longer available. Please choose different seats."
       );
       setSelectedSeats([]);
       refreshBookedSeats();
@@ -715,14 +739,14 @@ const BookTrainPage = () => {
               <Calendar className="w-4 h-4 mr-2" />
               Departure
             </Label>
-            <Input value={new Date(train.departureTime).toLocaleString()} readOnly />
+            <Input value={formatDate(train?.departureTime)} readOnly />
           </div>
           <div className="space-y-2">
             <Label className="flex items-center">
               <Clock className="w-4 h-4 mr-2" />
               Arrival
             </Label>
-            <Input value={new Date(train.arrivalTime).toLocaleString()} readOnly />
+            <Input value={formatDate(train?.arrivalTime)} readOnly />
           </div>
         </div>
 
@@ -818,7 +842,7 @@ const BookTrainPage = () => {
                   </p>
                 </div>
               </div>
-              <WishlistButton userId={user?.id} type="Train" entityId={train.id} />
+              <WishlistButton userId={user?.id || (user as any)?._id} type="Train" entityId={trainIdStr} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
               <div className="flex items-center text-gray-600 text-sm">
@@ -1218,8 +1242,8 @@ const BookTrainPage = () => {
             </div>
             <DynamicPriceCard
               entityType="TRAIN"
-              entityId={id as string}
-              userId={user?.id}
+              entityId={trainIdStr}
+              userId={user?.id || (user as any)?._id}
               variantLabel={`${coachClass.label} (${coachClass.code})`}
               variantPrice={perSeatFare + tatkalPremium}
             />
