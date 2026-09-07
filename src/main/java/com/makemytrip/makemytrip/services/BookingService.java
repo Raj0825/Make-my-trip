@@ -44,6 +44,9 @@ public class BookingService {
     private FlightSeatService flightSeatService;
 
     @Autowired
+    private SeatInventoryService seatInventoryService;
+
+    @Autowired
     private RoomTypeService roomTypeService;
 
     @Autowired
@@ -214,13 +217,32 @@ public class BookingService {
         throw new RuntimeException("User or flight not found");
     }
 
-    public Users.Booking booktrain(String userId, String trainId, int seats, double price, double unitPrice, String passengersJson){
+    public Users.Booking booktrain(String userId, String trainId, int seats, double price, double unitPrice, String passengersJson, String seatNumbersCsv){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Train> trainOptional =trainRepository.findById(trainId);
         if(usersOptional.isPresent() && trainOptional.isPresent()){
             Users user=usersOptional.get();
             Train train=trainOptional.get();
             if(train.getAvailableSeats() >= seats){
+
+                List<String> seatNumbers = null;
+                if (seatNumbersCsv != null && !seatNumbersCsv.isBlank()) {
+                    seatNumbers = Arrays.stream(seatNumbersCsv.split(","))
+                            .map(String::trim).filter(s -> !s.isEmpty()).toList();
+                    if (seatNumbers.isEmpty()) seatNumbers = null;
+                    else if (seatNumbers.size() != seats) {
+                        throw new RuntimeException("Number of selected seats must match number of tickets");
+                    }
+                }
+
+                // Reserve the specific seats FIRST — if another booking already holds
+                // one of them, this throws before availableSeats or anything else changes.
+                String seatBookingRef = null;
+                if (seatNumbers != null) {
+                    seatBookingRef = userId + ":" + trainId + ":" + System.currentTimeMillis();
+                    seatInventoryService.bookSeats("Train", trainId, seatNumbers, userId, seatBookingRef);
+                }
+
                 train.setAvailableSeats(train.getAvailableSeats()- seats);
                 trainRepository.save(train);
                 dynamicPricingService.recalculate(DynamicPricingService.TRAIN, trainId);
@@ -234,6 +256,7 @@ public class BookingService {
                 booking.setQuantity(seats);
                 booking.setTotalPrice(finalPrice);
                 booking.setPassengers(parsePassengers(passengersJson));
+                if (seatNumbers != null) booking.setSeatNumbers(seatNumbers);
                 user.getBookings().add(booking);
                 userRepository.save(user);
                 return booking;
@@ -244,13 +267,30 @@ public class BookingService {
         throw new RuntimeException("User or train not found");
     }
 
-    public Users.Booking bookbus(String userId, String busId, int seats, double price, double unitPrice, String passengersJson){
+    public Users.Booking bookbus(String userId, String busId, int seats, double price, double unitPrice, String passengersJson, String seatNumbersCsv){
         Optional<Users> usersOptional =userRepository.findById(userId);
         Optional<Bus> busOptional =busRepository.findById(busId);
         if(usersOptional.isPresent() && busOptional.isPresent()){
             Users user=usersOptional.get();
             Bus bus=busOptional.get();
             if(bus.getAvailableSeats() >= seats){
+
+                List<String> seatNumbers = null;
+                if (seatNumbersCsv != null && !seatNumbersCsv.isBlank()) {
+                    seatNumbers = Arrays.stream(seatNumbersCsv.split(","))
+                            .map(String::trim).filter(s -> !s.isEmpty()).toList();
+                    if (seatNumbers.isEmpty()) seatNumbers = null;
+                    else if (seatNumbers.size() != seats) {
+                        throw new RuntimeException("Number of selected seats must match number of tickets");
+                    }
+                }
+
+                String seatBookingRef = null;
+                if (seatNumbers != null) {
+                    seatBookingRef = userId + ":" + busId + ":" + System.currentTimeMillis();
+                    seatInventoryService.bookSeats("Bus", busId, seatNumbers, userId, seatBookingRef);
+                }
+
                 bus.setAvailableSeats(bus.getAvailableSeats()- seats);
                 busRepository.save(bus);
                 dynamicPricingService.recalculate(DynamicPricingService.BUS, busId);
@@ -264,6 +304,7 @@ public class BookingService {
                 booking.setQuantity(seats);
                 booking.setTotalPrice(finalPrice);
                 booking.setPassengers(parsePassengers(passengersJson));
+                if (seatNumbers != null) booking.setSeatNumbers(seatNumbers);
                 user.getBookings().add(booking);
                 userRepository.save(user);
                 return booking;
