@@ -470,6 +470,7 @@ const BookBusPage = () => {
   const [promoCode, setPromoCode] = useState<string | null>(null);
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
+  const [bookingError, setBookingError] = useState("");
   const [ticketData, setTicketData] = useState<{
     busClass: BusClass;
     seats: BusSeat[];
@@ -595,8 +596,6 @@ const BookBusPage = () => {
   const grandTotal = Math.max(0, seatFareTotal + taxes + insuranceFee - promoDiscount);
   const seatsReady = selectedSeats.length === passengerCount;
   const passengersReady = passengers.length === passengerCount && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
-
-  const [bookingError, setBookingError] = useState("");
 
   const handlebooking = async (e: React.FormEvent) => {
     e.preventDefault();
