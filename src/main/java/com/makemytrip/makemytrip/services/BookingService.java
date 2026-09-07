@@ -22,6 +22,26 @@ public class BookingService {
     @Autowired
     private UserRepository userRepository;
 
+    /**
+     * Awards loyalty points to the user immediately after a successful booking.
+     * 1 point per ₹1 spent (floor). Points stored in user document in the same
+     * save call that persists the booking, so they are always in sync.
+     * loyaltyEarned (lifetime total) is never reduced and drives tier calculation.
+     */
+    private void awardLoyaltyPoints(Users user, double totalPrice, String bookingType) {
+        int pts = (int) Math.floor(totalPrice);
+        if (pts <= 0) return;
+        user.setLoyaltyPoints(user.getLoyaltyPoints() + pts);
+        user.setLoyaltyEarned(user.getLoyaltyEarned() + pts);
+        Users.LoyaltyEvent event = new Users.LoyaltyEvent();
+        event.setType("EARNED");
+        event.setPoints(pts);
+        event.setDescription("Booking confirmed – " + bookingType);
+        event.setDate(java.time.Instant.now().toString());
+        if (user.getLoyaltyHistory() == null) user.setLoyaltyHistory(new java.util.ArrayList<>());
+        user.getLoyaltyHistory().add(0, event); // prepend so newest first
+    }
+
     @Autowired
     private FlightRepository flightRepository;
 
@@ -162,6 +182,7 @@ public class BookingService {
                 booking.setPassengers(parsePassengers(passengersJson));
 
                 user.getBookings().add(booking);
+                awardLoyaltyPoints(user, finalPrice, "Flight");
                 userRepository.save(user);
                 return booking;
             }else {
@@ -208,13 +229,14 @@ public class BookingService {
                 }
                 booking.setPassengers(parsePassengers(passengersJson));
                 user.getBookings().add(booking);
+                awardLoyaltyPoints(user, finalPrice, "Hotel");
                 userRepository.save(user);
                 return booking;
             }else {
                 throw new RuntimeException("Not enough rooms available");
             }
         }
-        throw new RuntimeException("User or flight not found");
+        throw new RuntimeException("User or hotel not found");
     }
 
     public Users.Booking booktrain(String userId, String trainId, int seats, double price, double unitPrice, String passengersJson, String seatNumbersCsv){
@@ -258,6 +280,7 @@ public class BookingService {
                 booking.setPassengers(parsePassengers(passengersJson));
                 if (seatNumbers != null) booking.setSeatNumbers(seatNumbers);
                 user.getBookings().add(booking);
+                awardLoyaltyPoints(user, finalPrice, "Train");
                 userRepository.save(user);
                 return booking;
             }else {
@@ -306,6 +329,7 @@ public class BookingService {
                 booking.setPassengers(parsePassengers(passengersJson));
                 if (seatNumbers != null) booking.setSeatNumbers(seatNumbers);
                 user.getBookings().add(booking);
+                awardLoyaltyPoints(user, finalPrice, "Bus");
                 userRepository.save(user);
                 return booking;
             }else {
@@ -336,6 +360,7 @@ public class BookingService {
                 booking.setTotalPrice(finalPrice);
                 booking.setPassengers(parsePassengers(passengersJson));
                 user.getBookings().add(booking);
+                awardLoyaltyPoints(user, finalPrice, "Cab");
                 userRepository.save(user);
                 return booking;
             }else {
@@ -366,6 +391,7 @@ public class BookingService {
                 booking.setTotalPrice(finalPrice);
                 booking.setPassengers(parsePassengers(passengersJson));
                 user.getBookings().add(booking);
+                awardLoyaltyPoints(user, finalPrice, "Homestay");
                 userRepository.save(user);
                 return booking;
             }else {

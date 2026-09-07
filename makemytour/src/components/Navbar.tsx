@@ -2,6 +2,7 @@ import React from "react";
 import SignupDialog from "./SignupDialog";
 import { LogOut, Plane, User, Bell } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +40,8 @@ const Navbar = () => {
                   ADMIN
                 </Button>
               )}
+
+              <NotificationBell />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

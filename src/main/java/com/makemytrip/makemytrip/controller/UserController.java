@@ -5,6 +5,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.makemytrip.makemytrip.services.UserServices;
+import com.makemytrip.makemytrip.repositories.UserRepository;
+import java.time.Instant;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
@@ -12,6 +15,8 @@ import com.makemytrip.makemytrip.services.UserServices;
 public class UserController {
     @Autowired
     private UserServices userServices;
+    @Autowired
+    private UserRepository userRepository;
 
     @PostMapping("/login")
     public Users login(@RequestParam String email, @RequestParam String password){
@@ -36,5 +41,36 @@ public class UserController {
     @PostMapping("/edit")
     public Users editprofile(@RequestParam String id ,@RequestBody Users updatedUser){
         return userServices.editprofile(id,updatedUser);
+    }
+
+    @GetMapping("/loyalty")
+    public ResponseEntity<?> getLoyalty(@RequestParam String id) {
+        return userRepository.findById(id)
+            .map(u -> (ResponseEntity<?>) ResponseEntity.ok(Map.of(
+                "points",   u.getLoyaltyPoints(),
+                "earned",   u.getLoyaltyEarned(),
+                "history",  u.getLoyaltyHistory() != null ? u.getLoyaltyHistory() : java.util.List.of()
+            )))
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/loyalty/redeem")
+    public ResponseEntity<?> redeemPoints(@RequestParam String id, @RequestParam int points) {
+        return userRepository.findById(id).map(u -> {
+            int available = u.getLoyaltyPoints();
+            if (points <= 0 || points > available) {
+                return ResponseEntity.badRequest().body("Insufficient loyalty points");
+            }
+            u.setLoyaltyPoints(available - points);
+            Users.LoyaltyEvent event = new Users.LoyaltyEvent();
+            event.setType("REDEEMED");
+            event.setPoints(-points);
+            event.setDescription("Points redeemed at checkout");
+            event.setDate(Instant.now().toString());
+            if (u.getLoyaltyHistory() == null) u.setLoyaltyHistory(new java.util.ArrayList<>());
+            u.getLoyaltyHistory().add(0, event);
+            Users saved = userRepository.save(u);
+            return (ResponseEntity<?>) ResponseEntity.ok(saved);
+        }).orElse(ResponseEntity.notFound().build());
     }
 }

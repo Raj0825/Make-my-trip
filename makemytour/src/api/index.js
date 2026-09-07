@@ -100,7 +100,29 @@ export const editprofile = async (
     return data;
   } catch (error) {}
 };
+
+export const getLoyaltyInfo = async (userId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/user/loyalty?id=${userId}`);
+    return res.data;
+  } catch (error) {
+    console.error("getLoyaltyInfo error:", error);
+    return null;
+  }
+};
+
+export const redeemLoyaltyPoints = async (userId, points) => {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/user/loyalty/redeem?id=${userId}&points=${points}`);
+    return res.data;
+  } catch (error) {
+    console.error("redeemLoyaltyPoints error:", error);
+    throw error;
+  }
+};
+
 export const getflight = async () => {
+
   try {
     const res = await axios.get(`${BACKEND_URL}/flight`);
     return res.data || [];

@@ -6,9 +6,11 @@ import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 import WishlistButton from "@/components/wishlist/WishlistButton";
 import PromoCodeInput from "@/components/promo/PromoCodeInput";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
+import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
+import { getTier } from "@/components/loyalty/LoyaltyWidget";
 import { getFlightStatus } from "@/api";
 import SeatMap from "@/components/seat-selection/SeatMap";
-import { saveBookingPreferences } from "@/api";
+import { saveBookingPreferences, redeemLoyaltyPoints } from "@/api";
 
 import {
   Plane,
@@ -74,6 +76,7 @@ const BookFlightPage = () => {
   const [insured, setInsured] = useState(false);
   const [promoCode, setPromoCode] = useState<string | null>(null);
   const [promoDiscount, setPromoDiscount] = useState(0);
+  const [redeemedPoints, setRedeemedPoints] = useState(0);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
     const [flightStatus, setFlightStatus] = useState<any>(null);
     const user = useSelector((state: any) => state.user.user);
@@ -210,7 +213,9 @@ const BookFlightPage = () => {
   const totalOtherServices = fareSummary?.otherServices * quantity;
   const totalDiscounts = fareSummary?.discounts * quantity;
   const grandTotal = Math.max(0,
-      totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge + (insured ? INSURANCE_PREMIUM : 0) - promoDiscount);
+      totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge + (insured ? INSURANCE_PREMIUM : 0) - promoDiscount - redeemedPoints);
+  const loyaltyTier = getTier(user?.loyaltyEarned ?? 0);
+  const loyaltyAvailable = user?.loyaltyPoints ?? 0;
   const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
 
   const handlebooking = async (e: React.FormEvent) => {
@@ -240,6 +245,14 @@ const BookFlightPage = () => {
           const lastCol = selectedSeats[0].slice(-1);
           const seatType = ["A", "F"].includes(lastCol) ? "WINDOW" : ["C", "D"].includes(lastCol) ? "AISLE" : "MIDDLE";
           saveBookingPreferences(user.id, { seatType }).catch(() => {});
+        }
+
+        if (redeemedPoints > 0) {
+          const updatedUser = await redeemLoyaltyPoints(user?.id, redeemedPoints);
+          if (updatedUser) dispatch(setUser({ ...updatedUser, bookings: [...(updatedUser.bookings || []), data] }));
+          else dispatch(setUser({ ...user, bookings: [...user.bookings, data] }));
+        } else {
+          dispatch(setUser({ ...user, bookings: [...user.bookings, data] }));
         }
 
         setopem(false);
@@ -366,6 +379,14 @@ const BookFlightPage = () => {
 
         <PassengerDetailsForm count={quantity} passengers={passengers} onChange={setPassengers} />
 
+        <LoyaltyRedeemToggle
+          available={loyaltyAvailable}
+          maxRedeemPct={loyaltyTier.redeemPct}
+          subtotal={totalPrice + totalTaxes + totalOtherServices + (insured ? INSURANCE_PREMIUM : 0)}
+          redeemedPoints={redeemedPoints}
+          onChange={setRedeemedPoints}
+        />
+
         <PromoCodeInput
           subtotal={totalPrice + totalTaxes + totalOtherServices + (insured ? INSURANCE_PREMIUM : 0)}
           appliedCode={promoCode}
@@ -424,6 +445,12 @@ const BookFlightPage = () => {
                           <div className="flex justify-between items-center text-green-600">
                             <span>Promo ({promoCode})</span>
                             <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {redeemedPoints > 0 && (
+                          <div className="flex justify-between items-center text-amber-600">
+                            <span>Rewards Redeemed</span>
+                            <span className="font-medium">- ₹ {redeemedPoints.toLocaleString()}</span>
                           </div>
                         )}
             <div className="border-t pt-2 mt-2">

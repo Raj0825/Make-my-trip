@@ -31,12 +31,14 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { getbus, handlebusbooking, getBookedSeats } from "@/api";
+import { getbus, handlebusbooking, getBookedSeats, redeemLoyaltyPoints } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
 import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
 import WishlistButton from "@/components/wishlist/WishlistButton";
 import PromoCodeInput from "@/components/promo/PromoCodeInput";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
+import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
+import { getTier } from "@/components/loyalty/LoyaltyWidget";
 interface Bus {
   id: string;
   busName: string;
@@ -469,6 +471,7 @@ const BookBusPage = () => {
   const [insured, setInsured] = useState(false);
   const [promoCode, setPromoCode] = useState<string | null>(null);
   const [promoDiscount, setPromoDiscount] = useState(0);
+  const [redeemedPoints, setRedeemedPoints] = useState(0);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
   const [bookingError, setBookingError] = useState("");
   const [ticketData, setTicketData] = useState<{
@@ -593,7 +596,9 @@ const BookBusPage = () => {
   const seatFareTotal = perSeatFare * passengerCount;
   const taxes = Math.round(seatFareTotal * 0.05);
   const insuranceFee = insured ? INSURANCE_PREMIUM : 0;
-  const grandTotal = Math.max(0, seatFareTotal + taxes + insuranceFee - promoDiscount);
+  const grandTotal = Math.max(0, seatFareTotal + taxes + insuranceFee - promoDiscount - redeemedPoints);
+  const loyaltyTier = getTier(user?.loyaltyEarned ?? 0);
+  const loyaltyAvailable = user?.loyaltyPoints ?? 0;
   const seatsReady = selectedSeats.length === passengerCount;
   const passengersReady = passengers.length === passengerCount && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
 
@@ -606,9 +611,16 @@ const BookBusPage = () => {
       if (!data) {
         throw new Error("Failed to book bus ticket. Please try again.");
       }
-      const existingBookings = user?.bookings || [];
-      const updateuser = { ...user, bookings: [...existingBookings, data] };
-      dispatch(setUser(updateuser));
+      // Redeem points if applied
+      if (redeemedPoints > 0) {
+        const updatedUser = await redeemLoyaltyPoints(userId, redeemedPoints);
+        if (updatedUser) dispatch(setUser({ ...updatedUser, bookings: [...(updatedUser.bookings || []), data] }));
+        else dispatch(setUser({ ...user, bookings: [...(user?.bookings || []), data] }));
+      } else {
+        const existingBookings = user?.bookings || [];
+        const updateuser = { ...user, bookings: [...existingBookings, data] };
+        dispatch(setUser(updateuser));
+      }
       setopem(false);
       const bookedSeats = allSeats.filter((s) => selectedSeats.includes(s.number));
       setTicketData({
@@ -687,6 +699,14 @@ const BookBusPage = () => {
 
         <PassengerDetailsForm count={passengerCount} passengers={passengers} onChange={setPassengers} />
 
+        <LoyaltyRedeemToggle
+          available={loyaltyAvailable}
+          maxRedeemPct={loyaltyTier.redeemPct}
+          subtotal={seatFareTotal + insuranceFee}
+          redeemedPoints={redeemedPoints}
+          onChange={setRedeemedPoints}
+        />
+
         <PromoCodeInput
           subtotal={seatFareTotal + insuranceFee}
           appliedCode={promoCode}
@@ -721,6 +741,12 @@ const BookBusPage = () => {
               <div className="flex justify-between items-center text-green-600">
                 <span>Promo ({promoCode})</span>
                 <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
+              </div>
+            )}
+            {redeemedPoints > 0 && (
+              <div className="flex justify-between items-center text-amber-600">
+                <span>Rewards Redeemed</span>
+                <span className="font-medium">- ₹ {redeemedPoints.toLocaleString()}</span>
               </div>
             )}
             <div className="border-t pt-2 mt-2 flex justify-between items-center">

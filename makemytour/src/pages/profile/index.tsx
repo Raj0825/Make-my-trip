@@ -4,11 +4,12 @@ import {
   User, Phone, Mail, Edit2, Calendar, CreditCard,
   X, Check, LogOut, Plane, Building2, Train, Bus,
   Car, Home, AlertCircle, Clock, CheckCircle2, XCircle,
-  IndianRupee, Tag, ArrowRight, Ticket, Heart,
+  IndianRupee, Tag, ArrowRight, Ticket, Heart, Gift,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/router";
 import { clearUser, setUser } from "@/store";
+import LoyaltyWidget from "@/components/loyalty/LoyaltyWidget";
 import {
   editprofile, cancelbooking,
   gethotel, getflight, gettrain, getbus, getcab, gethomestay,
@@ -269,6 +270,10 @@ const ProfilePage = () => {
                         className="w-full flex items-center justify-center gap-2 py-2 border border-pink-200 text-pink-500 rounded-lg text-sm font-semibold hover:bg-pink-50 transition-colors">
                         <Heart className="w-3.5 h-3.5" /> My Wishlist
                       </Link>
+                      <Link href="/loyalty"
+                        className="w-full flex items-center justify-center gap-2 py-2 border border-amber-200 text-amber-600 rounded-lg text-sm font-semibold hover:bg-amber-50 transition-colors">
+                        <Gift className="w-3.5 h-3.5" /> My Rewards
+                      </Link>
                       <button onClick={logout}
                         className="w-full flex items-center justify-center gap-2 py-2 border border-red-200 text-red-500 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors">
                         <LogOut className="w-3.5 h-3.5" /> Sign Out
@@ -290,6 +295,12 @@ const ProfilePage = () => {
                 <p className="text-xs text-gray-500 mt-0.5">Cancelled</p>
               </div>
             </div>
+
+            {/* Loyalty Widget */}
+            <LoyaltyWidget
+              points={user?.loyaltyPoints ?? 0}
+              earned={user?.loyaltyEarned ?? 0}
+            />
           </div>
 
           {/* Right — Bookings */}

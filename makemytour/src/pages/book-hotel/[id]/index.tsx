@@ -3,6 +3,8 @@ import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 import WishlistButton from "@/components/wishlist/WishlistButton";
 import PromoCodeInput from "@/components/promo/PromoCodeInput";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
+import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
+import { getTier } from "@/components/loyalty/LoyaltyWidget";
 import {
   Star,
   MapPin,
@@ -44,13 +46,14 @@ import Loader from "@/components/Loader";
 import { setUser } from "@/store";
 import ReviewSection from "@/components/reviews/ReviewSection";
 import RoomTypeGrid from "@/components/room-selection/RoomTypeGrid";
-import { saveBookingPreferences } from "@/api";
+import { saveBookingPreferences, redeemLoyaltyPoints } from "@/api";
 const BookHotelPage = () => {
   const [quantity, setQuantity] = useState(1);
     const [selectedRoomType, setSelectedRoomType] = useState<any>(null);
     const [rememberRoomPref, setRememberRoomPref] = useState(false);
     const [promoCode, setPromoCode] = useState<string | null>(null);
     const [promoDiscount, setPromoDiscount] = useState(0);
+    const [redeemedPoints, setRedeemedPoints] = useState(0);
     const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
   const router = useRouter();
   const { id } = router.query; // Access the hotel ID from the URL
@@ -131,7 +134,9 @@ const BookHotelPage = () => {
  const totalPrice = (selectedRoomType?.pricePerNight ?? hotel?.pricePerNight) * quantity;
    const totalTaxes = hotelData?.room.taxes * quantity;
    const totalDiscounts = hotelData?.room.discountedPrice * quantity;
-   const grandTotal = Math.max(0, totalPrice + totalTaxes - totalDiscounts - promoDiscount);
+   const grandTotal = Math.max(0, totalPrice + totalTaxes - totalDiscounts - promoDiscount - redeemedPoints);
+   const loyaltyTier = getTier(user?.loyaltyEarned ?? 0);
+   const loyaltyAvailable = user?.loyaltyPoints ?? 0;
    const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
    const handlebooking = async (e: React.FormEvent) => {
      e.preventDefault();
@@ -154,10 +159,17 @@ const BookHotelPage = () => {
          ...user,
          bookings: [...user.bookings, data],
        };
-       dispatch(setUser(updateuser));
 
        if (rememberRoomPref) {
          saveBookingPreferences(user.id, { roomTypeName: selectedRoomType.name }).catch(() => {});
+       }
+
+       if (redeemedPoints > 0) {
+         const updatedUser = await redeemLoyaltyPoints(user?.id, redeemedPoints);
+         if (updatedUser) dispatch(setUser({ ...updatedUser, bookings: [...(updatedUser.bookings || []), data] }));
+         else dispatch(setUser(updateuser));
+       } else {
+         dispatch(setUser(updateuser));
        }
 
        setopem(false);
@@ -250,6 +262,14 @@ const BookHotelPage = () => {
 
                 <PassengerDetailsForm count={quantity} passengers={passengers} onChange={setPassengers} />
 
+                <LoyaltyRedeemToggle
+                  available={loyaltyAvailable}
+                  maxRedeemPct={loyaltyTier.redeemPct}
+                  subtotal={totalPrice}
+                  redeemedPoints={redeemedPoints}
+                  onChange={setRedeemedPoints}
+                />
+
                 <PromoCodeInput
                   subtotal={totalPrice}
                   appliedCode={promoCode}
@@ -286,6 +306,12 @@ const BookHotelPage = () => {
               <div className="flex justify-between items-center text-green-600">
                 <span>Promo ({promoCode})</span>
                 <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
+              </div>
+            )}
+            {redeemedPoints > 0 && (
+              <div className="flex justify-between items-center text-amber-600">
+                <span>Rewards Redeemed</span>
+                <span className="font-medium">- ₹ {redeemedPoints.toLocaleString()}</span>
               </div>
             )}
             <div className="border-t pt-2 mt-2">

@@ -16,6 +16,9 @@ public class Users {
     private String phoneNumber;
     private List<Booking> bookings = new ArrayList<>();
     private List<Favorite> favorites = new ArrayList<>();
+    private int loyaltyPoints = 0;
+    private int loyaltyEarned = 0;
+    private List<LoyaltyEvent> loyaltyHistory = new ArrayList<>();
 
     public String getFirstName() {return firstName;}
     public String getId() { return _id; }
@@ -33,6 +36,12 @@ public class Users {
     public void setBookings(List<Booking> bookings){this.bookings=bookings;}
     public List<Favorite> getFavorites() { return favorites; }
     public void setFavorites(List<Favorite> favorites) { this.favorites = favorites; }
+    public int getLoyaltyPoints() { return loyaltyPoints; }
+    public void setLoyaltyPoints(int loyaltyPoints) { this.loyaltyPoints = loyaltyPoints; }
+    public int getLoyaltyEarned() { return loyaltyEarned; }
+    public void setLoyaltyEarned(int loyaltyEarned) { this.loyaltyEarned = loyaltyEarned; }
+    public List<LoyaltyEvent> getLoyaltyHistory() { return loyaltyHistory; }
+    public void setLoyaltyHistory(List<LoyaltyEvent> loyaltyHistory) { this.loyaltyHistory = loyaltyHistory; }
 
     public static class Favorite {
         private String type;     // "Train", "Bus", "Flight", "Cab", "Hotel", "Homestay"
@@ -113,5 +122,18 @@ public class Users {
             public String getAge() { return age; }
             public void setAge(String age) { this.age = age; }
         }
+    }
+
+    public static class LoyaltyEvent {
+        private String date;
+        private String description;
+        private int pointsChanged;
+
+        public String getDate() { return date; }
+        public void setDate(String date) { this.date = date; }
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+        public int getPointsChanged() { return pointsChanged; }
+        public void setPointsChanged(int pointsChanged) { this.pointsChanged = pointsChanged; }
     }
 }
