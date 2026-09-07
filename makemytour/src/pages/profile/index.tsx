@@ -127,6 +127,7 @@ const ProfilePage = () => {
             const map: Record<string, string> = {};
             (list || []).forEach((item: any) => {
               if (item?.id) map[item.id] = item[meta.nameField] || type;
+              if (item?._id) map[item._id] = item[meta.nameField] || type;
             });
             return [type, map] as const;
           } catch {

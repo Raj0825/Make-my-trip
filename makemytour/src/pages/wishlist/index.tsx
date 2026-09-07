@@ -41,7 +41,10 @@ export default function WishlistPage() {
         const map: Record<string, Record<string, any>> = {};
         typeKeys.forEach((type, i) => {
           const byId: Record<string, any> = {};
-          (lists[i] || []).forEach((item: any) => { if (item?.id) byId[item.id] = item; });
+          (lists[i] || []).forEach((item: any) => {
+            if (item?.id) byId[item.id] = item;
+            if (item?._id) byId[item._id] = item;
+          });
           map[type] = byId;
         });
         setEntities(map);

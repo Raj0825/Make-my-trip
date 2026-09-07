@@ -139,6 +139,26 @@ function generatePNR(bookingId?: string) {
   return Math.floor(1000000000 + Math.random() * 8999999999).toString();
 }
 
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    return dateString;
+  }
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+  try {
+    return date.toLocaleString("en-US", options);
+  } catch {
+    return dateString;
+  }
+};
+
 // ---------------------------------------------------------------------------
 // Photo bank, route stops, boarding points, and safety/amenity data —
 // deterministically derived per bus id so every listing renders rich,
@@ -217,29 +237,35 @@ function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
 
 // Live route tracking, mocked from current time vs departure/arrival.
 function RouteTracking({ bus, stops }: { bus: Bus; stops: { name: string; time: string }[] }) {
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(t);
   }, []);
 
-  const dep = new Date(bus.departureTime).getTime();
-  const arr = new Date(bus.arrivalTime).getTime();
-  const cur = now.getTime();
+  if (!bus || !stops || stops.length === 0) return null;
+
+  const dep = bus.departureTime ? new Date(bus.departureTime).getTime() : NaN;
+  const arr = bus.arrivalTime ? new Date(bus.arrivalTime).getTime() : NaN;
+  const cur = now ? now.getTime() : 0;
 
   let status: "upcoming" | "running" | "completed" = "upcoming";
   let progress = 0;
-  if (cur < dep) status = "upcoming";
-  else if (cur >= dep && cur <= arr) {
-    status = "running";
-    progress = arr > dep ? Math.min(100, Math.max(0, ((cur - dep) / (arr - dep)) * 100)) : 0;
-  } else {
-    status = "completed";
-    progress = 100;
+  if (now && !isNaN(dep) && !isNaN(arr) && arr > dep) {
+    if (cur < dep) status = "upcoming";
+    else if (cur >= dep && cur <= arr) {
+      status = "running";
+      progress = Math.min(100, Math.max(0, ((cur - dep) / (arr - dep)) * 100));
+    } else {
+      status = "completed";
+      progress = 100;
+    }
   }
 
-  const currentStopIdx = Math.min(stops.length - 1, Math.floor((progress / 100) * stops.length));
-  const delayMinutes = hashToIndex(bus.id, 3) * 5;
+  const currentStopIdx = Math.min(Math.max(0, stops.length - 1), Math.floor((progress / 100) * stops.length));
+  const busIdStr = bus.id || (bus as any)._id || "";
+  const delayMinutes = hashToIndex(busIdStr, 3) * 5;
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4">
@@ -279,7 +305,7 @@ function RouteTracking({ bus, stops }: { bus: Bus; stops: { name: string; time: 
       </div>
       <p className="text-xs text-gray-500 mt-3">
         {status === "running" &&
-          `Currently near ${stops[currentStopIdx]?.name}${
+          `Currently near ${stops[currentStopIdx]?.name || ""}${
             delayMinutes > 0 ? ` · Running ${delayMinutes} min late` : " · Running on time"
           }`}
         {status === "upcoming" && "Tracking will begin once the bus departs."}
@@ -334,8 +360,8 @@ function ETicket({
         <table>
           <tr><td class="label">From</td><td>${bus.from}</td></tr>
           <tr><td class="label">To</td><td>${bus.to}</td></tr>
-          <tr><td class="label">Departure</td><td>${new Date(bus.departureTime).toLocaleString()}</td></tr>
-          <tr><td class="label">Arrival</td><td>${new Date(bus.arrivalTime).toLocaleString()}</td></tr>
+          <tr><td class="label">Departure</td><td>${formatDate(bus.departureTime)}</td></tr>
+          <tr><td class="label">Arrival</td><td>${formatDate(bus.arrivalTime)}</td></tr>
           <tr><td class="label">Boarding Point</td><td>${boardingPoint}</td></tr>
           <tr><td class="label">Bus Type</td><td>${busClass.label}</td></tr>
           <tr><td class="label">Seats</td><td>${seats.map((s) => `${s.number} (${s.type})`).join(", ")}</td></tr>
@@ -381,12 +407,12 @@ function ETicket({
           <div className="flex items-center justify-between border-y border-dashed border-gray-200 py-3 mb-3">
             <div>
               <p className="text-lg font-bold">{bus.from}</p>
-              <p className="text-xs text-gray-500">{new Date(bus.departureTime).toLocaleString()}</p>
+              <p className="text-xs text-gray-500">{formatDate(bus.departureTime)}</p>
             </div>
             <BusIcon className="text-blue-600" size={20} />
             <div className="text-right">
               <p className="text-lg font-bold">{bus.to}</p>
-              <p className="text-xs text-gray-500">{new Date(bus.arrivalTime).toLocaleString()}</p>
+              <p className="text-xs text-gray-500">{formatDate(bus.arrivalTime)}</p>
             </div>
           </div>
 
@@ -457,7 +483,7 @@ const BookBusPage = () => {
     const fetchBuses = async () => {
       try {
         const data = await getbus();
-        const filteredData = data.filter((bus: any) => bus.id === id);
+        const filteredData = (data || []).filter((bus: any) => bus.id === id || bus._id === id);
         setBuses(filteredData);
       } catch (error) {
         console.error("Error fetching buses:", error);
@@ -465,27 +491,30 @@ const BookBusPage = () => {
         setLoading(false);
       }
     };
-    fetchBuses();
+    if (id) {
+      fetchBuses();
+    }
   }, [id, user]);
 
   const bus = buses[0];
+  const busIdStr = (bus?.id || (bus as any)?._id || id || "") as string;
   const busClass = BUS_CLASSES.find((c) => c.key === busClassKey) || BUS_CLASSES[0];
 
   const [realBookedSeats, setRealBookedSeats] = useState<Set<string>>(new Set());
   const refreshBookedSeats = async () => {
-    if (!bus) return;
-    const booked = await getBookedSeats("Bus", bus.id);
+    if (!busIdStr) return;
+    const booked = await getBookedSeats("Bus", busIdStr);
     setRealBookedSeats(new Set(booked || []));
   };
   useEffect(() => {
     refreshBookedSeats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bus?.id]);
+  }, [busIdStr]);
 
   const allSeats = useMemo(() => {
     if (!bus) return [];
-    return busClass.seatType === "sleeper" ? generateSleeperSeats(bus.id, realBookedSeats) : generateSeaterSeats(bus.id, realBookedSeats);
-  }, [bus, busClass, realBookedSeats]);
+    return busClass.seatType === "sleeper" ? generateSleeperSeats(busIdStr, realBookedSeats) : generateSeaterSeats(busIdStr, realBookedSeats);
+  }, [bus, busClass, realBookedSeats, busIdStr]);
 
   const decks = useMemo(() => Array.from(new Set(allSeats.map((s) => s.deckLabel))), [allSeats]);
 
@@ -500,26 +529,31 @@ const BookBusPage = () => {
   const deckSeats = allSeats.filter((s) => s.deckLabel === activeDeck);
 
   // Photos, route stops, boarding points, safety/amenities derived per bus id
-  const photoSetIndex = hashToIndex(bus?.id, BUS_PHOTO_SETS.length);
+  const photoSetIndex = hashToIndex(busIdStr, BUS_PHOTO_SETS.length);
   const photos = useMemo(() => BUS_PHOTO_SETS[photoSetIndex], [photoSetIndex]);
 
   const routeStops = useMemo(() => {
     if (!bus) return [];
-    const dep = new Date(bus.departureTime).getTime();
-    const arr = new Date(bus.arrivalTime).getTime();
-    const names = [bus.from, "Midway Junction", "Highway Rest Stop", bus.to];
-    const validDuration = arr > dep;
+    const dep = bus.departureTime ? new Date(bus.departureTime).getTime() : NaN;
+    const arr = bus.arrivalTime ? new Date(bus.arrivalTime).getTime() : NaN;
+    const names = [bus.from || "Origin", "Midway Junction", "Highway Rest Stop", bus.to || "Destination"];
+    const validDuration = !isNaN(dep) && !isNaN(arr) && arr > dep;
     return names.map((name, i) => {
       const t = validDuration ? new Date(dep + ((arr - dep) * i) / (names.length - 1)) : null;
-      return { name, time: t ? t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--" };
+      return {
+        name,
+        time: t && !isNaN(t.getTime())
+          ? t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : "--:--",
+      };
     });
   }, [bus]);
 
   const boardingPoints = useMemo(() => {
     if (!bus) return [];
     return [
-      { name: `${bus.from} Main Bus Stand`, time: routeStops[0]?.time || "" },
-      { name: `${bus.from} Bypass`, time: routeStops[0]?.time || "" },
+      { name: `${bus.from || "City"} Main Bus Stand`, time: routeStops[0]?.time || "" },
+      { name: `${bus.from || "City"} Bypass`, time: routeStops[0]?.time || "" },
     ];
   }, [bus, routeStops]);
 
@@ -527,7 +561,7 @@ const BookBusPage = () => {
     if (boardingPoints.length > 0 && !boardingPoint) setBoardingPoint(boardingPoints[0].name);
   }, [boardingPoints, boardingPoint]);
 
-  const foodAvailable = hashToIndex(bus?.id, 3) !== 0; // ~2/3 of buses serve a meal stop
+  const foodAvailable = hashToIndex(busIdStr, 3) !== 0; // ~2/3 of buses serve a meal stop
   const amenities: Amenity[] = useMemo(() => {
     const list: Amenity[] = [];
     if (busClass.ac) list.push({ icon: Snowflake, label: "Air Conditioned" });
@@ -544,18 +578,6 @@ const BookBusPage = () => {
   if (!bus) {
     return <div>No bus data available for this ID.</div>;
   }
-
-  const formatDate = (dateString: string): string => {
-    const options: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    };
-    const date = new Date(dateString);
-    return date.toLocaleString("en-US", options);
-  };
 
   const toggleSeat = (seat: BusSeat) => {
     if (seat.booked) return;
@@ -580,8 +602,13 @@ const BookBusPage = () => {
     e.preventDefault();
     setBookingError("");
     try {
-      const data = await handlebusbooking(user?.id, bus?.id, passengerCount, grandTotal, perSeatFare, passengers, selectedSeats);
-      const updateuser = { ...user, bookings: [...user.bookings, data] };
+      const userId = user?.id || (user as any)?._id;
+      const data = await handlebusbooking(userId, busIdStr, passengerCount, grandTotal, perSeatFare, passengers, selectedSeats);
+      if (!data) {
+        throw new Error("Failed to book bus ticket. Please try again.");
+      }
+      const existingBookings = user?.bookings || [];
+      const updateuser = { ...user, bookings: [...existingBookings, data] };
       dispatch(setUser(updateuser));
       setopem(false);
       const bookedSeats = allSeats.filter((s) => selectedSeats.includes(s.number));
@@ -589,14 +616,14 @@ const BookBusPage = () => {
         busClass,
         seats: bookedSeats,
         boardingPoint,
-        pnr: generatePNR(data?.id),
+        pnr: generatePNR(data?.id || data?.bookingId || data?._id),
         grandTotal,
         insured,
       });
     } catch (error: any) {
-      console.log(error);
+      console.error(error);
       setBookingError(
-        error?.response?.data || "One or more selected seats are no longer available. Please choose different seats."
+        error?.response?.data || error?.message || "One or more selected seats are no longer available. Please choose different seats."
       );
       setSelectedSeats([]);
       refreshBookedSeats();
@@ -653,7 +680,7 @@ const BookBusPage = () => {
               <Calendar className="w-4 h-4 mr-2" />
               Departure
             </Label>
-            <Input value={new Date(bus.departureTime).toLocaleString()} readOnly />
+            <Input value={formatDate(bus?.departureTime)} readOnly />
           </div>
         </div>
 
@@ -987,7 +1014,7 @@ const BookBusPage = () => {
             </p>
           </div>
 
-          <ReviewSection serviceType="Bus" serviceId={id as string} />
+          <ReviewSection serviceType="Bus" serviceId={busIdStr} />
         </div>
 
         {/* Sticky booking sidebar */}
@@ -1044,8 +1071,8 @@ const BookBusPage = () => {
             </div>
             <DynamicPriceCard
               entityType="BUS"
-              entityId={id as string}
-              userId={user?.id}
+              entityId={busIdStr}
+              userId={user?.id || (user as any)?._id}
               variantLabel={busClass.label}
               variantPrice={perSeatFare}
             />

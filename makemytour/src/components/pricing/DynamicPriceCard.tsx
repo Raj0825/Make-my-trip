@@ -40,12 +40,12 @@ export default function DynamicPriceCard({ entityType, entityId, userId, onPrice
     let active = true;
 
     getCurrentPricing(entityType, entityId).then((data) => {
-      if (active) {
+      if (active && data) {
         setPricing(data);
         onPriceChange?.(data.currentPrice);
       }
-    });
-    getPriceHistory(entityType, entityId).then((data) => active && setHistory(data));
+    }).catch((e) => console.log("Pricing load error:", e));
+    getPriceHistory(entityType, entityId).then((data) => active && setHistory(data || [])).catch((e) => console.log("Price history load error:", e));
 
     const unsubscribe = subscribeToPriceUpdates(entityType, entityId, (update) => {
       setPricing((prev: any) => ({

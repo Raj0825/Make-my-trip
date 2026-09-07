@@ -345,6 +345,7 @@ export const handletrainbooking = async (userId, trainId, seats, price, unitPric
     return data;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
@@ -427,6 +428,7 @@ export const handlebusbooking = async (userId, busId, seats, price, unitPrice, p
     return data;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
@@ -514,6 +516,7 @@ export const handlecabbooking = async (userId, cabId, seats, price, unitPrice, p
     return data;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
@@ -593,6 +596,7 @@ export const handlehomestaybooking = async (userId, homestayId, rooms, price, un
     return data;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
