@@ -103,10 +103,10 @@ export const editprofile = async (
 export const getflight = async () => {
   try {
     const res = await axios.get(`${BACKEND_URL}/flight`);
-    const data = res.data;
-    return data;
+    return res.data || [];
   } catch (error) {
-    console.log(data);
+    console.error("getflight error:", error);
+    return [];
   }
 };
 
@@ -176,10 +176,10 @@ export const editflight = async (
 export const gethotel = async () => {
   try {
     const res = await axios.get(`${BACKEND_URL}/hotel`);
-    const data = res.data;
-    return data;
+    return res.data || [];
   } catch (error) {
-    console.log(data);
+    console.error("gethotel error:", error);
+    return [];
   }
 };
 
@@ -271,10 +271,10 @@ export const handlehotelbooking = async (userId, hotelId, rooms, price, unitPric
 export const gettrain = async () => {
   try {
     const res = await axios.get(`${BACKEND_URL}/train`);
-    const data = res.data;
-    return data;
+    return res.data || [];
   } catch (error) {
-    console.log(error);
+    console.error("gettrain error:", error);
+    return [];
   }
 };
 
@@ -354,10 +354,10 @@ export const handletrainbooking = async (userId, trainId, seats, price, unitPric
 export const getbus = async () => {
   try {
     const res = await axios.get(`${BACKEND_URL}/bus`);
-    const data = res.data;
-    return data;
+    return res.data || [];
   } catch (error) {
-    console.log(error);
+    console.error("getbus error:", error);
+    return [];
   }
 };
 
@@ -437,10 +437,10 @@ export const handlebusbooking = async (userId, busId, seats, price, unitPrice, p
 export const getcab = async () => {
   try {
     const res = await axios.get(`${BACKEND_URL}/cab`);
-    const data = res.data;
-    return data;
+    return res.data || [];
   } catch (error) {
-    console.log(error);
+    console.error("getcab error:", error);
+    return [];
   }
 };
 
@@ -525,10 +525,10 @@ export const handlecabbooking = async (userId, cabId, seats, price, unitPrice, p
 export const gethomestay = async () => {
   try {
     const res = await axios.get(`${BACKEND_URL}/homestay`);
-    const data = res.data;
-    return data;
+    return res.data || [];
   } catch (error) {
-    console.log(error);
+    console.error("gethomestay error:", error);
+    return [];
   }
 };
 
@@ -802,10 +802,10 @@ export const untrackFlight = async (userId, flightId) => {
 export const getTrackedFlights = async (userId) => {
   try {
     const res = await axios.get(`${BACKEND_URL}/flight-status/tracked/${userId}`);
-    return res.data;
+    return res.data || [];
   } catch (error) {
-    console.log(error);
-    throw error;
+    console.error("getTrackedFlights error:", error);
+    return [];
   }
 };
 
@@ -816,10 +816,10 @@ export const getRecommendations = async (userId, limit = 6) => {
     const res = await axios.get(`${BACKEND_URL}/api/recommendations/${userId}`, {
       params: { limit },
     });
-    return res.data;
+    return res.data || [];
   } catch (error) {
-    console.log(error);
-    throw error;
+    console.error("getRecommendations error:", error);
+    return [];
   }
 };
 
@@ -905,20 +905,20 @@ export const PRICING_WS_URL = `${BACKEND_URL}/ws`;
 export const getSeatMap = async (flightId) => {
   try {
     const res = await axios.get(`${BACKEND_URL}/flight-seats/${flightId}`);
-    return res.data;
+    return res.data || [];
   } catch (error) {
-    console.log(error);
-    throw error;
+    console.error("getSeatMap error:", error);
+    return [];
   }
 };
 
 export const getRoomTypes = async (hotelId) => {
   try {
     const res = await axios.get(`${BACKEND_URL}/room-types/${hotelId}`);
-    return res.data;
+    return res.data || [];
   } catch (error) {
-    console.log(error);
-    throw error;
+    console.error("getRoomTypes error:", error);
+    return [];
   }
 };
 
@@ -927,8 +927,8 @@ export const getBookingPreferences = async (userId) => {
     const res = await axios.get(`${BACKEND_URL}/preferences/${userId}`);
     return res.data;
   } catch (error) {
-    console.log(error);
-    throw error;
+    console.error("getBookingPreferences error:", error);
+    return null;
   }
 };
 
@@ -952,10 +952,10 @@ export const saveBookingPreferences = async (userId, prefs) => {
 export const getWishlist = async (userId) => {
   try {
     const res = await axios.get(`${BACKEND_URL}/wishlist/${userId}`);
-    return res.data;
+    return res.data || [];
   } catch (error) {
-    console.log(error);
-    throw error;
+    console.error("getWishlist error:", error);
+    return [];
   }
 };
 

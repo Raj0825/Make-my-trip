@@ -64,7 +64,7 @@ export default function RecommendationCard({
         </div>
         <div className="font-semibold text-gray-900 truncate">{rec.name}</div>
         <div className="text-sm text-gray-500">{rec.location}</div>
-        <div className="text-lg font-bold mt-2">₹{Math.round(rec.price).toLocaleString()}</div>
+        <div className="text-lg font-bold mt-2">₹{Math.round(rec?.price || 0).toLocaleString()}</div>
       </button>
 
       <div className="flex items-center justify-between mt-3">

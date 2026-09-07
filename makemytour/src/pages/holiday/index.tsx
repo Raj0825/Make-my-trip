@@ -423,7 +423,7 @@ export default function HolidayPlannerPage() {
                                 {opt.name}
                                 {i === 0 && <span className="text-[10px] font-bold text-white bg-blue-600 px-1.5 py-0.5 rounded-full">AI PICK</span>}
                               </p>
-                              <p className="text-xs text-gray-500">{opt.type} · {new Date(opt.departureTime).toLocaleString()}</p>
+                              <p className="text-xs text-gray-500">{opt.type} · {opt.departureTime && !isNaN(new Date(opt.departureTime).getTime()) ? new Date(opt.departureTime).toLocaleString() : (opt.departureTime || "")}</p>
                             </div>
                           </div>
                           <div className="text-right">

@@ -92,7 +92,7 @@ export default function RefundPage() {
               {hasRefund ? (
                 <div className="flex items-center gap-1 text-4xl font-bold">
                   <IndianRupee className="w-8 h-8" />
-                  {booking.refundAmount.toLocaleString("en-IN")}
+                  {(booking?.refundAmount || 0).toLocaleString("en-IN")}
                 </div>
               ) : (
                 <h1 className="text-3xl font-bold">No Refund Applicable</h1>
