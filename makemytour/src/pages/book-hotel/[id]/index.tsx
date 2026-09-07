@@ -155,22 +155,12 @@ const BookHotelPage = () => {
          selectedRoomType.name,
          passengers
        );
-       const updateuser = {
-         ...user,
-         bookings: [...user.bookings, data],
-       };
-
-       if (rememberRoomPref) {
-         saveBookingPreferences(user.id, { roomTypeName: selectedRoomType.name }).catch(() => {});
-       }
-
        if (redeemedPoints > 0) {
-         const updatedUser = await redeemLoyaltyPoints(user?.id, redeemedPoints);
-         if (updatedUser) dispatch(setUser({ ...updatedUser, bookings: [...(updatedUser.bookings || []), data] }));
-         else dispatch(setUser(updateuser));
-       } else {
-         dispatch(setUser(updateuser));
+         await redeemLoyaltyPoints(user?.id, redeemedPoints);
        }
+       const { getuserbyemail } = await import("@/api");
+       const freshUser = await getuserbyemail(user?.email);
+       dispatch(setUser(freshUser));
 
        setopem(false);
        setQuantity(1);

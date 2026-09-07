@@ -235,12 +235,6 @@ const BookFlightPage = () => {
           travelClass,
           passengers
         );
-        const updateuser = {
-          ...user,
-          bookings: [...user.bookings, data],
-        };
-        dispatch(setUser(updateuser));
-
         if (rememberSeatPref && selectedSeats.length > 0) {
           const lastCol = selectedSeats[0].slice(-1);
           const seatType = ["A", "F"].includes(lastCol) ? "WINDOW" : ["C", "D"].includes(lastCol) ? "AISLE" : "MIDDLE";
@@ -248,12 +242,11 @@ const BookFlightPage = () => {
         }
 
         if (redeemedPoints > 0) {
-          const updatedUser = await redeemLoyaltyPoints(user?.id, redeemedPoints);
-          if (updatedUser) dispatch(setUser({ ...updatedUser, bookings: [...(updatedUser.bookings || []), data] }));
-          else dispatch(setUser({ ...user, bookings: [...user.bookings, data] }));
-        } else {
-          dispatch(setUser({ ...user, bookings: [...user.bookings, data] }));
+          await redeemLoyaltyPoints(user?.id, redeemedPoints);
         }
+        const { getuserbyemail } = await import("@/api");
+        const freshUser = await getuserbyemail(user?.email);
+        dispatch(setUser(freshUser));
 
         setopem(false);
         setQuantity(1);

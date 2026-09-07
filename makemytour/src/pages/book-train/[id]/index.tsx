@@ -668,13 +668,11 @@ const BookTrainPage = () => {
         throw new Error("Failed to book train ticket. Please try again.");
       }
       if (redeemedPoints > 0) {
-        const updatedUser = await redeemLoyaltyPoints(userId, redeemedPoints);
-        if (updatedUser) dispatch(setUser({ ...updatedUser, bookings: [...(updatedUser.bookings || []), data] }));
-        else dispatch(setUser({ ...user, bookings: [...(user?.bookings || []), data] }));
-      } else {
-        const existingBookings = user?.bookings || [];
-        dispatch(setUser({ ...user, bookings: [...existingBookings, data] }));
+        await redeemLoyaltyPoints(userId, redeemedPoints);
       }
+      const { getuserbyemail } = await import("@/api");
+      const freshUser = await getuserbyemail(user?.email);
+      dispatch(setUser(freshUser));
       setopem(false);
       const bookedSeats = seats.filter((s) => selectedSeats.includes(s.number));
       const orderedFoodItems = Object.entries(foodCart)

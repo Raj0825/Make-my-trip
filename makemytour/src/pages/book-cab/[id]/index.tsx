@@ -453,12 +453,11 @@ const BookCabPage = () => {
       
       if (redeemedPoints > 0) {
         const { redeemLoyaltyPoints } = await import("@/api");
-        const updatedUser = await redeemLoyaltyPoints(user?.id, redeemedPoints);
-        if (updatedUser) dispatch(setUser({ ...updatedUser, bookings: [...(updatedUser.bookings || []), data] }));
-        else dispatch(setUser({ ...user, bookings: [...user.bookings, data] }));
-      } else {
-        dispatch(setUser({ ...user, bookings: [...user.bookings, data] }));
+        await redeemLoyaltyPoints(user?.id, redeemedPoints);
       }
+      const { getuserbyemail } = await import("@/api");
+      const freshUser = await getuserbyemail(user?.email);
+      dispatch(setUser(freshUser));
       
       setopem(false);
       setQuantity(1);

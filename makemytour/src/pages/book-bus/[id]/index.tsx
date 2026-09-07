@@ -611,16 +611,12 @@ const BookBusPage = () => {
       if (!data) {
         throw new Error("Failed to book bus ticket. Please try again.");
       }
-      // Redeem points if applied
       if (redeemedPoints > 0) {
-        const updatedUser = await redeemLoyaltyPoints(userId, redeemedPoints);
-        if (updatedUser) dispatch(setUser({ ...updatedUser, bookings: [...(updatedUser.bookings || []), data] }));
-        else dispatch(setUser({ ...user, bookings: [...(user?.bookings || []), data] }));
-      } else {
-        const existingBookings = user?.bookings || [];
-        const updateuser = { ...user, bookings: [...existingBookings, data] };
-        dispatch(setUser(updateuser));
+        await redeemLoyaltyPoints(userId, redeemedPoints);
       }
+      const { getuserbyemail } = await import("@/api");
+      const freshUser = await getuserbyemail(user?.email);
+      dispatch(setUser(freshUser));
       setopem(false);
       const bookedSeats = allSeats.filter((s) => selectedSeats.includes(s.number));
       setTicketData({
