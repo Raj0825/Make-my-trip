@@ -331,11 +331,14 @@ export const edittrain = async (
   }
 };
 
-export const handletrainbooking = async (userId, trainId, seats, price, unitPrice, passengers) => {
+export const handletrainbooking = async (userId, trainId, seats, price, unitPrice, passengers, seatNumbers) => {
   try {
     let url = `${BACKEND_URL}/booking/train?userId=${userId}&trainId=${trainId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;
     if (passengers && passengers.length > 0) {
       url += `&passengersJson=${encodeURIComponent(JSON.stringify(passengers))}`;
+    }
+    if (seatNumbers && seatNumbers.length > 0) {
+      url += `&seatNumbers=${encodeURIComponent(seatNumbers.join(","))}`;
     }
     const res = await axios.post(url);
     const data = res.data;
@@ -410,11 +413,14 @@ export const editbus = async (
   }
 };
 
-export const handlebusbooking = async (userId, busId, seats, price, unitPrice, passengers) => {
+export const handlebusbooking = async (userId, busId, seats, price, unitPrice, passengers, seatNumbers) => {
   try {
     let url = `${BACKEND_URL}/booking/bus?userId=${userId}&busId=${busId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;
     if (passengers && passengers.length > 0) {
       url += `&passengersJson=${encodeURIComponent(JSON.stringify(passengers))}`;
+    }
+    if (seatNumbers && seatNumbers.length > 0) {
+      url += `&seatNumbers=${encodeURIComponent(seatNumbers.join(","))}`;
     }
     const res = await axios.post(url);
     const data = res.data;
@@ -981,5 +987,17 @@ export const validatePromoCode = async (code, subtotal) => {
   } catch (error) {
     if (error?.response?.data) return error.response.data; // { valid: false, message }
     throw error;
+  }
+};
+
+// ---------------- Seat Inventory (Train/Bus) ----------------
+
+export const getBookedSeats = async (entityType, entityId) => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/seats/${entityType}/${entityId}`);
+    return res.data; // string[] of already-booked seat numbers
+  } catch (error) {
+    console.log(error);
+    return [];
   }
 };

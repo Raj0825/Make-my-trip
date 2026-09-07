@@ -31,7 +31,7 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { getbus, handlebusbooking } from "@/api";
+import { getbus, handlebusbooking, getBookedSeats } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
 import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
 import WishlistButton from "@/components/wishlist/WishlistButton";
@@ -90,15 +90,14 @@ interface BusSeat {
 }
 
 // Seater buses: single deck, 2+2 rows (Window/Aisle either side)
-function generateSeaterSeats(busId: string): BusSeat[] {
+function generateSeaterSeats(busId: string, realBookedSeats: Set<string>): BusSeat[] {
   const rows = 10;
-  const seed = (busId || "").length;
   const seats: BusSeat[] = [];
   let n = 1;
   for (let r = 1; r <= rows; r++) {
     (["Window", "Aisle", "Aisle", "Window"] as const).forEach((type) => {
-      const booked = (n * 7 + seed) % 5 === 0;
-      seats.push({ number: `S${n}`, type, booked, deckLabel: "Main Deck", row: r, double: false });
+      const number = `S${n}`;
+      seats.push({ number, type, booked: realBookedSeats.has(number), deckLabel: "Main Deck", row: r, double: false });
       n++;
     });
   }
@@ -106,22 +105,19 @@ function generateSeaterSeats(busId: string): BusSeat[] {
 }
 
 // Sleeper buses: Lower Deck + Upper Deck, each row = 1 single berth + 1 double (couple) berth
-function generateSleeperSeats(busId: string): BusSeat[] {
+function generateSleeperSeats(busId: string, realBookedSeats: Set<string>): BusSeat[] {
   const rowsPerDeck = 6;
-  const seed = (busId || "").length;
   const seats: BusSeat[] = [];
   (["Lower Deck", "Upper Deck"] as const).forEach((deckLabel, deckIdx) => {
     let n = 1;
     for (let r = 1; r <= rowsPerDeck; r++) {
       const prefix = deckIdx === 0 ? "L" : "U";
       const single = `${prefix}${n}`;
-      const singleBooked = (n * 7 + seed + deckIdx) % 5 === 0;
-      seats.push({ number: single, type: "Single Berth", booked: singleBooked, deckLabel, row: r, double: false });
+      seats.push({ number: single, type: "Single Berth", booked: realBookedSeats.has(single), deckLabel, row: r, double: false });
       n++;
       ["A", "B"].forEach((suffix) => {
         const num = `${prefix}${n}${suffix}`;
-        const booked = (n * 11 + seed + deckIdx + suffix.charCodeAt(0)) % 5 === 0;
-        seats.push({ number: num, type: "Double Berth", booked, deckLabel, row: r, double: true });
+        seats.push({ number: num, type: "Double Berth", booked: realBookedSeats.has(num), deckLabel, row: r, double: true });
       });
       n++;
     }
@@ -475,10 +471,21 @@ const BookBusPage = () => {
   const bus = buses[0];
   const busClass = BUS_CLASSES.find((c) => c.key === busClassKey) || BUS_CLASSES[0];
 
+  const [realBookedSeats, setRealBookedSeats] = useState<Set<string>>(new Set());
+  const refreshBookedSeats = async () => {
+    if (!bus) return;
+    const booked = await getBookedSeats("Bus", bus.id);
+    setRealBookedSeats(new Set(booked || []));
+  };
+  useEffect(() => {
+    refreshBookedSeats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bus?.id]);
+
   const allSeats = useMemo(() => {
     if (!bus) return [];
-    return busClass.seatType === "sleeper" ? generateSleeperSeats(bus.id) : generateSeaterSeats(bus.id);
-  }, [bus, busClass]);
+    return busClass.seatType === "sleeper" ? generateSleeperSeats(bus.id, realBookedSeats) : generateSeaterSeats(bus.id, realBookedSeats);
+  }, [bus, busClass, realBookedSeats]);
 
   const decks = useMemo(() => Array.from(new Set(allSeats.map((s) => s.deckLabel))), [allSeats]);
 
@@ -567,10 +574,13 @@ const BookBusPage = () => {
   const seatsReady = selectedSeats.length === passengerCount;
   const passengersReady = passengers.length === passengerCount && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
 
+  const [bookingError, setBookingError] = useState("");
+
   const handlebooking = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBookingError("");
     try {
-      const data = await handlebusbooking(user?.id, bus?.id, passengerCount, grandTotal, perSeatFare, passengers);
+      const data = await handlebusbooking(user?.id, bus?.id, passengerCount, grandTotal, perSeatFare, passengers, selectedSeats);
       const updateuser = { ...user, bookings: [...user.bookings, data] };
       dispatch(setUser(updateuser));
       setopem(false);
@@ -583,8 +593,13 @@ const BookBusPage = () => {
         grandTotal,
         insured,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
+      setBookingError(
+        error?.response?.data || "One or more selected seats are no longer available. Please choose different seats."
+      );
+      setSelectedSeats([]);
+      refreshBookedSeats();
     }
   };
 
@@ -688,6 +703,7 @@ const BookBusPage = () => {
             </div>
           </div>
         </div>
+        {bookingError && <p className="text-sm text-red-500 text-center">{bookingError}</p>}
         <Button className="w-full bg-blue-600 text-white" onClick={handlebooking} disabled={!passengersReady}>
           {passengersReady ? "Confirm & Pay" : "Enter traveler details to continue"}
         </Button>

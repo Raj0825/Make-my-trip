@@ -26,6 +26,7 @@ public class CancellationService {
     @Autowired private FlightRepository flightRepository;
     @Autowired private HotelRepository hotelRepository;
     @Autowired private FlightSeatService flightSeatService;
+    @Autowired private SeatInventoryService seatInventoryService;
     @Autowired private RoomTypeService roomTypeService;
     @Autowired private TrainRepository trainRepository;
     @Autowired private BusRepository busRepository;
@@ -201,6 +202,9 @@ public class CancellationService {
                     t.setAvailableSeats(t.getAvailableSeats() + quantity);
                     trainRepository.save(t);
                 });
+                if (booking.getSeatNumbers() != null && !booking.getSeatNumbers().isEmpty()) {
+                    seatInventoryService.releaseSeats("Train", bookingId, booking.getSeatNumbers());
+                }
                 dynamicPricingService.recalculate(DynamicPricingService.TRAIN, bookingId);
             }
             case "Bus" -> {
@@ -208,6 +212,9 @@ public class CancellationService {
                     b.setAvailableSeats(b.getAvailableSeats() + quantity);
                     busRepository.save(b);
                 });
+                if (booking.getSeatNumbers() != null && !booking.getSeatNumbers().isEmpty()) {
+                    seatInventoryService.releaseSeats("Bus", bookingId, booking.getSeatNumbers());
+                }
                 dynamicPricingService.recalculate(DynamicPricingService.BUS, bookingId);
             }
             case "Cab" -> {

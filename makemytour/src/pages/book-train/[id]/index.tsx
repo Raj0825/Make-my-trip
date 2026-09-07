@@ -25,7 +25,7 @@ import {
   Drumstick,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { gettrain, handletrainbooking } from "@/api";
+import { gettrain, handletrainbooking, getBookedSeats } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
 import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
 import WishlistButton from "@/components/wishlist/WishlistButton";
@@ -144,9 +144,8 @@ interface Coach {
   unitLabel: string; // "Bay" or "Row"
 }
 
-function generateCoaches(coachClass: CoachClass, trainId: string): Coach[] {
+function generateCoaches(coachClass: CoachClass, trainId: string, realBookedSeats: Set<string>): Coach[] {
   const pattern = bayPatternFor(coachClass);
-  const seed = (trainId || "").length + coachClass.key.length;
   const coaches: Coach[] = [];
 
   for (let c = 1; c <= coachClass.coachCount; c++) {
@@ -155,11 +154,11 @@ function generateCoaches(coachClass: CoachClass, trainId: string): Coach[] {
     let seatNum = 1;
     for (let u = 1; u <= coachClass.units; u++) {
       pattern.forEach((slot) => {
-        const booked = (seatNum * 7 + seed + c * 3) % 5 === 0;
+        const seatNumber = `${coachNumber}-${seatNum}`;
         seats.push({
-          number: `${coachNumber}-${seatNum}`,
+          number: seatNumber,
           type: slot.type,
-          booked,
+          booked: realBookedSeats.has(seatNumber),
           side: slot.side,
           bay: u,
         });
@@ -531,10 +530,21 @@ const BookTrainPage = () => {
   const coachClass = COACH_CLASSES.find((c) => c.key === coachKey) || COACH_CLASSES[2];
   const train = trains[0];
 
+  const [realBookedSeats, setRealBookedSeats] = useState<Set<string>>(new Set());
+  const refreshBookedSeats = async () => {
+    if (!train) return;
+    const booked = await getBookedSeats("Train", train.id);
+    setRealBookedSeats(new Set(booked || []));
+  };
+  useEffect(() => {
+    refreshBookedSeats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [train?.id]);
+
   const coaches = useMemo(() => {
     if (!train) return [];
-    return generateCoaches(coachClass, train.id);
-  }, [train, coachClass]);
+    return generateCoaches(coachClass, train.id, realBookedSeats);
+  }, [train, coachClass, realBookedSeats]);
 
   const [activeCoachNumber, setActiveCoachNumber] = useState<string>("");
   useEffect(() => {
@@ -613,8 +623,11 @@ const BookTrainPage = () => {
   const seatsReady = selectedSeats.length === passengerCount;
   const passengersReady = passengers.length === passengerCount && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
 
+  const [bookingError, setBookingError] = useState("");
+
   const handlebooking = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBookingError("");
     try {
       const data = await handletrainbooking(
         user?.id,
@@ -622,7 +635,8 @@ const BookTrainPage = () => {
         passengerCount,
         grandTotal,
         perSeatFare + tatkalPremium,
-        passengers
+        passengers,
+        selectedSeats
       );
       const updateuser = {
         ...user,
@@ -646,8 +660,15 @@ const BookTrainPage = () => {
         foodItems: orderedFoodItems,
         insured,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
+      // A seat we thought was free just got taken by someone else — refresh
+      // the real booked-seat list so the map updates, and let the person know.
+      setBookingError(
+        error?.response?.data || "One or more selected seats are no longer available. Please choose different seats."
+      );
+      setSelectedSeats([]);
+      refreshBookedSeats();
     }
   };
 
@@ -773,6 +794,7 @@ const BookTrainPage = () => {
             </div>
           </div>
         </div>
+        {bookingError && <p className="text-sm text-red-500 text-center">{bookingError}</p>}
         <Button className="w-full bg-blue-600 text-white" onClick={handlebooking} disabled={!passengersReady}>
           {passengersReady ? "Confirm & Pay" : "Enter traveler details to continue"}
         </Button>

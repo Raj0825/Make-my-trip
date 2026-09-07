@@ -36,9 +36,10 @@ public class BookingController {
 
     @PostMapping("/train")
     public ResponseEntity<?> booktrain(@RequestParam String userId,@RequestParam String trainId,@RequestParam int seats,@RequestParam double price, @RequestParam double unitPrice,
-                                       @RequestParam(required = false) String passengersJson){
+                                       @RequestParam(required = false) String passengersJson,
+                                       @RequestParam(required = false) String seatNumbers){
         try {
-            return ResponseEntity.ok(bookingService.booktrain(userId,trainId,seats,price,unitPrice,passengersJson));
+            return ResponseEntity.ok(bookingService.booktrain(userId,trainId,seats,price,unitPrice,passengersJson,seatNumbers));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -46,9 +47,10 @@ public class BookingController {
 
     @PostMapping("/bus")
     public ResponseEntity<?> bookbus(@RequestParam String userId,@RequestParam String busId,@RequestParam int seats,@RequestParam double price, @RequestParam double unitPrice,
-                                     @RequestParam(required = false) String passengersJson){
+                                     @RequestParam(required = false) String passengersJson,
+                                     @RequestParam(required = false) String seatNumbers){
         try {
-            return ResponseEntity.ok(bookingService.bookbus(userId,busId,seats,price,unitPrice,passengersJson));
+            return ResponseEntity.ok(bookingService.bookbus(userId,busId,seats,price,unitPrice,passengersJson,seatNumbers));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
