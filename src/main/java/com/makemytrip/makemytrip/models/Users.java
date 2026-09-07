@@ -125,15 +125,18 @@ public class Users {
     }
 
     public static class LoyaltyEvent {
-        private String date;
+        private String type;        // "EARNED" | "REDEEMED"
+        private int points;
         private String description;
-        private int pointsChanged;
+        private String date;
 
-        public String getDate() { return date; }
-        public void setDate(String date) { this.date = date; }
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+        public int getPoints() { return points; }
+        public void setPoints(int points) { this.points = points; }
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
-        public int getPointsChanged() { return pointsChanged; }
-        public void setPointsChanged(int pointsChanged) { this.pointsChanged = pointsChanged; }
+        public String getDate() { return date; }
+        public void setDate(String date) { this.date = date; }
     }
 }

@@ -40,6 +40,8 @@ import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsur
 import WishlistButton from "@/components/wishlist/WishlistButton";
 import PromoCodeInput from "@/components/promo/PromoCodeInput";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
+import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
+import { getTier } from "@/components/loyalty/LoyaltyWidget";
 interface Cab {
   id: string;
   cabType: string;
@@ -342,6 +344,7 @@ const BookCabPage = () => {
   const [insured, setInsured] = useState(false);
   const [promoCode, setPromoCode] = useState<string | null>(null);
   const [promoDiscount, setPromoDiscount] = useState(0);
+  const [redeemedPoints, setRedeemedPoints] = useState(0);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
   const [reviewStats, setReviewStats] = useState<{ count: number; average: number }>({ count: 0, average: 0 });
   const [rideData, setRideData] = useState<{ driver: Driver; pnr: string; otp: string; grandTotal: number; paymentMethod: PaymentMethod; insured: boolean } | null>(null);
@@ -437,7 +440,9 @@ const BookCabPage = () => {
   const totalPrice = perCabFare * quantity;
   const taxes = Math.round(totalPrice * 0.05);
   const insuranceFee = insured ? INSURANCE_PREMIUM : 0;
-  const grandTotal = Math.max(0, totalPrice + taxes + insuranceFee - promoDiscount);
+  const grandTotal = Math.max(0, totalPrice + taxes + insuranceFee - promoDiscount - redeemedPoints);
+  const loyaltyTier = getTier(user?.loyaltyEarned ?? 0);
+  const loyaltyAvailable = user?.loyaltyPoints ?? 0;
   const paymentMethod = PAYMENT_METHODS.find((p) => p.key === paymentKey) || PAYMENT_METHODS[0];
   const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
 
@@ -445,8 +450,16 @@ const BookCabPage = () => {
     e.preventDefault();
     try {
       const data = await handlecabbooking(user?.id, cab?.id, quantity, grandTotal, perCabFare, passengers);
-      const updateuser = { ...user, bookings: [...user.bookings, data] };
-      dispatch(setUser(updateuser));
+      
+      if (redeemedPoints > 0) {
+        const { redeemLoyaltyPoints } = await import("@/api");
+        const updatedUser = await redeemLoyaltyPoints(user?.id, redeemedPoints);
+        if (updatedUser) dispatch(setUser({ ...updatedUser, bookings: [...(updatedUser.bookings || []), data] }));
+        else dispatch(setUser({ ...user, bookings: [...user.bookings, data] }));
+      } else {
+        dispatch(setUser({ ...user, bookings: [...user.bookings, data] }));
+      }
+      
       setopem(false);
       setQuantity(1);
       setRideData({
@@ -519,6 +532,14 @@ const BookCabPage = () => {
 
         <PassengerDetailsForm count={quantity} passengers={passengers} onChange={setPassengers} />
 
+        <LoyaltyRedeemToggle
+          available={loyaltyAvailable}
+          maxRedeemPct={loyaltyTier.redeemPct}
+          subtotal={totalPrice + insuranceFee}
+          redeemedPoints={redeemedPoints}
+          onChange={setRedeemedPoints}
+        />
+
         <PromoCodeInput
           subtotal={totalPrice + insuranceFee}
           appliedCode={promoCode}
@@ -558,6 +579,12 @@ const BookCabPage = () => {
               <div className="flex justify-between items-center text-green-600">
                 <span>Promo ({promoCode})</span>
                 <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
+              </div>
+            )}
+            {redeemedPoints > 0 && (
+              <div className="flex justify-between items-center text-amber-600">
+                <span>Rewards Redeemed</span>
+                <span className="font-medium">- ₹ {redeemedPoints.toLocaleString()}</span>
               </div>
             )}
             <div className="border-t pt-2 mt-2 flex justify-between items-center">
