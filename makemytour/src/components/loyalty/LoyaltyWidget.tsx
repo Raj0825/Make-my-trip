@@ -1,4 +1,4 @@
-﻿import { useMemo } from "react";
+import { useMemo } from "react";
 import { Star, Zap, Award, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
@@ -7,8 +7,8 @@ import Link from "next/link";
 // ---------------------------------------------------------------------------
 export const TIERS = [
   { key: "silver",   label: "Silver",   minEarned: 0,      color: "from-slate-400 to-slate-500",    ring: "ring-slate-300",   icon: Star,  redeemPct: 10, earnRate: 1.0 },
-  { key: "gold",     label: "Gold",     minEarned: 5_000,  color: "from-amber-400 to-yellow-500",   ring: "ring-amber-300",   icon: Zap,   redeemPct: 15, earnRate: 1.25 },
-  { key: "platinum", label: "Platinum", minEarned: 20_000, color: "from-purple-500 to-violet-600",  ring: "ring-purple-300",  icon: Award, redeemPct: 20, earnRate: 1.5 },
+  { key: "gold",     label: "Gold",     minEarned: 50_000, color: "from-amber-400 to-yellow-500",   ring: "ring-amber-300",   icon: Zap,   redeemPct: 15, earnRate: 1.25 },
+  { key: "platinum", label: "Platinum", minEarned: 100_000, color: "from-purple-500 to-violet-600", ring: "ring-purple-300",  icon: Award, redeemPct: 20, earnRate: 1.5 },
 ] as const;
 
 export function getTier(earned: number) {
