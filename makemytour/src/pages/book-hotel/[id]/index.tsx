@@ -67,7 +67,7 @@ const BookHotelPage = () => {
     const fetchhotels = async () => {
       try {
         const data = await gethotel();
-        const filteredData = data.filter((hotel: any) => hotel.id === id);
+        const filteredData = (data || []).filter((hotel: any) => hotel.id === id || hotel._id === id);
         sethotels(filteredData);
       } catch (error) {
         console.error("Error fetching flights:", error);

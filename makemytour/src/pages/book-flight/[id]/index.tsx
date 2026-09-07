@@ -100,7 +100,7 @@ const BookFlightPage = () => {
       const fetchFlights = async () => {
       try {
         const data = await getflight();
-        const filteredData = data.filter((flight: any) => flight.id === id);
+        const filteredData = (data || []).filter((flight: any) => flight.id === id || flight._id === id);
         setFlights(filteredData);
         console.log(filteredData);
       } catch (error) {

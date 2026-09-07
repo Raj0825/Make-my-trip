@@ -371,7 +371,7 @@ const BookCabPage = () => {
     const fetchCabs = async () => {
       try {
         const data = await getcab();
-        const filteredData = data.filter((cab: any) => cab.id === id);
+        const filteredData = (data || []).filter((cab: any) => cab.id === id || cab._id === id);
         setCabs(filteredData);
       } catch (error) {
         console.error("Error fetching cabs:", error);

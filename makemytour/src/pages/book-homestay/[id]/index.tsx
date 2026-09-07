@@ -256,8 +256,8 @@ const BookHomestayPage = () => {
     const fetchhomestays = async () => {
       try {
         const data = await gethomestay();
-        const filteredData = data.filter(
-          (homestay: any) => homestay.id === id
+        const filteredData = (data || []).filter(
+          (homestay: any) => homestay.id === id || homestay._id === id
         );
         sethomestays(filteredData);
       } catch (error) {
