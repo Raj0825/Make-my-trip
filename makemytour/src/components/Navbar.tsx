@@ -36,9 +36,14 @@ const Navbar = () => {
           {user ? (
             <>
               {user.role === "ADMIN" && (
-                <Button variant="default" onClick={() => router.push("/admin")}>
-                  ADMIN
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="default" onClick={() => router.push("/admin")}>
+                    ADMIN
+                  </Button>
+                  <Button variant="outline" onClick={() => router.push("/admin/analytics")}>
+                    Analytics
+                  </Button>
+                </div>
               )}
 
               <NotificationBell />
