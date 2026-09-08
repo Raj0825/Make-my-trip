@@ -39,6 +39,7 @@ import PromoCodeInput from "@/components/promo/PromoCodeInput";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
 import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
 import { getTier } from "@/components/loyalty/LoyaltyWidget";
+import FakePaymentModal from "@/components/payment/FakePaymentModal";
 interface Bus {
   id: string;
   busName: string;
@@ -474,6 +475,7 @@ const BookBusPage = () => {
   const [redeemedPoints, setRedeemedPoints] = useState(0);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
   const [bookingError, setBookingError] = useState("");
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [ticketData, setTicketData] = useState<{
     busClass: BusClass;
     seats: BusSeat[];
@@ -602,8 +604,7 @@ const BookBusPage = () => {
   const seatsReady = selectedSeats.length === passengerCount;
   const passengersReady = passengers.length === passengerCount && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
 
-  const handlebooking = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePaymentSuccess = async () => {
     setBookingError("");
     try {
       const userId = user?.id || (user as any)?._id;
@@ -752,7 +753,7 @@ const BookBusPage = () => {
           </div>
         </div>
         {bookingError && <p className="text-sm text-red-500 text-center">{bookingError}</p>}
-        <Button className="w-full bg-blue-600 text-white" onClick={handlebooking} disabled={!passengersReady}>
+        <Button className="w-full bg-blue-600 text-white" onClick={() => setIsPaymentModalOpen(true)} disabled={!passengersReady}>
           {passengersReady ? "Confirm & Pay" : "Enter traveler details to continue"}
         </Button>
       </div>
@@ -1116,6 +1117,12 @@ const BookBusPage = () => {
           }}
         />
       )}
+      <FakePaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onSuccess={handlePaymentSuccess}
+        amount={grandTotal}
+      />
     </div>
   );
 };

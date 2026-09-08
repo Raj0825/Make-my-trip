@@ -8,6 +8,7 @@ import PromoCodeInput from "@/components/promo/PromoCodeInput";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
 import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
 import { getTier } from "@/components/loyalty/LoyaltyWidget";
+import FakePaymentModal from "@/components/payment/FakePaymentModal";
 import { getFlightStatus } from "@/api";
 import SeatMap from "@/components/seat-selection/SeatMap";
 import { saveBookingPreferences, redeemLoyaltyPoints } from "@/api";
@@ -77,6 +78,7 @@ const BookFlightPage = () => {
   const [promoCode, setPromoCode] = useState<string | null>(null);
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [redeemedPoints, setRedeemedPoints] = useState(0);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
     const [flightStatus, setFlightStatus] = useState<any>(null);
     const user = useSelector((state: any) => state.user.user);
@@ -218,8 +220,7 @@ const BookFlightPage = () => {
   const loyaltyAvailable = user?.loyaltyPoints ?? 0;
   const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
 
-  const handlebooking = async (e: React.FormEvent) => {
-      e.preventDefault();
+  const handlePaymentSuccess = async () => {
       if (selectedSeats.length !== quantity) {
         alert(`Please select ${quantity} seat${quantity > 1 ? "s" : ""} before proceeding.`);
         return;
@@ -457,7 +458,7 @@ const BookFlightPage = () => {
           </div>
         </div>
       </div>
-      <Button className="w-full mt-4" onClick={handlebooking} disabled={!passengersReady}>
+      <Button className="w-full mt-4" onClick={() => setIsPaymentModalOpen(true)} disabled={!passengersReady}>
         {passengersReady ? "Proceed to Payment" : "Enter traveler details to continue"}
       </Button>
     </DialogContent>
@@ -882,7 +883,7 @@ const BookFlightPage = () => {
                                         </div>
                                       </div>
                                     </div>
-                                    <Button className="w-full mt-4" onClick={handlebooking} disabled={!passengersReady}>
+                                    <Button className="w-full mt-4" onClick={() => setIsPaymentModalOpen(true)} disabled={!passengersReady}>
                                       {passengersReady ? "Proceed to Payment" : "Enter traveler details to continue"}
                                     </Button>
                                   </DialogContent>
@@ -962,6 +963,12 @@ const BookFlightPage = () => {
         </div>
         <ReviewSection serviceType="Flight" serviceId={id as string} />
       </div>
+      <FakePaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onSuccess={handlePaymentSuccess}
+        amount={totalPrice + totalTaxes + totalOtherServices + (insured ? INSURANCE_PREMIUM : 0) - promoDiscount - redeemedPoints + seatSurcharge}
+      />
     </div>
   );
 };

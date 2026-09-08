@@ -101,6 +101,16 @@ export const editprofile = async (
   } catch (error) {}
 };
 
+export const getAnalytics = async () => {
+  try {
+    const res = await axios.get(`${BACKEND_URL}/admin/analytics`);
+    return res.data;
+  } catch (error) {
+    console.error("getAnalytics error:", error);
+    return null;
+  }
+};
+
 export const getLoyaltyInfo = async (userId) => {
   try {
     const res = await axios.get(`${BACKEND_URL}/user/loyalty?id=${userId}`);

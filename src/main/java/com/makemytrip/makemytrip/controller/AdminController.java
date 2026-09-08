@@ -47,6 +47,44 @@ public class AdminController {
         List<Users> users=userRepository.findAll();
         return ResponseEntity.ok(users);
     }
+
+    @GetMapping("/analytics")
+    public ResponseEntity<java.util.Map<String, Object>> getAnalytics() {
+        List<Users> users = userRepository.findAll();
+        long totalUsers = users.size();
+        long totalBookings = 0;
+        double totalRevenue = 0;
+        java.util.Map<String, Double> revenueByService = new java.util.HashMap<>();
+        java.util.Map<String, Integer> bookingsByService = new java.util.HashMap<>();
+
+        for (Users user : users) {
+            List<Users.Booking> bookings = user.getBookings();
+            if (bookings != null) {
+                for (Users.Booking booking : bookings) {
+                    if (booking.isCancelled()) continue;
+                    totalBookings++;
+                    double price = booking.getTotalPrice();
+                    totalRevenue += price;
+                    
+                    String type = booking.getType();
+                    if (type == null) type = "Unknown";
+                    
+                    revenueByService.put(type, revenueByService.getOrDefault(type, 0.0) + price);
+                    bookingsByService.put(type, bookingsByService.getOrDefault(type, 0) + 1);
+                }
+            }
+        }
+
+        java.util.Map<String, Object> analytics = new java.util.HashMap<>();
+        analytics.put("totalUsers", totalUsers);
+        analytics.put("totalBookings", totalBookings);
+        analytics.put("totalRevenue", totalRevenue);
+        analytics.put("revenueByService", revenueByService);
+        analytics.put("bookingsByService", bookingsByService);
+
+        return ResponseEntity.ok(analytics);
+    }
+
     @PostMapping("/flight")
     public Flight addflight(@RequestBody Flight flight){
         return flightRepository.save(flight);

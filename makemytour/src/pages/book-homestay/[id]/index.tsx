@@ -53,6 +53,7 @@ import PromoCodeInput from "@/components/promo/PromoCodeInput";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
 import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
 import { getTier } from "@/components/loyalty/LoyaltyWidget";
+import FakePaymentModal from "@/components/payment/FakePaymentModal";
 
 // ---------------------------------------------------------------------------
 // Static homestay photo bank. In absence of a photoUrls field on the backend
@@ -222,6 +223,7 @@ const BookHomestayPage = () => {
   const [promoCode, setPromoCode] = useState<string | null>(null);
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [redeemedPoints, setRedeemedPoints] = useState(0);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
   const [selectedRoomKey, setSelectedRoomKey] = useState<string>(
     ROOM_OPTIONS_TEMPLATE[1].key
@@ -331,8 +333,7 @@ const BookHomestayPage = () => {
   const loyaltyAvailable = user?.loyaltyPoints ?? 0;
   const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
 
-  const handlebooking = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePaymentSuccess = async () => {
     try {
       const data = await handlehomestaybooking(
         user?.id,
@@ -503,10 +504,10 @@ const BookHomestayPage = () => {
         </div>
         <Button
           className="w-full bg-blue-600 text-white"
-          onClick={handlebooking}
+          onClick={() => setIsPaymentModalOpen(true)}
           disabled={!passengersReady}
         >
-          {passengersReady ? "Confirm Booking" : "Enter traveler details to continue"}
+          {passengersReady ? "Confirm & Pay" : "Enter traveler details to continue"}
         </Button>
       </div>
     </DialogContent>
@@ -834,6 +835,12 @@ const BookHomestayPage = () => {
           </div>
         </div>
       )}
+      <FakePaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onSuccess={handlePaymentSuccess}
+        amount={grandTotal}
+      />
     </div>
   );
 };
