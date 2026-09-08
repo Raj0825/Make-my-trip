@@ -147,8 +147,8 @@ const BookHotelPage = () => {
      }
      try {
        const data = await handlehotelbooking(
-         user?.id,
-         hotel?.id,
+         user?.id || (user as any)?._id,
+         hotel?.id || (hotel as any)?._id,
          quantity,
          grandTotal,
          selectedRoomType?.pricePerNight ?? hotel?.pricePerNight,
@@ -157,7 +157,7 @@ const BookHotelPage = () => {
          passengers
        );
        if (redeemedPoints > 0) {
-         await redeemLoyaltyPoints(user?.id, redeemedPoints);
+         await redeemLoyaltyPoints(user?.id || (user as any)?._id, redeemedPoints);
        }
        const { getuserbyemail } = await import("@/api");
        const freshUser = await getuserbyemail(user?.email);
@@ -316,7 +316,13 @@ const BookHotelPage = () => {
           </div>
         </div>
       </div>
-      <Button className="w-full mt-4" onClick={() => setIsPaymentModalOpen(true)} disabled={!passengersReady}>
+      <Button className="w-full mt-4" onClick={() => {
+        if (!selectedRoomType) {
+          alert("Please select a room type before proceeding.");
+          return;
+        }
+        setIsPaymentModalOpen(true);
+      }} disabled={!passengersReady}>
         {passengersReady ? "Proceed to Payment" : "Enter traveler details to continue"}
       </Button>
     </DialogContent>
