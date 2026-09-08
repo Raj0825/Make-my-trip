@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import Navbar from "@/components/Navbar";
 import { getAnalytics } from "@/api";
 import { 
   Users, 
@@ -49,7 +48,6 @@ export default function AdminAnalyticsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 font-sans">
-        <Navbar />
         <div className="flex justify-center items-center h-[80vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -60,7 +58,6 @@ export default function AdminAnalyticsPage() {
   if (!data) {
     return (
       <div className="min-h-screen bg-gray-50 font-sans">
-        <Navbar />
         <div className="flex justify-center items-center h-[80vh]">
           <p className="text-red-500 font-medium text-lg">Failed to load analytics data.</p>
         </div>
@@ -89,7 +86,6 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 flex justify-between items-end">
