@@ -67,6 +67,7 @@ export default function FakePaymentModal({ isOpen, onClose, onSuccess, amount }:
         // Reset form
         setCardNumber(""); setExpiry(""); setCvv(""); setName(""); setUpiId("");
         onSuccess();
+        onClose();
       }, 1500);
     }, 2000);
   };
