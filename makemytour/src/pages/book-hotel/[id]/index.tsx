@@ -56,7 +56,7 @@ const BookHotelPage = () => {
     const [promoDiscount, setPromoDiscount] = useState(0);
     const [redeemedPoints, setRedeemedPoints] = useState(0);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
+    const [passengers, setPassengers] = useState<PassengerInfo[]>([{ name: "", age: "" }]);
   const router = useRouter();
   const { id } = router.query; // Access the hotel ID from the URL
   const [hotels, sethotels] = useState<Hotel[]>([]);
@@ -316,13 +316,17 @@ const BookHotelPage = () => {
           </div>
         </div>
       </div>
-      <Button className="w-full mt-4" onClick={() => {
+      <Button className="w-full mt-4 bg-blue-600 text-white" onClick={() => {
         if (!selectedRoomType) {
           alert("Please select a room type before proceeding.");
           return;
         }
+        if (!passengersReady) {
+          alert("Please fill in all traveler details (name and age) before proceeding.");
+          return;
+        }
         setIsPaymentModalOpen(true);
-      }} disabled={!passengersReady}>
+      }}>
         {passengersReady ? "Proceed to Payment" : "Enter traveler details to continue"}
       </Button>
     </DialogContent>
