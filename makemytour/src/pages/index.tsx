@@ -388,7 +388,7 @@ export default function Home() {
                 {searchresults.map((result) => (
                   <div
                     key={result.id}
-                    className="bg-white rounded-lg shadow p-4 border border-gray-200"
+                    className="bg-white rounded-xl shadow-md p-5 border border-gray-200 text-gray-900"
                   >
                     {bookingtype === "flights" ? (
                       <>
@@ -408,7 +408,7 @@ export default function Home() {
                           ₹{result.price}
                         </p>
                         <Button
-                          className="w-full mt-4"
+                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                           onClick={() => handlebooknow(result.id)}
                         >
                           Book Now
@@ -424,7 +424,7 @@ export default function Home() {
                           ₹{result.pricePerNight} per night
                         </p>
                         <Button
-                          className="w-full mt-4"
+                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                           onClick={() => handlebooknow(result.id)}
                         >
                           Book Now
@@ -448,7 +448,7 @@ export default function Home() {
                           ₹{result.price}
                         </p>
                         <Button
-                          className="w-full mt-4"
+                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                           onClick={() => handlebooknow(result.id)}
                         >
                           Book Now
@@ -472,7 +472,7 @@ export default function Home() {
                           ₹{result.price}
                         </p>
                         <Button
-                          className="w-full mt-4"
+                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                           onClick={() => handlebooknow(result.id)}
                         >
                           Book Now
@@ -496,7 +496,7 @@ export default function Home() {
                           ₹{result.price}
                         </p>
                         <Button
-                          className="w-full mt-4"
+                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                           onClick={() => handlebooknow(result.id)}
                         >
                           Book Now
@@ -512,7 +512,7 @@ export default function Home() {
                           ₹{result.pricePerNight} per night
                         </p>
                         <Button
-                          className="w-full mt-4"
+                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                           onClick={() => handlebooknow(result.id)}
                         >
                           Book Now

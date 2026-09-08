@@ -284,18 +284,6 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
-                <p className="text-2xl font-bold text-blue-600">{activeCount}</p>
-                <p className="text-xs text-gray-500 mt-0.5">Active</p>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
-                <p className="text-2xl font-bold text-red-500">{cancelledCount}</p>
-                <p className="text-xs text-gray-500 mt-0.5">Cancelled</p>
-              </div>
-            </div>
-
             {/* Loyalty Widget */}
             <LoyaltyWidget
               points={user?.loyaltyPoints ?? 0}

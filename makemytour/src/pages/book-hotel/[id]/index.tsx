@@ -57,6 +57,7 @@ const BookHotelPage = () => {
     const [redeemedPoints, setRedeemedPoints] = useState(0);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [passengers, setPassengers] = useState<PassengerInfo[]>([{ name: "", age: "" }]);
+    const [bookingTicket, setBookingTicket] = useState<{ pnr: string; roomType: string; nights: number; grandTotal: number; guests: PassengerInfo[] } | null>(null);
   const router = useRouter();
   const { id } = router.query; // Access the hotel ID from the URL
   const [hotels, sethotels] = useState<Hotel[]>([]);
@@ -139,7 +140,7 @@ const BookHotelPage = () => {
    const grandTotal = Math.max(0, totalPrice + totalTaxes - totalDiscounts - promoDiscount - redeemedPoints);
    const loyaltyTier = getTier(user?.loyaltyEarned ?? 0);
    const loyaltyAvailable = user?.loyaltyPoints ?? 0;
-   const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
+   const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "" && Number(p.age) >= 18);
    const handlePaymentSuccess = async () => {
      if (!selectedRoomType) {
        alert("Please select a room type before proceeding.");
@@ -163,9 +164,19 @@ const BookHotelPage = () => {
        const freshUser = await getuserbyemail(user?.email);
        dispatch(setUser(freshUser));
 
-       setopem(false);
-       setQuantity(1);
-       router.push("/profile");
+        setopem(false);
+        setQuantity(1);
+        // Generate PNR and show ticket
+        const pnr = "HTL" + Math.random().toString(36).substring(2, 8).toUpperCase();
+        setBookingTicket({
+          pnr,
+          roomType: selectedRoomType?.name ?? "Standard Room",
+          nights: quantity,
+          grandTotal,
+          guests: passengers,
+        });
+        // also navigate to profile after a delay
+        // router.push("/profile"); // keep ticket visible instead
      } catch (error: any) {
        const message = error?.response?.data || "Booking failed. Please try again.";
        alert(typeof message === "string" ? message : "Booking failed. Please try again.");
@@ -211,14 +222,6 @@ const BookHotelPage = () => {
             />
           </div>
 
-          {/* Available Rooms */}
-          <div className="space-y-2">
-            <Label htmlFor="availableRooms" className="flex items-center">
-              <Ticket className="w-4 h-4 mr-2" />
-              Available Rooms
-            </Label>
-            <Input id="availableRooms" value={hotel.availableRooms} readOnly />
-          </div>
 
           {/* Number of Rooms to Book */}
           <div className="space-y-2">
@@ -610,6 +613,81 @@ const BookHotelPage = () => {
       onSuccess={handlePaymentSuccess}
       amount={grandTotal}
     />
+
+    {/* Hotel Booking Confirmation Ticket */}
+    {bookingTicket && (
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+          {/* Green success header */}
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white text-center">
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-extrabold">Booking Confirmed!</h2>
+            <p className="text-green-100 text-sm mt-1">Your hotel room has been reserved</p>
+          </div>
+
+          {/* Ticket body */}
+          <div className="p-6 space-y-4">
+            {/* Hotel name */}
+            <div className="text-center">
+              <h3 className="text-xl font-bold text-gray-900">{hotel?.hotelName}</h3>
+              <p className="text-gray-500 text-sm">{hotel?.location}</p>
+            </div>
+
+            {/* Dashed divider */}
+            <div className="border-t-2 border-dashed border-gray-200" />
+
+            {/* Details */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider">PNR / Booking ID</p>
+                <p className="font-bold text-gray-900 text-lg tracking-widest">{bookingTicket.pnr}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider">Room Type</p>
+                <p className="font-semibold text-gray-800">{bookingTicket.roomType}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider">Rooms / Nights</p>
+                <p className="font-semibold text-gray-800">{bookingTicket.nights} room{bookingTicket.nights > 1 ? "s" : ""}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider">Amount Paid</p>
+                <p className="font-bold text-green-600 text-lg">₹ {bookingTicket.grandTotal.toLocaleString("en-IN")}</p>
+              </div>
+            </div>
+
+            {/* Guests */}
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Guests</p>
+              <div className="space-y-1">
+                {bookingTicket.guests.map((g, i) => (
+                  <p key={i} className="text-sm font-medium text-gray-700">
+                    {i + 1}. {g.name} <span className="text-gray-400">(Age {g.age})</span>
+                  </p>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t-2 border-dashed border-gray-200" />
+
+            <p className="text-xs text-center text-gray-400">
+              View full details in your profile page under "My Bookings"
+            </p>
+
+            <button
+              onClick={() => { setBookingTicket(null); router.push("/profile"); }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors"
+            >
+              Go to My Bookings
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 };

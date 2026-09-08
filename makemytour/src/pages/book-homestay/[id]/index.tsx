@@ -331,7 +331,7 @@ const BookHomestayPage = () => {
   const grandTotal = Math.max(0, totalPrice + taxes + insuranceFee - promoDiscount - redeemedPoints);
   const loyaltyTier = getTier(user?.loyaltyEarned ?? 0);
   const loyaltyAvailable = user?.loyaltyPoints ?? 0;
-  const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
+  const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "" && Number(p.age) >= 18);
 
   const handlePaymentSuccess = async () => {
     try {

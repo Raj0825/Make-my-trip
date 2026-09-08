@@ -38,9 +38,9 @@ export default function RecommendationCard({
   const [feedbackGiven, setFeedbackGiven] = useState<"HELPFUL" | "IRRELEVANT" | null>(null);
   const router = useRouter();
 
-  const handleFeedback = async (feedback: "HELPFUL" | "IRRELEVANT") => {
-    if (!userId) return;
+  const handleFeedback = async (feedback: "HELPFUL" | "IRRELEVANT" | null) => {
     setFeedbackGiven(feedback);
+    if (!userId || !feedback) return;
     try {
       await sendRecommendationFeedback(userId, rec.entityType, rec.entityId, feedback);
     } catch {
@@ -76,30 +76,24 @@ export default function RecommendationCard({
           <Info size={12} /> Why this recommendation?
         </button>
 
-        {!feedbackGiven ? (
-          <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1">
             <button
               type="button"
               title="Helpful"
-              onClick={() => handleFeedback("HELPFUL")}
-              className="p-1 rounded hover:bg-green-50 text-gray-400 hover:text-green-600"
+              onClick={() => handleFeedback(feedbackGiven === "HELPFUL" ? null : "HELPFUL")}
+              className={`p-1 rounded transition-colors ${feedbackGiven === "HELPFUL" ? "bg-green-100 text-green-600" : "hover:bg-green-50 text-gray-400 hover:text-green-600"}`}
             >
               <ThumbsUp size={14} />
             </button>
             <button
               type="button"
               title="Not relevant"
-              onClick={() => handleFeedback("IRRELEVANT")}
-              className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-600"
+              onClick={() => handleFeedback(feedbackGiven === "IRRELEVANT" ? null : "IRRELEVANT")}
+              className={`p-1 rounded transition-colors ${feedbackGiven === "IRRELEVANT" ? "bg-red-100 text-red-500" : "hover:bg-red-50 text-gray-400 hover:text-red-500"}`}
             >
               <ThumbsDown size={14} />
             </button>
           </div>
-        ) : (
-          <span className="text-xs text-gray-400">
-            {feedbackGiven === "HELPFUL" ? "Thanks!" : "Got it"}
-          </span>
-        )}
       </div>
 
       {showReason && (

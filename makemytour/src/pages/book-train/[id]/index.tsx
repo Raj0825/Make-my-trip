@@ -650,7 +650,7 @@ const BookTrainPage = () => {
   const loyaltyAvailable = user?.loyaltyPoints ?? 0;
 
   const seatsReady = selectedSeats.length === passengerCount;
-  const passengersReady = passengers.length === passengerCount && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "");
+  const passengersReady = passengers.length === passengerCount && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "" && Number(p.age) >= 18);
 
   const handlePaymentSuccess = async () => {
     setBookingError("");
