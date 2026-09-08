@@ -603,6 +603,12 @@ const BookHotelPage = () => {
         </div>
       </div>
     </div>
+    <FakePaymentModal
+      isOpen={isPaymentModalOpen}
+      onClose={() => setIsPaymentModalOpen(false)}
+      onSuccess={handlePaymentSuccess}
+      amount={grandTotal}
+    />
   );
 };
 
