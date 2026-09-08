@@ -380,7 +380,7 @@ export default function Home() {
             SEARCH
           </Button>
           <div className="mt-6">
-            <h2 className="text-xl font-semibold mb-4 text-white">
+            <h2 className="text-xl font-bold mb-4 text-gray-900">
               Search Results
             </h2>
             {searchresults.length > 0 ? (
