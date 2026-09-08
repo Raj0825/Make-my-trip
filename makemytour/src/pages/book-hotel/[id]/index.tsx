@@ -332,6 +332,7 @@ const BookHotelPage = () => {
     </DialogContent>
   );
   return (
+    <>
     <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb */}
       <div className="bg-white border-b">
@@ -609,6 +610,7 @@ const BookHotelPage = () => {
       onSuccess={handlePaymentSuccess}
       amount={grandTotal}
     />
+    </>
   );
 };
 
