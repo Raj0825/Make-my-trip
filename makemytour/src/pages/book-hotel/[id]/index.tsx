@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 import WishlistButton from "@/components/wishlist/WishlistButton";
-import PromoCodeInput from "@/components/promo/PromoCodeInput";
+import BackButton from "@/components/navigation/BackButton";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
 import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
 import { getTier } from "@/components/loyalty/LoyaltyWidget";
@@ -52,12 +52,31 @@ const BookHotelPage = () => {
   const [quantity, setQuantity] = useState(1);
     const [selectedRoomType, setSelectedRoomType] = useState<any>(null);
     const [rememberRoomPref, setRememberRoomPref] = useState(false);
-    const [promoCode, setPromoCode] = useState<string | null>(null);
-    const [promoDiscount, setPromoDiscount] = useState(0);
     const [redeemedPoints, setRedeemedPoints] = useState(0);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [passengers, setPassengers] = useState<PassengerInfo[]>([{ name: "", age: "" }]);
     const [bookingTicket, setBookingTicket] = useState<{ pnr: string; roomType: string; nights: number; grandTotal: number; guests: PassengerInfo[] } | null>(null);
+
+  // Restore form state from sessionStorage
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const saved = sessionStorage.getItem(`mmt_hotel_${id}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.quantity) setQuantity(parsed.quantity);
+        if (parsed.passengers && Array.isArray(parsed.passengers)) setPassengers(parsed.passengers);
+      }
+    } catch {}
+  }, [id]);
+
+  // Persist form state to sessionStorage
+  useEffect(() => {
+    if (!id) return;
+    try {
+      sessionStorage.setItem(`mmt_hotel_${id}`, JSON.stringify({ quantity, passengers }));
+    } catch {}
+  }, [id, quantity, passengers]);
   const router = useRouter();
   const { id } = router.query; // Access the hotel ID from the URL
   const [hotels, sethotels] = useState<Hotel[]>([]);
@@ -137,7 +156,7 @@ const BookHotelPage = () => {
  const totalPrice = (selectedRoomType?.pricePerNight ?? hotel?.pricePerNight) * quantity;
    const totalTaxes = hotelData?.room.taxes * quantity;
    const totalDiscounts = hotelData?.room.discountedPrice * quantity;
-   const grandTotal = Math.max(0, totalPrice + totalTaxes - totalDiscounts - promoDiscount - redeemedPoints);
+   const grandTotal = Math.max(0, totalPrice + totalTaxes - totalDiscounts - redeemedPoints);
    const loyaltyTier = getTier(user?.loyaltyEarned ?? 0);
    const loyaltyAvailable = user?.loyaltyPoints ?? 0;
    const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "" && Number(p.age) >= 18);
@@ -264,14 +283,6 @@ const BookHotelPage = () => {
                   onChange={setRedeemedPoints}
                 />
 
-                <PromoCodeInput
-                  subtotal={totalPrice}
-                  appliedCode={promoCode}
-                  discount={promoDiscount}
-                  onApply={(code, discount) => { setPromoCode(code); setPromoDiscount(discount); }}
-                  onRemove={() => { setPromoCode(null); setPromoDiscount(0); }}
-                />
-
                 <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
@@ -296,12 +307,6 @@ const BookHotelPage = () => {
                 - ₹ {Math.abs(totalDiscounts).toLocaleString()}
               </span>
             </div>
-            {promoDiscount > 0 && (
-              <div className="flex justify-between items-center text-green-600">
-                <span>Promo ({promoCode})</span>
-                <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
-              </div>
-            )}
             {redeemedPoints > 0 && (
               <div className="flex justify-between items-center text-amber-600">
                 <span>Rewards Redeemed</span>
@@ -319,13 +324,9 @@ const BookHotelPage = () => {
           </div>
         </div>
       </div>
-      <Button className="w-full mt-4 bg-blue-600 text-white" onClick={() => {
-        if (!selectedRoomType) {
-          alert("Please select a room type before proceeding.");
-          return;
-        }
-        if (!passengersReady) {
-          alert("Please fill in all traveler details (name and age) before proceeding.");
+      <Button className="w-full mt-6" onClick={() => {
+        if (!user) {
+          setopem(true);
           return;
         }
         setIsPaymentModalOpen(true);
@@ -340,16 +341,14 @@ const BookHotelPage = () => {
       {/* Breadcrumb */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center space-x-2 text-sm">
-            <a href="/" className="text-blue-500">
-              Home
-            </a>
+          <div className="flex items-center space-x-3 text-sm">
+            <BackButton fallbackUrl="/" />
+            <span className="text-gray-400">/</span>
+            <span className="text-gray-500">Hotels</span>
             <ChevronRight className="w-4 h-4 text-gray-400" />
-            <a href="/" className="text-blue-500">
-              {hotel?.location}
-            </a>
+            <span className="text-gray-500">{hotel?.location}</span>
             <ChevronRight className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-600">{hotel?.hotelName}</span>
+            <span className="text-gray-700 font-medium">{hotel?.hotelName}</span>
           </div>
         </div>
       </div>

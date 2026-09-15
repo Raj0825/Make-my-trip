@@ -4,7 +4,7 @@ import TrackFlightButton from "@/components/flight-tracking/TrackFlightButton";
 import FlightStatusBadge from "@/components/flight-tracking/FlightStatusBadge";
 import DynamicPriceCard from "@/components/pricing/DynamicPriceCard";
 import WishlistButton from "@/components/wishlist/WishlistButton";
-import PromoCodeInput from "@/components/promo/PromoCodeInput";
+import BackButton from "@/components/navigation/BackButton";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
 import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
 import { getTier } from "@/components/loyalty/LoyaltyWidget";
@@ -75,11 +75,31 @@ const BookFlightPage = () => {
     const [rememberSeatPref, setRememberSeatPref] = useState(false);
   const [open, setopem] = useState(false);
   const [insured, setInsured] = useState(false);
-  const [promoCode, setPromoCode] = useState<string | null>(null);
-  const [promoDiscount, setPromoDiscount] = useState(0);
   const [redeemedPoints, setRedeemedPoints] = useState(0);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
+
+  // Restore form state from sessionStorage
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const saved = sessionStorage.getItem(`mmt_flight_${id}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.quantity) setQuantity(parsed.quantity);
+        if (parsed.travelClass) setTravelClass(parsed.travelClass);
+        if (parsed.passengers && Array.isArray(parsed.passengers)) setPassengers(parsed.passengers);
+      }
+    } catch {}
+  }, [id]);
+
+  // Persist form state to sessionStorage
+  useEffect(() => {
+    if (!id) return;
+    try {
+      sessionStorage.setItem(`mmt_flight_${id}`, JSON.stringify({ quantity, travelClass, passengers }));
+    } catch {}
+  }, [id, quantity, travelClass, passengers]);
     const [flightStatus, setFlightStatus] = useState<any>(null);
     const user = useSelector((state: any) => state.user.user);
     const dispatch = useDispatch();

@@ -25,6 +25,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSelector } from "react-redux";
+import BackButton from "@/components/navigation/BackButton";
+import FakePaymentModal from "@/components/payment/FakePaymentModal";
 
 // ---------------------------------------------------------------------------
 // Plan tiers. Coverage amounts scale with trip cost via the calculator below;
@@ -211,6 +213,7 @@ export default function InsurancePage() {
   const [showApply, setShowApply] = useState(false);
   const [applicant, setApplicant] = useState({ name: user?.name || "", age: "", nominee: "" });
   const [issuedPolicy, setIssuedPolicy] = useState<{ plan: Plan; travelers: number; days: number; premium: number; applicant: typeof applicant } | null>(null);
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
   const plan = PLANS.find((p) => p.key === planKey) || PLANS[1];
   const internationalMultiplier = tripType === "international" ? 1.6 : 1;
@@ -218,24 +221,30 @@ export default function InsurancePage() {
 
   const handleApply = (e: React.FormEvent) => {
     e.preventDefault();
-    setIssuedPolicy({ plan, travelers, days, premium, applicant });
     setShowApply(false);
+    setIsPaymentOpen(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    setIssuedPolicy({ plan, travelers, days, premium, applicant });
+    setIsPaymentOpen(false);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
       <div className="bg-gradient-to-br from-indigo-800 to-blue-700 text-white">
-        <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <BackButton variant="dark" className="mb-4" />
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-2"><Shield size={30} /> Travel Insurance</h1>
           <p className="text-blue-100">Cover flight delays, accidents, medical emergencies, and more — for as little as a few rupees a day.</p>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 -mt-8 pb-16 space-y-6">
-        {/* Premium calculator */}
+        {/* Calculator */}
         <div className="bg-white rounded-2xl shadow-xl p-6 animate-fade-in-up">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><IndianRupee size={18} className="text-blue-600" /> Premium Calculator</h2>
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><IndianRupee size={18} className="text-blue-600" /> Calculator</h2>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-2">
             <div>
               <Label className="text-xs text-gray-500 mb-1 block">Trip Cost (₹)</Label>
@@ -371,6 +380,13 @@ export default function InsurancePage() {
           onClose={() => setIssuedPolicy(null)}
         />
       )}
+
+      <FakePaymentModal
+        isOpen={isPaymentOpen}
+        onClose={() => setIsPaymentOpen(false)}
+        onSuccess={handlePaymentSuccess}
+        amount={premium}
+      />
     </div>
   );
 }

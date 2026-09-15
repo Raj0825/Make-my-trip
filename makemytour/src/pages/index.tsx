@@ -152,6 +152,43 @@ export default function Home() {
     fetchdata();
   }, [user]);
 
+  // Restore search state from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("mmt_search_state");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.bookingtype) setbookingtype(parsed.bookingtype);
+        if (parsed.from) setfrom(parsed.from);
+        if (parsed.to) setto(parsed.to);
+        if (parsed.date) setdate(parsed.date);
+        if (parsed.travelers) settravelers(parsed.travelers);
+        if (parsed.searchresults && Array.isArray(parsed.searchresults)) {
+          setsearchresult(parsed.searchresults);
+        }
+      }
+    } catch (e) {
+      console.error("Error restoring search state:", e);
+    }
+  }, []);
+
+  // Save search state to sessionStorage whenever inputs or results change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        "mmt_search_state",
+        JSON.stringify({
+          bookingtype,
+          from,
+          to,
+          date,
+          travelers,
+          searchresults,
+        })
+      );
+    } catch {}
+  }, [bookingtype, from, to, date, travelers, searchresults]);
+
  const cityOptions = useMemo(() => {
    const cities = new Set<string>();
    flight.forEach((f) => { if(f.from) cities.add(f.from); if(f.to) cities.add(f.to); });
