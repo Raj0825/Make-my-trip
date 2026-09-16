@@ -7,6 +7,7 @@ import WishlistButton from "@/components/wishlist/WishlistButton";
 import BackButton from "@/components/navigation/BackButton";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
 import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
+import PromoCodeInput from "@/components/promo/PromoCodeInput";
 import { getTier } from "@/components/loyalty/LoyaltyWidget";
 import FakePaymentModal from "@/components/payment/FakePaymentModal";
 import { getFlightStatus } from "@/api";
@@ -731,6 +732,23 @@ const BookFlightPage = () => {
                 />
               </div>
 
+              {/* Promo Codes & Coupons in Sidebar */}
+              <div className="my-4">
+                <PromoCodeInput
+                  subtotal={totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge + (insured ? INSURANCE_PREMIUM : 0)}
+                  appliedCode={selectedPromo}
+                  discount={promoDiscount}
+                  onApply={(code, discount) => {
+                    setSelectedPromo(code);
+                    setPromoDiscount(discount);
+                  }}
+                  onRemove={() => {
+                    setSelectedPromo(null);
+                    setPromoDiscount(0);
+                  }}
+                />
+              </div>
+
               <Dialog open={open} onOpenChange={setopem}>
                 <DialogTrigger asChild>
                   <Button className="w-full bg-red-600 text-white">
@@ -855,6 +873,21 @@ const BookFlightPage = () => {
                                         redeemedPoints={redeemedPoints}
                                         onChange={setRedeemedPoints}
                                       />
+                                      <div className="my-2">
+                                        <PromoCodeInput
+                                          subtotal={totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge + (insured ? INSURANCE_PREMIUM : 0)}
+                                          appliedCode={selectedPromo}
+                                          discount={promoDiscount}
+                                          onApply={(code, discount) => {
+                                            setSelectedPromo(code);
+                                            setPromoDiscount(discount);
+                                          }}
+                                          onRemove={() => {
+                                            setSelectedPromo(null);
+                                            setPromoDiscount(0);
+                                          }}
+                                        />
+                                      </div>
                                       <div className="bg-gray-100 rounded-lg p-4">
                                         <h3 className="text-lg font-bold mb-4 flex items-center">
                                           <CreditCard className="w-5 h-5 mr-2" />
@@ -944,76 +977,9 @@ const BookFlightPage = () => {
               </Dialog>
 
               {/* Live Flight Status + Tracking */}
-                <div className="mt-4 space-y-3">
-                    <FlightStatusBadge status={flightStatus} />
-                    <TrackFlightButton flightId={id as string} />
-                </div>
-
-              {/* Promo Codes */}
-              <div className="mt-8">
-                <div className="bg-[#FFF8E7] p-6 rounded-xl">
-                  <h3 className="font-bold mb-4 flex items-center">
-                    <Gift className="w-5 h-5 mr-2 text-yellow-600" />
-                    PROMO CODES
-                  </h3>
-                  {promoOffers.map((offer, index) => {
-                    const isSelected = selectedPromo === offer.code;
-                    return (
-                      <div
-                        key={index}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedPromo(null);
-                            setPromoDiscount(0);
-                          } else {
-                            setSelectedPromo(offer.code);
-                            setPromoDiscount(offer.amount);
-                          }
-                        }}
-                        className={`p-4 rounded-xl mb-3 shadow-sm border transition-all cursor-pointer ${
-                          isSelected
-                            ? "bg-green-50/80 border-green-400 ring-2 ring-green-300"
-                            : "bg-white border-gray-100 hover:border-amber-300 hover:bg-amber-50/20"
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="radio"
-                            name="promo"
-                            checked={isSelected}
-                            onChange={() => {}}
-                            className="mt-1.5 h-4 w-4 text-green-600 focus:ring-green-500 cursor-pointer"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <div className="font-bold text-red-600 text-sm tracking-wide">
-                                {offer.code}
-                              </div>
-                              {isSelected && (
-                                <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full uppercase">
-                                  Applied
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                              {offer.description}
-                            </p>
-                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                              <span className="text-xs font-bold text-green-700">Instant ₹{offer.amount} OFF</span>
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); alert(`${offer.code}: ${offer.description}`); }}
-                                className="text-blue-600 text-xs font-medium hover:underline"
-                              >
-                                Terms & Conditions
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="mt-4 space-y-3">
+                <FlightStatusBadge status={flightStatus} />
+                <TrackFlightButton flightId={id as string} />
               </div>
             </div>
           </div>
