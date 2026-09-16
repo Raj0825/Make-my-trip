@@ -77,6 +77,12 @@ public class Users {
         private String travelClass;                 // e.g. "Business" — flights only
         private java.util.List<Passenger> passengers = new ArrayList<>(); // per-traveler name/age
 
+        // Holiday package fields
+        private String destination;
+        private int packageDays;
+        private String hotelName;
+        private String style;
+
         // Getters and Setters — original fields
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }
@@ -112,6 +118,15 @@ public class Users {
         public void setTravelClass(String travelClass) { this.travelClass = travelClass; }
         public java.util.List<Passenger> getPassengers() { return passengers; }
         public void setPassengers(java.util.List<Passenger> passengers) { this.passengers = passengers; }
+
+        public String getDestination() { return destination; }
+        public void setDestination(String destination) { this.destination = destination; }
+        public int getPackageDays() { return packageDays; }
+        public void setPackageDays(int packageDays) { this.packageDays = packageDays; }
+        public String getHotelName() { return hotelName; }
+        public void setHotelName(String hotelName) { this.hotelName = hotelName; }
+        public String getStyle() { return style; }
+        public void setStyle(String style) { this.style = style; }
 
         public static class Passenger {
             private String name;

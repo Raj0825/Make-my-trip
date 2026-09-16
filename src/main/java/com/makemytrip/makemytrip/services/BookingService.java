@@ -401,4 +401,31 @@ public class BookingService {
         throw new RuntimeException("User or homestay not found");
     }
 
+    public Users.Booking bookHoliday(String userId, String destination, int travelers, int days, double price, String hotelName, String style, String passengersJson) {
+        Optional<Users> usersOptional = userRepository.findById(userId);
+        if (usersOptional.isPresent()) {
+            Users user = usersOptional.get();
+            Users.Booking booking = new Users.Booking();
+            booking.setType("Holiday");
+            String randomCode = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            String destPrefix = (destination != null && destination.length() >= 3)
+                    ? destination.replaceAll("[^a-zA-Z]", "").substring(0, Math.min(3, destination.length())).toUpperCase()
+                    : "PKG";
+            booking.setBookingId("HOL-" + destPrefix + "-" + randomCode);
+            booking.setDate(Instant.now().toString());
+            booking.setQuantity(travelers > 0 ? travelers : 1);
+            booking.setTotalPrice(price);
+            booking.setDestination(destination);
+            booking.setPackageDays(days);
+            booking.setHotelName(hotelName);
+            booking.setStyle(style);
+            booking.setPassengers(parsePassengers(passengersJson));
+            user.getBookings().add(booking);
+            awardLoyaltyPoints(user, price, "Holiday Package");
+            userRepository.save(user);
+            return booking;
+        }
+        throw new RuntimeException("User not found");
+    }
+
 }

@@ -29,7 +29,7 @@ import { gettrain, handletrainbooking, getBookedSeats, redeemLoyaltyPoints } fro
 import { useDispatch, useSelector } from "react-redux";
 import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
 import WishlistButton from "@/components/wishlist/WishlistButton";
-import PromoCodeInput from "@/components/promo/PromoCodeInput";
+import BackButton from "@/components/navigation/BackButton";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
 import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
 import { getTier } from "@/components/loyalty/LoyaltyWidget";
@@ -530,12 +530,33 @@ const BookTrainPage = () => {
   const [foodCart, setFoodCart] = useState<Record<string, number>>({});
   const [foodFilter, setFoodFilter] = useState<"all" | "veg" | "nonveg">("all");
   const [insured, setInsured] = useState(false);
-  const [promoCode, setPromoCode] = useState<string | null>(null);
-  const [promoDiscount, setPromoDiscount] = useState(0);
   const [redeemedPoints, setRedeemedPoints] = useState(0);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
   const [bookingError, setBookingError] = useState("");
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Restore form state from sessionStorage
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const saved = sessionStorage.getItem(`mmt_train_${id}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.passengerCount) setPassengerCount(parsed.passengerCount);
+        if (parsed.coachKey) setCoachKey(parsed.coachKey);
+        if (parsed.quota) setQuota(parsed.quota);
+        if (parsed.passengers && Array.isArray(parsed.passengers)) setPassengers(parsed.passengers);
+      }
+    } catch {}
+  }, [id]);
+
+  // Persist form state to sessionStorage
+  useEffect(() => {
+    if (!id) return;
+    try {
+      sessionStorage.setItem(`mmt_train_${id}`, JSON.stringify({ passengerCount, coachKey, quota, passengers }));
+    } catch {}
+  }, [id, passengerCount, coachKey, quota, passengers]);
   const [ticketData, setTicketData] = useState<{
     coachClass: CoachClass;
     seats: Seat[];
@@ -645,7 +666,7 @@ const BookTrainPage = () => {
   const subtotal = seatFareTotal + foodTotal;
   const taxes = Math.round(subtotal * 0.05);
   const insuranceFee = insured ? INSURANCE_PREMIUM : 0;
-  const grandTotal = Math.max(0, subtotal + taxes + insuranceFee - promoDiscount - redeemedPoints);
+  const grandTotal = Math.max(0, subtotal + taxes + insuranceFee - redeemedPoints);
   const loyaltyTier = getTier(user?.loyaltyEarned ?? 0);
   const loyaltyAvailable = user?.loyaltyPoints ?? 0;
 
@@ -785,14 +806,6 @@ const BookTrainPage = () => {
           onChange={setRedeemedPoints}
         />
 
-        <PromoCodeInput
-          subtotal={subtotal + insuranceFee}
-          appliedCode={promoCode}
-          discount={promoDiscount}
-          onApply={(code, discount) => { setPromoCode(code); setPromoDiscount(discount); }}
-          onRemove={() => { setPromoCode(null); setPromoDiscount(0); }}
-        />
-
         <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
@@ -819,12 +832,6 @@ const BookTrainPage = () => {
               <span className="text-gray-600">Taxes and Fees</span>
               <span className="font-medium">₹ {taxes.toLocaleString()}</span>
             </div>
-            {promoDiscount > 0 && (
-              <div className="flex justify-between items-center text-green-600">
-                <span>Promo ({promoCode})</span>
-                <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
-              </div>
-            )}
             {redeemedPoints > 0 && (
               <div className="flex justify-between items-center text-amber-600">
                 <span>Rewards Redeemed</span>
@@ -847,7 +854,10 @@ const BookTrainPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 pt-6 pb-2">
+        <BackButton fallbackUrl="/" />
+      </div>
+      <div className="max-w-7xl mx-auto px-4 pb-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl shadow-lg p-6">

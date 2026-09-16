@@ -49,13 +49,15 @@ import ReviewSection from "@/components/reviews/ReviewSection";
 import RoomTypeGrid from "@/components/room-selection/RoomTypeGrid";
 import { saveBookingPreferences, redeemLoyaltyPoints } from "@/api";
 const BookHotelPage = () => {
+  const router = useRouter();
+  const { id } = router.query; // Access the hotel ID from the URL
   const [quantity, setQuantity] = useState(1);
-    const [selectedRoomType, setSelectedRoomType] = useState<any>(null);
-    const [rememberRoomPref, setRememberRoomPref] = useState(false);
-    const [redeemedPoints, setRedeemedPoints] = useState(0);
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [passengers, setPassengers] = useState<PassengerInfo[]>([{ name: "", age: "" }]);
-    const [bookingTicket, setBookingTicket] = useState<{ pnr: string; roomType: string; nights: number; grandTotal: number; guests: PassengerInfo[] } | null>(null);
+  const [selectedRoomType, setSelectedRoomType] = useState<any>(null);
+  const [rememberRoomPref, setRememberRoomPref] = useState(false);
+  const [redeemedPoints, setRedeemedPoints] = useState(0);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [passengers, setPassengers] = useState<PassengerInfo[]>([{ name: "", age: "" }]);
+  const [bookingTicket, setBookingTicket] = useState<{ pnr: string; roomType: string; nights: number; grandTotal: number; guests: PassengerInfo[] } | null>(null);
 
   // Restore form state from sessionStorage
   useEffect(() => {
@@ -77,8 +79,7 @@ const BookHotelPage = () => {
       sessionStorage.setItem(`mmt_hotel_${id}`, JSON.stringify({ quantity, passengers }));
     } catch {}
   }, [id, quantity, passengers]);
-  const router = useRouter();
-  const { id } = router.query; // Access the hotel ID from the URL
+
   const [hotels, sethotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
   const user = useSelector((state: any) => state.user.user);

@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ModerationPanel from "@/components/reviews/ModerationPanel";
 import AdminLogin from "@/components/admin/AdminLogin";
 import { isAdminLoggedIn, adminLogout } from "@/api";
+import BackButton from "@/components/navigation/BackButton";
 import {
   Card,
   CardContent,
@@ -1260,7 +1261,10 @@ export default function AdminDashboard() {
   return (
     <div className="container mx-auto p-4 bg-white max-w-full">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <div className="flex items-center gap-4">
+          <BackButton fallbackUrl="/" />
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        </div>
         <Button variant="outline" onClick={handleLogout}>
           Log Out
         </Button>

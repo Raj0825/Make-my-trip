@@ -235,7 +235,7 @@ const BookFlightPage = () => {
   const totalOtherServices = fareSummary?.otherServices * quantity;
   const totalDiscounts = fareSummary?.discounts * quantity;
   const grandTotal = Math.max(0,
-      totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge + (insured ? INSURANCE_PREMIUM : 0) - promoDiscount - redeemedPoints);
+      totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge + (insured ? INSURANCE_PREMIUM : 0) - redeemedPoints);
   const loyaltyTier = getTier(user?.loyaltyEarned ?? 0);
   const loyaltyAvailable = user?.loyaltyPoints ?? 0;
   const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "" && Number(p.age) >= 18);
@@ -401,14 +401,6 @@ const BookFlightPage = () => {
           onChange={setRedeemedPoints}
         />
 
-        <PromoCodeInput
-          subtotal={totalPrice + totalTaxes + totalOtherServices + (insured ? INSURANCE_PREMIUM : 0)}
-          appliedCode={promoCode}
-          discount={promoDiscount}
-          onApply={(code, discount) => { setPromoCode(code); setPromoDiscount(discount); }}
-          onRemove={() => { setPromoCode(null); setPromoDiscount(0); }}
-        />
-
         <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
@@ -455,12 +447,6 @@ const BookFlightPage = () => {
                             </span>
                           </div>
                         )}
-                        {promoDiscount > 0 && (
-                          <div className="flex justify-between items-center text-green-600">
-                            <span>Promo ({promoCode})</span>
-                            <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
-                          </div>
-                        )}
                         {redeemedPoints > 0 && (
                           <div className="flex justify-between items-center text-amber-600">
                             <span>Rewards Redeemed</span>
@@ -485,7 +471,10 @@ const BookFlightPage = () => {
   );
   return (
     <div className="min-h-screen bg-[#f4f7fa]">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 pt-6 pb-2">
+        <BackButton fallbackUrl="/" />
+      </div>
+      <div className="max-w-7xl mx-auto px-4 pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -833,13 +822,6 @@ const BookFlightPage = () => {
                                       />
                                       <InsuranceAddOn checked={insured} onChange={setInsured} />
                                       <PassengerDetailsForm count={quantity} passengers={passengers} onChange={setPassengers} />
-                                      <PromoCodeInput
-                                        subtotal={totalPrice + totalTaxes + totalOtherServices + (insured ? INSURANCE_PREMIUM : 0)}
-                                        appliedCode={promoCode}
-                                        discount={promoDiscount}
-                                        onApply={(code, discount) => { setPromoCode(code); setPromoDiscount(discount); }}
-                                        onRemove={() => { setPromoCode(null); setPromoDiscount(0); }}
-                                      />
                                       <div className="bg-gray-100 rounded-lg p-4">
                                         <h3 className="text-lg font-bold mb-4 flex items-center">
                                           <CreditCard className="w-5 h-5 mr-2" />
@@ -884,12 +866,6 @@ const BookFlightPage = () => {
                                               <span className="font-medium">
                                                 ₹ {INSURANCE_PREMIUM.toLocaleString()}
                                               </span>
-                                            </div>
-                                          )}
-                                          {promoDiscount > 0 && (
-                                            <div className="flex justify-between items-center text-green-600">
-                                              <span>Promo ({promoCode})</span>
-                                              <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
                                             </div>
                                           )}
                                           <div className="border-t pt-2 mt-2">
@@ -987,7 +963,7 @@ const BookFlightPage = () => {
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         onSuccess={handlePaymentSuccess}
-        amount={totalPrice + totalTaxes + totalOtherServices + (insured ? INSURANCE_PREMIUM : 0) - promoDiscount - redeemedPoints + seatSurcharge}
+        amount={totalPrice + totalTaxes + totalOtherServices + (insured ? INSURANCE_PREMIUM : 0) - redeemedPoints + seatSurcharge}
       />
     </div>
   );

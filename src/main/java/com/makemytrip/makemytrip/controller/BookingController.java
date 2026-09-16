@@ -74,4 +74,20 @@ public class BookingController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @PostMapping("/holiday")
+    public ResponseEntity<?> bookHoliday(@RequestParam String userId,
+                                         @RequestParam String destination,
+                                         @RequestParam int travelers,
+                                         @RequestParam int days,
+                                         @RequestParam double price,
+                                         @RequestParam(required = false) String hotelName,
+                                         @RequestParam(required = false) String style,
+                                         @RequestParam(required = false) String passengersJson) {
+        try {
+            return ResponseEntity.ok(bookingService.bookHoliday(userId, destination, travelers, days, price, hotelName, style, passengersJson));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

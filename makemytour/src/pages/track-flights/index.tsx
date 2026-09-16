@@ -5,6 +5,7 @@ import { Plane, MapPin, ArrowRight, Bell, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getTrackedFlights, untrackFlight } from "@/api";
 import FlightStatusBadge from "@/components/flight-tracking/FlightStatusBadge";
+import BackButton from "@/components/navigation/BackButton";
 
 // Refresh the dashboard periodically so status/estimated-arrival changes
 // show up live while the page is open, in addition to push notifications.
@@ -56,6 +57,7 @@ export default function TrackFlightsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
+        <BackButton fallbackUrl="/" className="mb-4" />
         <div className="flex items-center gap-2 mb-1">
           <BellRing className="text-blue-600" size={24} />
           <h1 className="text-2xl font-bold">Live Flight Tracking</h1>

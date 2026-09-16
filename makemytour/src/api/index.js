@@ -632,6 +632,22 @@ export const handlehomestaybooking = async (userId, homestayId, rooms, price, un
   }
 };
 
+export const handleholidaybooking = async (userId, destination, travelers, days, price, hotelName, style, passengers) => {
+  try {
+    let url = `${BACKEND_URL}/booking/holiday?userId=${userId}&destination=${encodeURIComponent(destination)}&travelers=${travelers}&days=${days}&price=${price}`;
+    if (hotelName) url += `&hotelName=${encodeURIComponent(hotelName)}`;
+    if (style) url += `&style=${encodeURIComponent(style)}`;
+    if (passengers && passengers.length > 0) {
+      url += `&passengersJson=${encodeURIComponent(JSON.stringify(passengers))}`;
+    }
+    const res = await axios.post(url);
+    return res.data;
+  } catch (error) {
+    console.error("handleholidaybooking error:", error);
+    throw error;
+  }
+};
+
 // ---------------- Cancellation ----------------
 
 export const cancelbooking = async (userId, bookingId, reason) => {

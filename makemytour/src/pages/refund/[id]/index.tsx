@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { ArrowLeft, IndianRupee, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import BackButton from "@/components/navigation/BackButton";
 import RefundProgress from "@/components/refund/RefundProgress";
 import RefundInfoCard from "@/components/refund/RefundInfoCard";
 import RefundTimeline from "@/components/refund/RefundTimeline";
@@ -80,10 +81,7 @@ export default function RefundPage() {
     <div className="min-h-screen bg-slate-100">
       <div className="bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white rounded-b-3xl shadow-xl">
         <div className="max-w-5xl mx-auto px-6 py-8">
-          <Link href="/profile"
-            className="inline-flex items-center gap-2 text-blue-100 hover:text-white mb-6 text-sm transition">
-            <ArrowLeft size={16} /> Back to Profile
-          </Link>
+          <BackButton fallbackUrl="/profile" variant="light" label="Back to Profile" className="mb-6" />
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
               <p className="uppercase tracking-[0.25em] text-blue-200 text-xs font-semibold mb-2">

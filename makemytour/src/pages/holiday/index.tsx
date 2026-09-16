@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import { useSelector, useDispatch } from "react-redux";
 import {
   MapPin, Calendar, Users, Wallet, Sparkles, Loader2,
-  Sun, Utensils, Hotel, Camera, Info, Clock, ChevronDown, ChevronUp, Plane
+  Sun, Utensils, Hotel, Camera, Info, Clock, ChevronDown, ChevronUp, Plane,
+  CheckCircle2, Ticket, IndianRupee, ShieldCheck, AlertCircle, X, Printer, ArrowRight
 } from "lucide-react";
+import { setUser } from "@/store";
+import { handleholidaybooking } from "@/api";
+import BackButton from "@/components/navigation/BackButton";
+import FakePaymentModal from "@/components/payment/FakePaymentModal";
 
 // ─────────────────────────────────────────────────────────────
 //  Types
@@ -30,6 +37,12 @@ interface Itinerary {
   estimatedCostBreakdown: { label: string; amount: number }[];
   days: DayPlan[];
   packingTips: string[];
+}
+
+interface Passenger {
+  name: string;
+  age: string;
+  gender: string;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -121,12 +134,9 @@ const DESTINATIONS: Record<string, Itinerary> = {
 
 function generateMockItinerary(destination: string, duration: number, budget: number, travelers: number, style: string): Itinerary {
   const key = destination.toLowerCase().replace(/\s+/g, "");
-
-  // Find closest matching destination
   const matchedKey = Object.keys(DESTINATIONS).find((k) => key.includes(k) || k.includes(key));
   const base: Itinerary = matchedKey ? DESTINATIONS[matchedKey] : DESTINATIONS["goa"];
 
-  // Scale the budget breakdown proportionally
   const budgetRatio = budget / base.budget;
   const durationRatio = duration / base.duration;
   const scaledBreakdown = base.estimatedCostBreakdown.map((item) => ({
@@ -135,7 +145,6 @@ function generateMockItinerary(destination: string, duration: number, budget: nu
   }));
 
   const days = base.days.slice(0, Math.min(duration, base.days.length));
-  // Pad days if needed
   while (days.length < duration) {
     const last = days[days.length - 1];
     days.push({ ...last, day: days.length + 1, title: `Day ${days.length + 1}: Explore & Relax` });
@@ -210,6 +219,10 @@ function DayCard({ plan }: { plan: DayPlan }) {
 const TRAVEL_STYLES = ["Adventure", "Relaxing", "Cultural", "Romantic", "Family", "Budget"];
 
 export default function HolidayPlannerPage() {
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const user = useSelector((state: any) => state.user.user);
+
   const [destination, setDestination] = useState("");
   const [duration, setDuration] = useState(5);
   const [budget, setBudget] = useState(20000);
@@ -218,12 +231,87 @@ export default function HolidayPlannerPage() {
   const [loading, setLoading] = useState(false);
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
 
+  // Traveler form state
+  const [passengers, setPassengers] = useState<Passenger[]>([
+    { name: "", age: "", gender: "Male" },
+    { name: "", age: "", gender: "Female" },
+  ]);
+
+  // Payment and booking state
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingError, setBookingError] = useState("");
+  const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
+  const [showTicketModal, setShowTicketModal] = useState(false);
+
+  // Restore state from sessionStorage
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("mmt_ai_holiday_state");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.destination) setDestination(parsed.destination);
+        if (parsed.duration) setDuration(parsed.duration);
+        if (parsed.budget) setBudget(parsed.budget);
+        if (parsed.travelers) setTravelers(parsed.travelers);
+        if (parsed.style) setStyle(parsed.style);
+        if (parsed.itinerary) setItinerary(parsed.itinerary);
+        if (parsed.passengers && Array.isArray(parsed.passengers)) {
+          setPassengers(parsed.passengers);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Sync state to sessionStorage
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        "mmt_ai_holiday_state",
+        JSON.stringify({
+          destination,
+          duration,
+          budget,
+          travelers,
+          style,
+          itinerary,
+          passengers,
+        })
+      );
+    } catch {}
+  }, [destination, duration, budget, travelers, style, itinerary, passengers]);
+
+  // Adjust passenger array when travelers count changes
+  const handleTravelersChange = (count: number) => {
+    const validCount = Math.max(1, Math.min(20, count));
+    setTravelers(validCount);
+    setPassengers((prev) => {
+      const next = [...prev];
+      if (validCount > next.length) {
+        for (let i = next.length; i < validCount; i++) {
+          next.push({ name: "", age: "", gender: i % 2 === 0 ? "Male" : "Female" });
+        }
+      } else if (validCount < next.length) {
+        next.splice(validCount);
+      }
+      return next;
+    });
+  };
+
+  const handlePassengerChange = (index: number, field: keyof Passenger, value: string) => {
+    setPassengers((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
+
   const handleGenerate = async () => {
     if (!destination.trim()) return;
     setLoading(true);
     setItinerary(null);
-    // Simulate AI "thinking" delay
-    await new Promise((r) => setTimeout(r, 2200));
+    setBookingError("");
+    await new Promise((r) => setTimeout(r, 1800));
     const result = generateMockItinerary(destination.trim(), duration, budget, travelers, style);
     setItinerary(result);
     setLoading(false);
@@ -231,33 +319,110 @@ export default function HolidayPlannerPage() {
 
   const totalBudget = itinerary?.estimatedCostBreakdown.reduce((s, i) => s + i.amount, 0) ?? 0;
 
+  const handleStartBooking = () => {
+    setBookingError("");
+    if (!user?.id) {
+      setBookingError("Please log in to your account to book this holiday package.");
+      return;
+    }
+
+    // Validate passenger details
+    for (let i = 0; i < passengers.length; i++) {
+      if (!passengers[i].name.trim()) {
+        setBookingError(`Please enter the full name for Traveler ${i + 1}.`);
+        return;
+      }
+      const ageNum = parseInt(passengers[i].age);
+      if (!passengers[i].age || isNaN(ageNum) || ageNum <= 0) {
+        setBookingError(`Please enter a valid age for Traveler ${i + 1}.`);
+        return;
+      }
+    }
+
+    // Strict Age Limit: Primary traveler must be >= 18
+    const leadAge = parseInt(passengers[0].age);
+    if (leadAge < 18) {
+      setBookingError("The lead traveler (Traveler 1) must be at least 18 years old to book a holiday package.");
+      return;
+    }
+
+    setIsPaymentOpen(true);
+  };
+
+  const handlePaymentSuccess = async () => {
+    if (!itinerary || !user?.id) return;
+    setIsPaymentOpen(false);
+    setIsBooking(true);
+    setBookingError("");
+
+    try {
+      const bookedData = await handleholidaybooking(
+        user.id,
+        itinerary.destination,
+        itinerary.travelers,
+        itinerary.duration,
+        totalBudget,
+        itinerary.accommodation,
+        itinerary.style,
+        passengers
+      );
+
+      // Consolidate booking in Redux & localStorage
+      const updatedBookings = [...(user.bookings || []), bookedData];
+      const pts = Math.floor(totalBudget);
+      const updatedUser = {
+        ...user,
+        bookings: updatedBookings,
+        loyaltyPoints: (user.loyaltyPoints || 0) + pts,
+        loyaltyEarned: (user.loyaltyEarned || 0) + pts,
+      };
+      dispatch(setUser(updatedUser));
+      try {
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      } catch {}
+
+      setConfirmedBooking(bookedData);
+      setShowTicketModal(true);
+    } catch (err: any) {
+      console.error(err);
+      setBookingError(err?.response?.data?.message || err?.message || "Booking failed. Please try again.");
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Hero */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 text-white py-14 px-4">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="flex justify-center mb-4">
-            <span className="bg-white/20 rounded-full px-4 py-1.5 text-sm font-medium flex items-center gap-2">
-              <Sparkles size={14} /> AI-Powered Holiday Planner
-            </span>
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 text-white py-12 px-4 shadow-md">
+        <div className="max-w-4xl mx-auto">
+          <BackButton fallbackUrl="/" variant="light" className="mb-4" />
+          <div className="text-center">
+            <div className="flex justify-center mb-3">
+              <span className="bg-white/20 rounded-full px-4 py-1 text-sm font-medium flex items-center gap-2 backdrop-blur-sm">
+                <Sparkles size={14} /> AI-Powered Holiday Planner
+              </span>
+            </div>
+            <h1 className="text-3xl sm:text-5xl font-extrabold mb-2">Plan Your Dream Trip</h1>
+            <p className="text-blue-100 text-base sm:text-lg max-w-2xl mx-auto">
+              Personalized day-by-day itineraries with complete accommodation, transport, and sightseeing consolidated into a single master ticket.
+            </p>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold mb-3">Plan Your Dream Trip</h1>
-          <p className="text-blue-100 text-lg">Tell us where you want to go — our AI creates a personalized day-by-day itinerary in seconds.</p>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-10">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Input Card */}
-        <div className="bg-white rounded-3xl shadow-lg p-8 mb-10 border border-gray-100">
+        <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 mb-8 border border-gray-100">
           <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <Sparkles className="text-indigo-500" size={20} /> Tell us about your trip
+            <Sparkles className="text-indigo-500" size={20} /> Customize Your Holiday
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {/* Destination */}
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-600 mb-1.5 flex items-center gap-1">
-                <MapPin size={14} /> Destination
+              <label className="block text-sm font-semibold text-gray-600 mb-1.5 flex items-center gap-1">
+                <MapPin size={14} className="text-indigo-600" /> Destination
               </label>
               <input
                 value={destination}
@@ -269,8 +434,8 @@ export default function HolidayPlannerPage() {
 
             {/* Duration */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1.5 flex items-center gap-1">
-                <Calendar size={14} /> Duration (days)
+              <label className="block text-sm font-semibold text-gray-600 mb-1.5 flex items-center gap-1">
+                <Calendar size={14} className="text-indigo-600" /> Duration (days)
               </label>
               <input
                 type="number" min={1} max={14}
@@ -282,21 +447,21 @@ export default function HolidayPlannerPage() {
 
             {/* Travelers */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1.5 flex items-center gap-1">
-                <Users size={14} /> Travelers
+              <label className="block text-sm font-semibold text-gray-600 mb-1.5 flex items-center gap-1">
+                <Users size={14} className="text-indigo-600" /> Travelers
               </label>
               <input
                 type="number" min={1} max={20}
                 value={travelers}
-                onChange={(e) => setTravelers(Number(e.target.value))}
+                onChange={(e) => handleTravelersChange(Number(e.target.value))}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition"
               />
             </div>
 
             {/* Budget */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1.5 flex items-center gap-1">
-                <Wallet size={14} /> Budget (₹)
+              <label className="block text-sm font-semibold text-gray-600 mb-1.5 flex items-center gap-1">
+                <Wallet size={14} className="text-indigo-600" /> Total Target Budget (₹)
               </label>
               <input
                 type="number" min={1000} step={1000}
@@ -308,15 +473,15 @@ export default function HolidayPlannerPage() {
 
             {/* Travel Style */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1.5 flex items-center gap-1">
-                <Plane size={14} /> Travel Style
+              <label className="block text-sm font-semibold text-gray-600 mb-1.5 flex items-center gap-1">
+                <Plane size={14} className="text-indigo-600" /> Travel Style
               </label>
               <select
                 value={style}
                 onChange={(e) => setStyle(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition bg-white"
               >
-                {TRAVEL_STYLES.map((s) => <option key={s}>{s}</option>)}
+                {TRAVEL_STYLES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
           </div>
@@ -324,12 +489,12 @@ export default function HolidayPlannerPage() {
           <button
             onClick={handleGenerate}
             disabled={loading || !destination.trim()}
-            className="mt-6 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3.5 rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 text-base"
+            className="mt-6 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3.5 rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 text-base shadow-sm"
           >
             {loading ? (
-              <><Loader2 className="animate-spin" size={18} /> AI is crafting your itinerary…</>
+              <><Loader2 className="animate-spin" size={18} /> AI is crafting your holiday package…</>
             ) : (
-              <><Sparkles size={18} /> Generate My Itinerary</>
+              <><Sparkles size={18} /> Generate Holiday Package</>
             )}
           </button>
         </div>
@@ -338,44 +503,49 @@ export default function HolidayPlannerPage() {
         {itinerary && (
           <div className="space-y-8 animate-fadeIn">
             {/* Overview Card */}
-            <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
+            <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 border border-gray-100">
               <div className="flex flex-wrap justify-between items-start gap-4 mb-5">
                 <div>
                   <h2 className="text-3xl font-bold text-gray-900">{itinerary.destination}</h2>
-                  <p className="text-gray-500 mt-1">{itinerary.duration} Days · {itinerary.travelers} Traveler{itinerary.travelers > 1 ? "s" : ""} · {itinerary.style}</p>
+                  <p className="text-gray-500 mt-1">{itinerary.duration} Days · {itinerary.travelers} Traveler{itinerary.travelers > 1 ? "s" : ""} · {itinerary.style} Style</p>
                 </div>
-                <span className="bg-green-100 text-green-700 font-bold px-4 py-2 rounded-full text-sm">
-                  Budget: ₹{itinerary.budget.toLocaleString("en-IN")}
-                </span>
+                <div className="flex flex-col items-end">
+                  <span className="bg-emerald-100 text-emerald-800 font-bold px-4 py-1.5 rounded-full text-sm">
+                    Total Package: ₹{totalBudget.toLocaleString("en-IN")}
+                  </span>
+                  <span className="text-[11px] text-gray-400 mt-1">Includes Stay, Sightseeing & Passes</span>
+                </div>
               </div>
               <p className="text-gray-600 leading-relaxed mb-6">{itinerary.overview}</p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-blue-50 rounded-2xl p-4">
-                  <p className="text-xs font-semibold text-blue-600 mb-2 flex items-center gap-1"><Calendar size={12} /> Best Time to Visit</p>
-                  <p className="text-sm text-gray-700">{itinerary.bestTimeToVisit}</p>
+                  <p className="text-xs font-semibold text-blue-600 mb-1 flex items-center gap-1"><Calendar size={13} /> Best Time to Visit</p>
+                  <p className="text-sm text-gray-800 font-medium">{itinerary.bestTimeToVisit}</p>
                 </div>
                 <div className="bg-indigo-50 rounded-2xl p-4">
-                  <p className="text-xs font-semibold text-indigo-600 mb-2 flex items-center gap-1"><Hotel size={12} /> Recommended Stay</p>
-                  <p className="text-sm text-gray-700">{itinerary.accommodation}</p>
+                  <p className="text-xs font-semibold text-indigo-600 mb-1 flex items-center gap-1"><Hotel size={13} /> Recommended Stay</p>
+                  <p className="text-sm text-gray-800 font-medium">{itinerary.accommodation}</p>
                 </div>
               </div>
 
               {/* Highlights */}
               <div className="mt-5">
-                <p className="text-sm font-semibold text-gray-600 mb-2">🌟 Trip Highlights</p>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">🌟 Included In Package Highlights</p>
                 <div className="flex flex-wrap gap-2">
                   {itinerary.highlights.map((h) => (
-                    <span key={h} className="bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full">{h}</span>
+                    <span key={h} className="bg-gray-100 text-gray-800 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200">
+                      ✓ {h}
+                    </span>
                   ))}
                 </div>
               </div>
             </div>
 
             {/* Budget Breakdown */}
-            <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
+            <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 border border-gray-100">
               <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
-                <Wallet className="text-green-500" size={20} /> Estimated Budget Breakdown
+                <Wallet className="text-emerald-500" size={20} /> All-Inclusive Package Breakdown
               </h3>
               <div className="space-y-3">
                 {itinerary.estimatedCostBreakdown.map((item) => {
@@ -392,9 +562,9 @@ export default function HolidayPlannerPage() {
                     </div>
                   );
                 })}
-                <div className="flex justify-between pt-3 border-t border-gray-100 font-bold text-gray-900">
-                  <span>Total Estimate</span>
-                  <span>₹{totalBudget.toLocaleString("en-IN")}</span>
+                <div className="flex justify-between pt-4 border-t border-gray-100 font-bold text-gray-900 text-base">
+                  <span>Grand Total Package Price</span>
+                  <span className="text-blue-600 text-lg">₹{totalBudget.toLocaleString("en-IN")}</span>
                 </div>
               </div>
             </div>
@@ -402,7 +572,7 @@ export default function HolidayPlannerPage() {
             {/* Day-by-Day */}
             <div>
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Sun className="text-amber-500" size={20} /> Day-by-Day Itinerary
+                <Sun className="text-amber-500" size={20} /> Consolidated Day-by-Day Schedule
               </h3>
               <div className="space-y-3">
                 {itinerary.days.map((day) => <DayCard key={day.day} plan={day} />)}
@@ -410,7 +580,7 @@ export default function HolidayPlannerPage() {
             </div>
 
             {/* Packing Tips */}
-            <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
+            <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 border border-gray-100">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 🎒 Packing Checklist
               </h3>
@@ -423,9 +593,256 @@ export default function HolidayPlannerPage() {
                 ))}
               </ul>
             </div>
+
+            {/* ══════════════════════════════════════════════════════════════
+                SINGLE CONSOLIDATED TICKET BOOKING SECTION
+            ══════════════════════════════════════════════════════════════ */}
+            <div className="bg-gradient-to-br from-white to-blue-50/50 rounded-3xl shadow-xl p-6 sm:p-8 border-2 border-blue-200">
+              <div className="flex items-center justify-between flex-wrap gap-3 pb-5 border-b border-blue-100">
+                <div>
+                  <span className="bg-blue-100 text-blue-800 font-bold text-xs uppercase tracking-wider px-3 py-1 rounded-full">
+                    Single Ticket Guarantee
+                  </span>
+                  <h3 className="text-2xl font-black text-gray-900 mt-2">
+                    Book Complete {itinerary.destination} Package
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    Your hotel stay, transport passes, and daily activities will be issued under <strong>1 single Master PNR ticket</strong>.
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-gray-400 block">Total Payable</span>
+                  <div className="text-3xl font-black text-blue-600 flex items-center gap-0.5 justify-end">
+                    <IndianRupee size={24} />
+                    {totalBudget.toLocaleString("en-IN")}
+                  </div>
+                </div>
+              </div>
+
+              {/* Package Inclusions summary */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-6">
+                <div className="bg-white p-3.5 rounded-xl border border-gray-200 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                    <Hotel size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-500 uppercase">Hotel / Stay</p>
+                    <p className="text-xs font-semibold text-gray-800 truncate max-w-[160px]">{itinerary.accommodation}</p>
+                  </div>
+                </div>
+                <div className="bg-white p-3.5 rounded-xl border border-gray-200 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <Plane size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-500 uppercase">Transport Pass</p>
+                    <p className="text-xs font-semibold text-gray-800">All {itinerary.duration} Days Covered</p>
+                  </div>
+                </div>
+                <div className="bg-white p-3.5 rounded-xl border border-gray-200 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                    <Ticket size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-500 uppercase">Activity Passes</p>
+                    <p className="text-xs font-semibold text-gray-800">{itinerary.highlights.length} Experiences Included</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Traveler Details Form */}
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                    <Users size={18} className="text-blue-600" /> Traveler Information ({passengers.length})
+                  </h4>
+                  <span className="text-xs text-gray-400 font-medium">Lead traveler must be 18+</span>
+                </div>
+
+                <div className="space-y-3">
+                  {passengers.map((p, idx) => (
+                    <div key={idx} className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full">
+                          Traveler {idx + 1} {idx === 0 ? "(Lead Contact)" : ""}
+                        </span>
+                        {idx === 0 && (
+                          <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium">
+                            Must be 18 or older
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                        <div className="sm:col-span-6">
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Full Name</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Rahul Sharma"
+                            value={p.name}
+                            onChange={(e) => handlePassengerChange(idx, "name", e.target.value)}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
+                          />
+                        </div>
+                        <div className="sm:col-span-3">
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Age</label>
+                          <input
+                            type="number"
+                            min={idx === 0 ? 18 : 1}
+                            max={120}
+                            placeholder={idx === 0 ? "18+" : "Age"}
+                            value={p.age}
+                            onChange={(e) => handlePassengerChange(idx, "age", e.target.value)}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
+                          />
+                        </div>
+                        <div className="sm:col-span-3">
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Gender</label>
+                          <select
+                            value={p.gender}
+                            onChange={(e) => handlePassengerChange(idx, "gender", e.target.value)}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+                          >
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {bookingError && (
+                <div className="mb-5 flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 p-3 rounded-xl text-sm">
+                  <AlertCircle size={18} className="shrink-0" />
+                  <span>{bookingError}</span>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                onClick={handleStartBooking}
+                disabled={isBooking}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 text-lg disabled:opacity-50"
+              >
+                {isBooking ? (
+                  <><Loader2 className="animate-spin" size={20} /> Processing Single Ticket Booking…</>
+                ) : (
+                  <>
+                    <ShieldCheck size={22} />
+                    Confirm & Pay for Complete Package • ₹{totalBudget.toLocaleString("en-IN")}
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          Payment Modal
+      ───────────────────────────────────────────────────────────── */}
+      <FakePaymentModal
+        isOpen={isPaymentOpen}
+        onClose={() => setIsPaymentOpen(false)}
+        onSuccess={handlePaymentSuccess}
+        amount={totalBudget}
+      />
+
+      {/* ─────────────────────────────────────────────────────────────
+          Consolidated Single Ticket Modal
+      ───────────────────────────────────────────────────────────── */}
+      {showTicketModal && confirmedBooking && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 p-6 text-white text-center relative">
+              <button
+                onClick={() => setShowTicketModal(false)}
+                className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/10 hover:bg-black/20 rounded-full p-1.5 transition"
+              >
+                <X size={18} />
+              </button>
+              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mx-auto mb-2">
+                <CheckCircle2 size={28} className="text-white" />
+              </div>
+              <span className="text-[11px] font-bold uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">
+                Single Ticket Confirmed
+              </span>
+              <h2 className="text-2xl font-black mt-2">{itinerary?.destination} Holiday Package</h2>
+              <p className="text-blue-100 text-xs mt-0.5 font-mono">Master PNR: {confirmedBooking.bookingId}</p>
+            </div>
+
+            {/* Ticket Body */}
+            <div className="p-6 space-y-5">
+              {/* Key Details Grid */}
+              <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-xs text-gray-400 block font-medium">Duration</span>
+                  <span className="font-bold text-gray-800">{itinerary?.duration} Days / {Math.max(1, (itinerary?.duration || 1) - 1)} Nights</span>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-400 block font-medium">Travel Style</span>
+                  <span className="font-bold text-gray-800">{itinerary?.style}</span>
+                </div>
+                <div className="col-span-2 pt-2 border-t border-gray-200">
+                  <span className="text-xs text-gray-400 block font-medium">Accommodation Included</span>
+                  <span className="font-semibold text-gray-800 text-xs">{itinerary?.accommodation}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-xs text-gray-400 block font-medium">Consolidated Inclusions</span>
+                  <span className="text-xs text-gray-700">Daily transport passes, hotel stay, and {itinerary?.highlights.length} guided activities.</span>
+                </div>
+              </div>
+
+              {/* Travelers */}
+              <div>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
+                  Travelers ({passengers.length})
+                </span>
+                <div className="space-y-1.5">
+                  {passengers.map((p, i) => (
+                    <div key={i} className="flex justify-between items-center text-xs bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                      <span className="font-semibold text-gray-800">{i + 1}. {p.name}</span>
+                      <span className="text-gray-500">{p.gender} · Age {p.age}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Row */}
+              <div className="flex justify-between items-center bg-emerald-50 border border-emerald-100 p-4 rounded-2xl">
+                <div>
+                  <span className="text-xs font-bold text-emerald-800 uppercase block">Total Amount Paid</span>
+                  <span className="text-xs text-emerald-600">Earned +{Math.floor(totalBudget)} Loyalty Points</span>
+                </div>
+                <div className="text-2xl font-black text-emerald-700 flex items-center gap-0.5">
+                  <IndianRupee size={20} />
+                  {totalBudget.toLocaleString("en-IN")}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+                <button
+                  onClick={() => router.push("/profile")}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition"
+                >
+                  <Ticket size={16} /> View in My Bookings
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition"
+                >
+                  <Printer size={16} /> Print Ticket
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

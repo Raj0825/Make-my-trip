@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import BackButton from "@/components/navigation/BackButton";
 
 interface FAQ { q: string; a: string; category: string; }
 
@@ -59,7 +60,10 @@ export default function HelpCenterPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-gradient-to-br from-blue-700 to-indigo-800 text-white">
-        <div className="max-w-4xl mx-auto px-4 py-14 text-center">
+        <div className="max-w-4xl mx-auto px-4 py-10 text-center relative">
+          <div className="text-left mb-4">
+            <BackButton fallbackUrl="/" variant="dark" />
+          </div>
           <h1 className="text-3xl font-bold mb-2 flex items-center justify-center gap-2">
             <LifeBuoy size={30} /> Help & Support
           </h1>

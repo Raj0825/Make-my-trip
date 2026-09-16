@@ -4,12 +4,13 @@ import {
   User, Phone, Mail, Edit2, Calendar, CreditCard,
   X, Check, LogOut, Plane, Building2, Train, Bus,
   Car, Home, AlertCircle, Clock, CheckCircle2, XCircle,
-  IndianRupee, Tag, ArrowRight, Ticket, Heart, Gift,
+  IndianRupee, Tag, ArrowRight, Ticket, Heart, Gift, Palmtree,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/router";
 import { clearUser, setUser } from "@/store";
 import LoyaltyWidget from "@/components/loyalty/LoyaltyWidget";
+import BackButton from "@/components/navigation/BackButton";
 import {
   editprofile, cancelbooking,
   gethotel, getflight, gettrain, getbus, getcab, gethomestay,
@@ -49,6 +50,7 @@ const TYPE_CONFIG: Record<string, { icon: any; bg: string; accent: string; label
   Bus:      { icon: Bus,       bg: "bg-orange-50",  accent: "text-orange-600", label: "Bus" },
   Cab:      { icon: Car,       bg: "bg-amber-50",   accent: "text-amber-600",  label: "Cab" },
   Homestay: { icon: Home,      bg: "bg-pink-50",    accent: "text-pink-600",   label: "Homestay" },
+  Holiday:  { icon: Palmtree,  bg: "bg-teal-50",    accent: "text-teal-600",   label: "Holiday Package" },
 };
 
 const getConfig = (type: string) =>
@@ -151,6 +153,9 @@ const ProfilePage = () => {
   };
 
   const getBookingName = (booking: any) => {
+    if (booking.type === "Holiday") {
+      return booking.destination ? `${booking.destination} Holiday Package` : "AI Holiday Package";
+    }
     const name = entityNames[booking.type]?.[booking.bookingId];
     return name || getConfig(booking.type).label;
   };
@@ -208,6 +213,7 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pt-8 pb-16 px-4">
       <div className="max-w-6xl mx-auto">
+        <BackButton fallbackUrl="/" className="mb-6" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
           {/* Left sidebar */}
@@ -597,6 +603,43 @@ const ProfilePage = () => {
                       <div className="flex justify-between">
                         <span className="text-gray-500">Seats</span>
                         <span className="font-semibold text-gray-800">{detailsBooking.seatNumbers.join(", ")}</span>
+                      </div>
+                    )}
+                    {detailsBooking.destination && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Destination</span>
+                        <span className="font-semibold text-gray-800">{detailsBooking.destination}</span>
+                      </div>
+                    )}
+                    {detailsBooking.packageDays && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Duration</span>
+                        <span className="font-semibold text-gray-800">{detailsBooking.packageDays} Days Package</span>
+                      </div>
+                    )}
+                    {detailsBooking.hotelName && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Stay Included</span>
+                        <span className="font-semibold text-gray-800">{detailsBooking.hotelName}</span>
+                      </div>
+                    )}
+                    {detailsBooking.style && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Trip Style</span>
+                        <span className="font-semibold text-gray-800">{detailsBooking.style}</span>
+                      </div>
+                    )}
+                    {detailsBooking.passengers && detailsBooking.passengers.length > 0 && (
+                      <div className="pt-2 border-t border-gray-200">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Travelers ({detailsBooking.passengers.length})</span>
+                        <div className="space-y-1">
+                          {detailsBooking.passengers.map((p: any, i: number) => (
+                            <div key={i} className="flex justify-between text-xs text-gray-700 bg-white px-2.5 py-1.5 rounded-lg border border-gray-100">
+                              <span className="font-medium">{i + 1}. {p.name}</span>
+                              <span className="text-gray-500">Age: {p.age}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                     <div className="flex justify-between pt-2 border-t border-gray-200">

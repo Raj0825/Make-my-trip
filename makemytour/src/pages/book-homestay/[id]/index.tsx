@@ -49,7 +49,7 @@ import SignupDialog from "@/components/SignupDialog";
 import Loader from "@/components/Loader";
 import { setUser } from "@/store";
 import InsuranceAddOn, { InsuranceReceiptBlock, INSURANCE_PREMIUM, generateInsurancePolicyNo } from "@/components/insurance/InsuranceAddOn";
-import PromoCodeInput from "@/components/promo/PromoCodeInput";
+import BackButton from "@/components/navigation/BackButton";
 import PassengerDetailsForm, { PassengerInfo } from "@/components/passengers/PassengerDetailsForm";
 import LoyaltyRedeemToggle from "@/components/loyalty/LoyaltyRedeemToggle";
 import { getTier } from "@/components/loyalty/LoyaltyWidget";
@@ -220,14 +220,34 @@ const BookHomestayPage = () => {
   const [insured, setInsured] = useState(false);
   const [policyNo, setPolicyNo] = useState<string>("");
   const [showInsuranceReceipt, setShowInsuranceReceipt] = useState(false);
-  const [promoCode, setPromoCode] = useState<string | null>(null);
-  const [promoDiscount, setPromoDiscount] = useState(0);
   const [redeemedPoints, setRedeemedPoints] = useState(0);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
   const [selectedRoomKey, setSelectedRoomKey] = useState<string>(
     ROOM_OPTIONS_TEMPLATE[1].key
   );
+
+  // Restore form state from sessionStorage
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const saved = sessionStorage.getItem(`mmt_homestay_${id}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.quantity) setQuantity(parsed.quantity);
+        if (parsed.selectedRoomKey) setSelectedRoomKey(parsed.selectedRoomKey);
+        if (parsed.passengers && Array.isArray(parsed.passengers)) setPassengers(parsed.passengers);
+      }
+    } catch {}
+  }, [id]);
+
+  // Persist form state to sessionStorage
+  useEffect(() => {
+    if (!id) return;
+    try {
+      sessionStorage.setItem(`mmt_homestay_${id}`, JSON.stringify({ quantity, selectedRoomKey, passengers }));
+    } catch {}
+  }, [id, quantity, selectedRoomKey, passengers]);
   const [reviewStats, setReviewStats] = useState<{ count: number; average: number }>({
     count: 0,
     average: 0,
@@ -328,7 +348,7 @@ const BookHomestayPage = () => {
   const totalPrice = effectivePricePerNight * quantity;
   const taxes = Math.round(totalPrice * 0.05);
   const insuranceFee = insured ? INSURANCE_PREMIUM : 0;
-  const grandTotal = Math.max(0, totalPrice + taxes + insuranceFee - promoDiscount - redeemedPoints);
+  const grandTotal = Math.max(0, totalPrice + taxes + insuranceFee - redeemedPoints);
   const loyaltyTier = getTier(user?.loyaltyEarned ?? 0);
   const loyaltyAvailable = user?.loyaltyPoints ?? 0;
   const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "" && Number(p.age) >= 18);
@@ -452,14 +472,6 @@ const BookHomestayPage = () => {
           onChange={setRedeemedPoints}
         />
 
-        <PromoCodeInput
-          subtotal={totalPrice + insuranceFee}
-          appliedCode={promoCode}
-          discount={promoDiscount}
-          onApply={(code, discount) => { setPromoCode(code); setPromoDiscount(discount); }}
-          onRemove={() => { setPromoCode(null); setPromoDiscount(0); }}
-        />
-
         <div className="bg-gray-100 rounded-lg p-4">
           <h3 className="text-lg font-bold mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
@@ -482,12 +494,6 @@ const BookHomestayPage = () => {
               <span className="text-gray-600">Taxes and Fees</span>
               <span className="font-medium">₹ {taxes.toLocaleString()}</span>
             </div>
-            {promoDiscount > 0 && (
-              <div className="flex justify-between items-center text-green-600">
-                <span>Promo ({promoCode})</span>
-                <span className="font-medium">- ₹ {promoDiscount.toLocaleString()}</span>
-              </div>
-            )}
             {redeemedPoints > 0 && (
               <div className="flex justify-between items-center text-amber-600">
                 <span>Rewards Redeemed</span>
@@ -589,7 +595,10 @@ const BookHomestayPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 pt-6 pb-2">
+        <BackButton fallbackUrl="/" />
+      </div>
+      <div className="max-w-7xl mx-auto px-4 pb-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main content column */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl shadow-lg p-6">

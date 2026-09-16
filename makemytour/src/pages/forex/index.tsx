@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import BackButton from "@/components/navigation/BackButton";
 
 // ---------------------------------------------------------------------------
 // Static base rates (INR per 1 unit of foreign currency). A small deterministic
@@ -184,8 +185,9 @@ export default function ForexPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-blue-700 to-indigo-800 text-white">
-        <div className="max-w-6xl mx-auto px-4 py-12">
+      <div className="bg-gradient-to-br from-emerald-800 to-teal-700 text-white">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <BackButton variant="dark" className="mb-4" />
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
             <Banknote size={30} /> Forex Exchange
           </h1>

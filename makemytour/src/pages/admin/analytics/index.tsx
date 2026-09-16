@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { getAnalytics } from "@/api";
+import BackButton from "@/components/navigation/BackButton";
 import { 
   Users, 
   CreditCard, 
@@ -88,6 +89,7 @@ export default function AdminAnalyticsPage() {
     <div className="min-h-screen bg-gray-50 font-sans">
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <BackButton fallbackUrl="/admin" className="mb-4" />
         <div className="mb-8 flex justify-between items-end">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Analytics Dashboard</h1>

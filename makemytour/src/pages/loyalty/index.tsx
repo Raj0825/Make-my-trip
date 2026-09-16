@@ -7,6 +7,7 @@ import {
   Bus, Car, Home, CheckCircle, Tag, Sparkles,
 } from "lucide-react";
 import LoyaltyWidget, { TIERS, getTier, getNextTier } from "@/components/loyalty/LoyaltyWidget";
+import BackButton from "@/components/navigation/BackButton";
 import Link from "next/link";
 import Head from "next/head";
 
@@ -75,10 +76,10 @@ export default function LoyaltyPage() {
         <div className="absolute -top-24 -left-24 w-72 h-72 bg-indigo-600/30 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute top-10 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-5xl mx-auto px-4 py-16 sm:py-20">
-          <Link href="/profile" className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white mb-8 font-medium transition-colors">
-            ← Back to Profile
-          </Link>
+        <div className="relative max-w-5xl mx-auto px-4 py-12 sm:py-16">
+          <div className="mb-6">
+            <BackButton fallbackUrl="/profile" variant="dark" />
+          </div>
 
           <div className="flex flex-col lg:flex-row gap-10 items-start">
             {/* Left — user status */}
