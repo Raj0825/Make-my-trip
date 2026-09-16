@@ -34,8 +34,11 @@ export default function LoyaltyRedeemToggle({ available, maxRedeemPct, subtotal,
     );
   }
 
-  // Allow redeeming up to full available balance or subtotal
-  const maxRedeemable = Math.min(available, Math.max(1, Math.floor(subtotal)));
+  // Points redemption is capped by loyalty tier percentage (10% Silver, 15% Gold, 20% Platinum)
+  // so airline tickets, taxes, and fees cannot be reduced to 0
+  const pct = maxRedeemPct > 0 ? maxRedeemPct : 10;
+  const cap = Math.max(1, Math.floor(subtotal * (pct / 100)));
+  const maxRedeemable = Math.min(available, cap);
 
   if (maxRedeemable <= 0) return null;
 
@@ -62,11 +65,11 @@ export default function LoyaltyRedeemToggle({ available, maxRedeemPct, subtotal,
         </div>
         <div>
           <p className={`text-sm font-semibold ${isApplied ? "text-amber-800" : "text-gray-700"}`}>
-            {isApplied ? `Redeeming ${maxRedeemable.toLocaleString("en-IN")} MMT pts` : `Use ${maxRedeemable.toLocaleString("en-IN")} MMT reward pts`}
+            {isApplied ? `Redeeming ${maxRedeemable.toLocaleString("en-IN")} MMT pts` : `Use ${maxRedeemable.toLocaleString("en-IN")} MMT reward pts (Max ${pct}%)`}
           </p>
           <p className="text-xs text-gray-500">
             {isApplied
-              ? `You save ₹${maxRedeemable.toLocaleString("en-IN")}`
+              ? `You save ₹${maxRedeemable.toLocaleString("en-IN")} · Max ${pct}% tier cap applied`
               : `Save ₹${maxRedeemable.toLocaleString("en-IN")} · Balance: ${available.toLocaleString("en-IN")} pts`}
           </p>
         </div>
