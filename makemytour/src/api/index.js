@@ -260,6 +260,17 @@ export const edithotel = async (
   }
 };
 
+export const deletehotel = async (id) => {
+  try {
+    const res = await axios.delete(`${BACKEND_URL}/admin/hotel/${id}`);
+    const data = res.data;
+    return data;
+  } catch (error) {
+    console.error("deletehotel error:", error);
+    throw error;
+  }
+};
+
 export const handleflightbooking = async (userId, flightId, seats, price, unitPrice, seatNumbers, travelClass, passengers) => {
   try {
     let url = `${BACKEND_URL}/booking/flight?userId=${userId}&flightId=${flightId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;

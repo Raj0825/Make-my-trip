@@ -133,6 +133,16 @@ public class AdminController {
         return ResponseEntity.notFound().build();
     }
 
+    @DeleteMapping("/hotel/{id}")
+    public ResponseEntity<?> deleteHotel(@PathVariable String id) {
+        Optional<Hotel> hotelOptional = hotelRepository.findById(id);
+        if (hotelOptional.isPresent()) {
+            hotelRepository.deleteById(id);
+            return ResponseEntity.ok(java.util.Map.of("message", "Hotel deleted successfully", "id", id));
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     @PostMapping("/train")
     public Train addtrain(@RequestBody Train train){
         return trainRepository.save(train);

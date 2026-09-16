@@ -31,6 +31,7 @@ import {
   addhotel,
   editflight,
   edithotel,
+  deletehotel,
   getuserbyemail,
   addtrain,
   edittrain,
@@ -173,7 +174,17 @@ interface Hotel {
   amenities: string;
 }
 
-function AddEditHotel({ hotel, onSaved }: { hotel: Hotel | null; onSaved?: () => void }) {
+function AddEditHotel({
+  hotel,
+  onSaved,
+  onDeleted,
+  onCancel,
+}: {
+  hotel: Hotel | null;
+  onSaved?: () => void;
+  onDeleted?: () => void;
+  onCancel?: () => void;
+}) {
   const [formData, setFormData] = useState<Hotel>({
     hotelName: "",
     location: "",
@@ -181,6 +192,7 @@ function AddEditHotel({ hotel, onSaved }: { hotel: Hotel | null; onSaved?: () =>
     availableRooms: 0,
     amenities: "",
   });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (hotel) {
@@ -203,11 +215,33 @@ function AddEditHotel({ hotel, onSaved }: { hotel: Hotel | null; onSaved?: () =>
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleDelete = async () => {
+    if (!hotel) return;
+    const hotelId = hotel.id || (hotel as any)._id;
+    if (!hotelId) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${formData.hotelName || hotel.hotelName}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await deletehotel(hotelId);
+      onDeleted?.();
+    } catch (err) {
+      console.error("Failed to delete hotel:", err);
+      alert("Failed to delete hotel. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (hotel) {
       await edithotel(
-        hotel.id,
+        hotel.id || (hotel as any)._id,
         formData.hotelName,
         formData.location,
         formData.pricePerNight,
@@ -238,9 +272,22 @@ function AddEditHotel({ hotel, onSaved }: { hotel: Hotel | null; onSaved?: () =>
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h3 className="text-lg font-semibold mb-2">
-        {hotel ? "Edit Hotel" : "Add New Hotel"}
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">
+          {hotel ? "Edit Hotel" : "Add New Hotel"}
+        </h3>
+        {hotel && onCancel && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="text-xs text-gray-500 hover:text-gray-900"
+          >
+            Cancel Edit
+          </Button>
+        )}
+      </div>
       <div>
         <Label htmlFor="hotelName">Hotel Name</Label>
         <Input
@@ -293,7 +340,22 @@ function AddEditHotel({ hotel, onSaved }: { hotel: Hotel | null; onSaved?: () =>
           required
         />
       </div>
-      <Button type="submit">{hotel ? "Update Hotel" : "Add Hotel"}</Button>
+      <div className="flex items-center gap-3 pt-2">
+        <Button type="submit" disabled={isDeleting}>
+          {hotel ? "Update Hotel" : "Add Hotel"}
+        </Button>
+        {hotel && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {isDeleting ? "Deleting..." : "Delete Hotel"}
+          </Button>
+        )}
+      </div>
     </form>
   );
 }
@@ -1312,13 +1374,30 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <HotelList onSelect={setSelectedHotel} refreshKey={hotelRefresh} />
+                <HotelList
+                  onSelect={setSelectedHotel}
+                  refreshKey={hotelRefresh}
+                  onDeleted={(deletedId: string) => {
+                    if (
+                      (selectedHotel as any)?.id === deletedId ||
+                      (selectedHotel as any)?._id === deletedId
+                    ) {
+                      setSelectedHotel(null);
+                    }
+                    setHotelRefresh((k) => k + 1);
+                  }}
+                />
                 <AddEditHotel
                   hotel={selectedHotel}
                   onSaved={() => {
                     setHotelRefresh((k) => k + 1);
                     setSelectedHotel(null);
                   }}
+                  onDeleted={() => {
+                    setHotelRefresh((k) => k + 1);
+                    setSelectedHotel(null);
+                  }}
+                  onCancel={() => setSelectedHotel(null)}
                 />
               </div>
             </CardContent>
