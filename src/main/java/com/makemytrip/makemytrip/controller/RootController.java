@@ -48,6 +48,26 @@ public class RootController {
         return ResponseEntity.ok(hotelRepository.findAll());
     }
 
+    @DeleteMapping(value = {"/hotel/{id}", "hotel/{id}"})
+    public ResponseEntity<?> deleteHotel(@PathVariable String id) {
+        if (id == null || id.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Hotel ID cannot be empty"));
+        }
+        id = id.trim();
+        java.util.Optional<Hotel> hotelOptional = hotelRepository.findById(id);
+        if (hotelOptional.isPresent()) {
+            hotelRepository.deleteById(id);
+            return ResponseEntity.ok(java.util.Map.of("message", "Hotel deleted successfully", "id", id));
+        }
+        for (Hotel h : hotelRepository.findAll()) {
+            if (id.equals(h.getId())) {
+                hotelRepository.delete(h);
+                return ResponseEntity.ok(java.util.Map.of("message", "Hotel deleted successfully", "id", id));
+            }
+        }
+        return ResponseEntity.status(404).body(java.util.Map.of("error", "Hotel not found with id: " + id));
+    }
+
     @GetMapping("/flight")
     public ResponseEntity<List<Flight>> getallflights(){
         return ResponseEntity.ok(flightRepository.findAll());

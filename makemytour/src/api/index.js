@@ -263,9 +263,16 @@ export const edithotel = async (
 export const deletehotel = async (id) => {
   try {
     const res = await axios.delete(`${BACKEND_URL}/admin/hotel/${id}`);
-    const data = res.data;
-    return data;
+    return res.data;
   } catch (error) {
+    if (error?.response?.status === 404) {
+      try {
+        const fallbackRes = await axios.delete(`${BACKEND_URL}/hotel/${id}`);
+        return fallbackRes.data;
+      } catch (fallbackError) {
+        console.error("deletehotel fallback error:", fallbackError);
+      }
+    }
     console.error("deletehotel error:", error);
     throw error;
   }

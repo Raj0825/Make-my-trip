@@ -133,14 +133,24 @@ public class AdminController {
         return ResponseEntity.notFound().build();
     }
 
-    @DeleteMapping("/hotel/{id}")
+    @DeleteMapping(value = {"/hotel/{id}", "hotel/{id}"})
     public ResponseEntity<?> deleteHotel(@PathVariable String id) {
+        if (id == null || id.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Hotel ID cannot be empty"));
+        }
+        id = id.trim();
         Optional<Hotel> hotelOptional = hotelRepository.findById(id);
         if (hotelOptional.isPresent()) {
             hotelRepository.deleteById(id);
             return ResponseEntity.ok(java.util.Map.of("message", "Hotel deleted successfully", "id", id));
         }
-        return ResponseEntity.notFound().build();
+        for (Hotel h : hotelRepository.findAll()) {
+            if (id.equals(h.getId())) {
+                hotelRepository.delete(h);
+                return ResponseEntity.ok(java.util.Map.of("message", "Hotel deleted successfully", "id", id));
+            }
+        }
+        return ResponseEntity.status(404).body(java.util.Map.of("error", "Hotel not found with id: " + id));
     }
 
     @PostMapping("/train")

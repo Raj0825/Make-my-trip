@@ -229,9 +229,17 @@ function AddEditHotel({
       setIsDeleting(true);
       await deletehotel(hotelId);
       onDeleted?.();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete hotel:", err);
-      alert("Failed to delete hotel. Please try again.");
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.error || err?.response?.data?.message || err?.message;
+      if (status === 405 || status === 404) {
+        alert(`Delete endpoint returned HTTP ${status}. Please restart your Spring Boot application in IntelliJ so the newly added delete route is loaded.`);
+      } else if (err?.code === "ERR_NETWORK") {
+        alert("Network Error: Could not reach Spring Boot backend on http://localhost:8080. Please ensure the backend is running.");
+      } else {
+        alert(`Failed to delete hotel: ${serverMsg || 'Unknown error'}. Please ensure Spring Boot is restarted.`);
+      }
     } finally {
       setIsDeleting(false);
     }

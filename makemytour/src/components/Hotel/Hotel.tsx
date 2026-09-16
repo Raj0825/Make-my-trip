@@ -49,9 +49,17 @@ const HotelList = ({ onSelect, refreshKey, onDeleted }: any) => {
       if (onDeleted) {
         onDeleted(id);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete hotel:", err);
-      setErrorMsg("Failed to delete hotel. Please try again.");
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.error || err?.response?.data?.message || err?.message;
+      if (status === 405 || status === 404) {
+        setErrorMsg(`Delete endpoint returned HTTP ${status}. Please restart your Spring Boot backend in IntelliJ so the newly added delete route is loaded.`);
+      } else if (err?.code === "ERR_NETWORK") {
+        setErrorMsg("Network Error: Could not reach the Spring Boot backend on http://localhost:8080. Please ensure the backend is running.");
+      } else {
+        setErrorMsg(`Failed to delete hotel: ${serverMsg || 'Unknown error'}. Please make sure Spring Boot is restarted with the latest changes.`);
+      }
     } finally {
       setDeletingId(null);
     }
