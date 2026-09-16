@@ -116,6 +116,26 @@ public class AdminController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    @DeleteMapping(value = {"/flight/{id}", "flight/{id}"})
+    public ResponseEntity<?> deleteFlight(@PathVariable String id) {
+        if (id == null || id.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Flight ID cannot be empty"));
+        }
+        id = id.trim();
+        Optional<Flight> flightOptional = flightRepository.findById(id);
+        if (flightOptional.isPresent()) {
+            flightRepository.deleteById(id);
+            return ResponseEntity.ok(java.util.Map.of("message", "Flight deleted successfully", "id", id));
+        }
+        for (Flight f : flightRepository.findAll()) {
+            if (id.equals(f.getId())) {
+                flightRepository.delete(f);
+                return ResponseEntity.ok(java.util.Map.of("message", "Flight deleted successfully", "id", id));
+            }
+        }
+        return ResponseEntity.status(404).body(java.util.Map.of("error", "Flight not found with id: " + id));
+    }
     @PutMapping("hotel/{id}")
     public ResponseEntity<Hotel> editHotel (@PathVariable String id, @RequestBody Hotel updatedHotel){
         Optional<Hotel> hotelOptional=hotelRepository.findById(id);
@@ -177,6 +197,26 @@ public class AdminController {
         return ResponseEntity.notFound().build();
     }
 
+    @DeleteMapping(value = {"/train/{id}", "train/{id}"})
+    public ResponseEntity<?> deleteTrain(@PathVariable String id) {
+        if (id == null || id.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Train ID cannot be empty"));
+        }
+        id = id.trim();
+        Optional<Train> trainOptional = trainRepository.findById(id);
+        if (trainOptional.isPresent()) {
+            trainRepository.deleteById(id);
+            return ResponseEntity.ok(java.util.Map.of("message", "Train deleted successfully", "id", id));
+        }
+        for (Train t : trainRepository.findAll()) {
+            if (id.equals(t.getId())) {
+                trainRepository.delete(t);
+                return ResponseEntity.ok(java.util.Map.of("message", "Train deleted successfully", "id", id));
+            }
+        }
+        return ResponseEntity.status(404).body(java.util.Map.of("error", "Train not found with id: " + id));
+    }
+
     @PostMapping("/bus")
     public Bus addbus(@RequestBody Bus bus){
         return busRepository.save(bus);
@@ -199,6 +239,26 @@ public class AdminController {
             return ResponseEntity.ok(bus);
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping(value = {"/bus/{id}", "bus/{id}"})
+    public ResponseEntity<?> deleteBus(@PathVariable String id) {
+        if (id == null || id.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Bus ID cannot be empty"));
+        }
+        id = id.trim();
+        Optional<Bus> busOptional = busRepository.findById(id);
+        if (busOptional.isPresent()) {
+            busRepository.deleteById(id);
+            return ResponseEntity.ok(java.util.Map.of("message", "Bus deleted successfully", "id", id));
+        }
+        for (Bus b : busRepository.findAll()) {
+            if (id.equals(b.getId())) {
+                busRepository.delete(b);
+                return ResponseEntity.ok(java.util.Map.of("message", "Bus deleted successfully", "id", id));
+            }
+        }
+        return ResponseEntity.status(404).body(java.util.Map.of("error", "Bus not found with id: " + id));
     }
 
     @PostMapping("/cab")
@@ -227,6 +287,26 @@ public class AdminController {
         return ResponseEntity.notFound().build();
     }
 
+    @DeleteMapping(value = {"/cab/{id}", "cab/{id}"})
+    public ResponseEntity<?> deleteCab(@PathVariable String id) {
+        if (id == null || id.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Cab ID cannot be empty"));
+        }
+        id = id.trim();
+        Optional<Cab> cabOptional = cabRepository.findById(id);
+        if (cabOptional.isPresent()) {
+            cabRepository.deleteById(id);
+            return ResponseEntity.ok(java.util.Map.of("message", "Cab deleted successfully", "id", id));
+        }
+        for (Cab c : cabRepository.findAll()) {
+            if (id.equals(c.getId())) {
+                cabRepository.delete(c);
+                return ResponseEntity.ok(java.util.Map.of("message", "Cab deleted successfully", "id", id));
+            }
+        }
+        return ResponseEntity.status(404).body(java.util.Map.of("error", "Cab not found with id: " + id));
+    }
+
     @PostMapping("/homestay")
     public Homestay addhomestay(@RequestBody Homestay homestay){
         return homestayRepository.save(homestay);
@@ -249,6 +329,65 @@ public class AdminController {
             return ResponseEntity.ok(homestay);
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping(value = {"/homestay/{id}", "homestay/{id}"})
+    public ResponseEntity<?> deleteHomestay(@PathVariable String id) {
+        if (id == null || id.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Homestay ID cannot be empty"));
+        }
+        id = id.trim();
+        Optional<Homestay> homestayOptional = homestayRepository.findById(id);
+        if (homestayOptional.isPresent()) {
+            homestayRepository.deleteById(id);
+            return ResponseEntity.ok(java.util.Map.of("message", "Homestay deleted successfully", "id", id));
+        }
+        for (Homestay h : homestayRepository.findAll()) {
+            if (id.equals(h.getId())) {
+                homestayRepository.delete(h);
+                return ResponseEntity.ok(java.util.Map.of("message", "Homestay deleted successfully", "id", id));
+            }
+        }
+        return ResponseEntity.status(404).body(java.util.Map.of("error", "Homestay not found with id: " + id));
+    }
+
+    @DeleteMapping(value = {"/booking/{bookingId}", "booking/{bookingId}"})
+    public ResponseEntity<?> deleteBooking(@PathVariable String bookingId, @RequestParam(required = false) String userId) {
+        if (bookingId == null || bookingId.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Booking ID cannot be empty"));
+        }
+        bookingId = bookingId.trim();
+        boolean found = false;
+
+        if (userId != null && !userId.trim().isEmpty()) {
+            Optional<Users> userOpt = userRepository.findById(userId.trim());
+            if (userOpt.isPresent()) {
+                Users user = userOpt.get();
+                if (user.getBookings() != null) {
+                    found = user.getBookings().removeIf(b -> bookingId.equals(b.getBookingId()));
+                    if (found) {
+                        userRepository.save(user);
+                        return ResponseEntity.ok(java.util.Map.of("message", "Booking deleted successfully", "bookingId", bookingId));
+                    }
+                }
+            }
+        }
+
+        for (Users u : userRepository.findAll()) {
+            if (u.getBookings() != null) {
+                boolean removed = u.getBookings().removeIf(b -> bookingId.equals(b.getBookingId()));
+                if (removed) {
+                    userRepository.save(u);
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (found) {
+            return ResponseEntity.ok(java.util.Map.of("message", "Booking deleted successfully", "bookingId", bookingId));
+        }
+        return ResponseEntity.status(404).body(java.util.Map.of("error", "Booking not found with id: " + bookingId));
     }
 
 }

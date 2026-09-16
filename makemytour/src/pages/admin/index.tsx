@@ -32,6 +32,12 @@ import {
   editflight,
   edithotel,
   deletehotel,
+  deleteflight,
+  deletetrain,
+  deletebus,
+  deletecab,
+  deletehomestay,
+  deletebooking,
   getuserbyemail,
   addtrain,
   edittrain,
@@ -113,17 +119,37 @@ interface User {
   email: string;
   role: string;
   phoneNumber: string;
+  bookings?: any[];
 }
 
 function UserSearch() {
   const [email, setEmail] = useState("");
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
+  const [deletingBookingId, setDeletingBookingId] = useState<string | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const data = await getuserbyemail(email);
-    const mockUser: User = data;
-    setUser(mockUser);
+    setUser(data);
+  };
+
+  const handleDeleteUserBooking = async (bookingId: string) => {
+    const confirmDelete = window.confirm(`Are you sure you want to delete booking "${bookingId}"? This will remove it permanently.`);
+    if (!confirmDelete) return;
+
+    try {
+      setDeletingBookingId(bookingId);
+      await deletebooking(bookingId, user?._id || user?.id);
+      setUser((prev: any) => ({
+        ...prev,
+        bookings: (prev.bookings || []).filter((b: any) => b.bookingId !== bookingId),
+      }));
+    } catch (err: any) {
+      console.error("Failed to delete booking:", err);
+      alert("Failed to delete booking. Please check that Spring Boot is restarted.");
+    } finally {
+      setDeletingBookingId(null);
+    }
   };
 
   return (
@@ -145,20 +171,54 @@ function UserSearch() {
         <Button type="submit">Search</Button>
       </form>
       {user && (
-        <div className="border p-4 rounded-md">
-          <h3 className="font-bold mb-2">User Details</h3>
-          <p>
-            <strong>Name:</strong> {user.firstName} {user.lastName}
-          </p>
-          <p>
-            <strong>Email:</strong> {user.email}
-          </p>
-          <p>
-            <strong>Role:</strong> {user.role}
-          </p>
-          <p>
-            <strong>Phone:</strong> {user.phoneNumber}
-          </p>
+        <div className="border p-4 rounded-md space-y-4">
+          <div>
+            <h3 className="font-bold mb-2">User Details</h3>
+            <p>
+              <strong>Name:</strong> {user.firstName} {user.lastName}
+            </p>
+            <p>
+              <strong>Email:</strong> {user.email}
+            </p>
+            <p>
+              <strong>Role:</strong> {user.role}
+            </p>
+            <p>
+              <strong>Phone:</strong> {user.phoneNumber}
+            </p>
+          </div>
+
+          {user.bookings && user.bookings.length > 0 && (
+            <div className="pt-3 border-t">
+              <h4 className="font-semibold text-sm mb-3">User Bookings ({user.bookings.length})</h4>
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {user.bookings.map((b: any) => (
+                  <div key={b.bookingId} className="flex items-center justify-between p-3 bg-gray-50 border rounded-lg text-xs">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-800 uppercase bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[10px]">
+                          {b.type}
+                        </span>
+                        <span className="text-gray-700 font-semibold">₹{b.totalPrice?.toLocaleString?.("en-IN") ?? b.totalPrice}</span>
+                        {b.cancelled && <span className="text-red-600 font-bold">[Cancelled]</span>}
+                      </div>
+                      <p className="text-gray-500 mt-1 font-mono text-[11px]">Booking ID: {b.bookingId}</p>
+                      {b.date && <p className="text-gray-400 text-[10px]">{new Date(b.date).toLocaleDateString()}</p>}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteUserBooking(b.bookingId)}
+                      disabled={deletingBookingId === b.bookingId}
+                      className="h-7 px-2.5 text-xs bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      {deletingBookingId === b.bookingId ? "Deleting..." : "Delete Booking"}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -383,7 +443,17 @@ interface Flight {
   economySeats?: number;
 }
 
-function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: () => void }) {
+function AddEditFlight({
+  flight,
+  onSaved,
+  onDeleted,
+  onCancel,
+}: {
+  flight: Flight | null;
+  onSaved?: () => void;
+  onDeleted?: () => void;
+  onCancel?: () => void;
+}) {
   const emptyFlight: Flight = {
     flightName: "",
     from: "",
@@ -398,6 +468,7 @@ function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: (
     economySeats: 0,
   };
   const [formData, setFormData] = useState<Flight>(emptyFlight);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (flight) {
@@ -424,6 +495,41 @@ function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: (
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDelete = async () => {
+    if (!flight) return;
+    const flightId = flight.id || (flight as any)?._id;
+    if (!flightId) {
+      alert("Cannot delete: flight ID is missing.");
+      return;
+    }
+    const confirmed = window.confirm(
+      `Are you sure you want to delete flight "${flight.flightName}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteflight(flightId);
+      onDeleted?.();
+    } catch (err: any) {
+      console.error("Failed to delete flight:", err);
+      const status = err?.response?.status;
+      if (status === 404) {
+        alert(
+          `Flight ID "${flightId}" was not found on the server, or the backend server was not restarted. Please restart Spring Boot in IntelliJ IDEA.`
+        );
+      } else if (status === 405) {
+        alert(
+          "DELETE method not supported yet by running server. Please restart Spring Boot in IntelliJ IDEA to register the new delete endpoint."
+        );
+      } else {
+        alert("Failed to delete flight. Please check your network or restart Spring Boot.");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -467,9 +573,22 @@ function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: (
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h3 className="text-lg font-semibold mb-2">
-        {flight ? "Edit Flight" : "Add New Flight"}
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">
+          {flight ? "Edit Flight" : "Add New Flight"}
+        </h3>
+        {flight && onCancel && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="text-xs text-gray-500 hover:text-gray-900"
+          >
+            Cancel Edit
+          </Button>
+        )}
+      </div>
       <div>
         <Label htmlFor="flightName">Flight Name</Label>
         <Input
@@ -589,7 +708,22 @@ function AddEditFlight({ flight, onSaved }: { flight: Flight | null; onSaved?: (
           Total available seats: <span className="font-semibold text-gray-700">{totalSeats}</span> (calculated automatically)
         </p>
       </div>
-      <Button type="submit">{flight ? "Update Flight" : "Add Flight"}</Button>
+      <div className="flex items-center gap-3 pt-2">
+        <Button type="submit" disabled={isDeleting}>
+          {flight ? "Update Flight" : "Add Flight"}
+        </Button>
+        {flight && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {isDeleting ? "Deleting..." : "Delete Flight"}
+          </Button>
+        )}
+      </div>
     </form>
   );
 }
@@ -605,7 +739,17 @@ interface Train {
   availableSeats: number;
 }
 
-function AddEditTrain({ train, onSaved }: { train: Train | null; onSaved?: () => void }) {
+function AddEditTrain({
+  train,
+  onSaved,
+  onDeleted,
+  onCancel,
+}: {
+  train: Train | null;
+  onSaved?: () => void;
+  onDeleted?: () => void;
+  onCancel?: () => void;
+}) {
   const [formData, setFormData] = useState<Train>({
     trainName: "",
     from: "",
@@ -615,6 +759,7 @@ function AddEditTrain({ train, onSaved }: { train: Train | null; onSaved?: () =>
     price: 0,
     availableSeats: 0,
   });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (train) {
@@ -635,6 +780,41 @@ function AddEditTrain({ train, onSaved }: { train: Train | null; onSaved?: () =>
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDelete = async () => {
+    if (!train) return;
+    const trainId = train.id || (train as any)?._id;
+    if (!trainId) {
+      alert("Cannot delete: train ID is missing.");
+      return;
+    }
+    const confirmed = window.confirm(
+      `Are you sure you want to delete train "${train.trainName}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await deletetrain(trainId);
+      onDeleted?.();
+    } catch (err: any) {
+      console.error("Failed to delete train:", err);
+      const status = err?.response?.status;
+      if (status === 404) {
+        alert(
+          `Train ID "${trainId}" was not found on the server, or the backend server was not restarted. Please restart Spring Boot in IntelliJ IDEA.`
+        );
+      } else if (status === 405) {
+        alert(
+          "DELETE method not supported yet by running server. Please restart Spring Boot in IntelliJ IDEA to register the new delete endpoint."
+        );
+      } else {
+        alert("Failed to delete train. Please check your network or restart Spring Boot.");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -678,9 +858,22 @@ function AddEditTrain({ train, onSaved }: { train: Train | null; onSaved?: () =>
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h3 className="text-lg font-semibold mb-2">
-        {train ? "Edit Train" : "Add New Train"}
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">
+          {train ? "Edit Train" : "Add New Train"}
+        </h3>
+        {train && onCancel && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="text-xs text-gray-500 hover:text-gray-900"
+          >
+            Cancel Edit
+          </Button>
+        )}
+      </div>
       <div>
         <Label htmlFor="trainName">Train Name</Label>
         <Input
@@ -755,7 +948,22 @@ function AddEditTrain({ train, onSaved }: { train: Train | null; onSaved?: () =>
           required
         />
       </div>
-      <Button type="submit">{train ? "Update Train" : "Add Train"}</Button>
+      <div className="flex items-center gap-3 pt-2">
+        <Button type="submit" disabled={isDeleting}>
+          {train ? "Update Train" : "Add Train"}
+        </Button>
+        {train && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {isDeleting ? "Deleting..." : "Delete Train"}
+          </Button>
+        )}
+      </div>
     </form>
   );
 }
@@ -771,7 +979,17 @@ interface Bus {
   availableSeats: number;
 }
 
-function AddEditBus({ bus, onSaved }: { bus: Bus | null; onSaved?: () => void }) {
+function AddEditBus({
+  bus,
+  onSaved,
+  onDeleted,
+  onCancel,
+}: {
+  bus: Bus | null;
+  onSaved?: () => void;
+  onDeleted?: () => void;
+  onCancel?: () => void;
+}) {
   const [formData, setFormData] = useState<Bus>({
     busName: "",
     from: "",
@@ -781,6 +999,7 @@ function AddEditBus({ bus, onSaved }: { bus: Bus | null; onSaved?: () => void })
     price: 0,
     availableSeats: 0,
   });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (bus) {
@@ -801,6 +1020,41 @@ function AddEditBus({ bus, onSaved }: { bus: Bus | null; onSaved?: () => void })
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDelete = async () => {
+    if (!bus) return;
+    const busId = bus.id || (bus as any)?._id;
+    if (!busId) {
+      alert("Cannot delete: bus ID is missing.");
+      return;
+    }
+    const confirmed = window.confirm(
+      `Are you sure you want to delete bus "${bus.busName}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await deletebus(busId);
+      onDeleted?.();
+    } catch (err: any) {
+      console.error("Failed to delete bus:", err);
+      const status = err?.response?.status;
+      if (status === 404) {
+        alert(
+          `Bus ID "${busId}" was not found on the server, or the backend server was not restarted. Please restart Spring Boot in IntelliJ IDEA.`
+        );
+      } else if (status === 405) {
+        alert(
+          "DELETE method not supported yet by running server. Please restart Spring Boot in IntelliJ IDEA to register the new delete endpoint."
+        );
+      } else {
+        alert("Failed to delete bus. Please check your network or restart Spring Boot.");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -844,9 +1098,22 @@ function AddEditBus({ bus, onSaved }: { bus: Bus | null; onSaved?: () => void })
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h3 className="text-lg font-semibold mb-2">
-        {bus ? "Edit Bus" : "Add New Bus"}
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">
+          {bus ? "Edit Bus" : "Add New Bus"}
+        </h3>
+        {bus && onCancel && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="text-xs text-gray-500 hover:text-gray-900"
+          >
+            Cancel Edit
+          </Button>
+        )}
+      </div>
       <div>
         <Label htmlFor="busName">Bus Name</Label>
         <Input
@@ -921,7 +1188,22 @@ function AddEditBus({ bus, onSaved }: { bus: Bus | null; onSaved?: () => void })
           required
         />
       </div>
-      <Button type="submit">{bus ? "Update Bus" : "Add Bus"}</Button>
+      <div className="flex items-center gap-3 pt-2">
+        <Button type="submit" disabled={isDeleting}>
+          {bus ? "Update Bus" : "Add Bus"}
+        </Button>
+        {bus && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {isDeleting ? "Deleting..." : "Delete Bus"}
+          </Button>
+        )}
+      </div>
     </form>
   );
 }
@@ -951,8 +1233,19 @@ const EMPTY_CAB_FORM: Cab = {
   estimatedDuration: "",
 };
 
-function AddEditCab({ cab, onSaved }: { cab: Cab | null; onSaved?: () => void }) {
+function AddEditCab({
+  cab,
+  onSaved,
+  onDeleted,
+  onCancel,
+}: {
+  cab: Cab | null;
+  onSaved?: () => void;
+  onDeleted?: () => void;
+  onCancel?: () => void;
+}) {
   const [formData, setFormData] = useState<Cab>(EMPTY_CAB_FORM);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (cab) {
@@ -965,6 +1258,41 @@ function AddEditCab({ cab, onSaved }: { cab: Cab | null; onSaved?: () => void })
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDelete = async () => {
+    if (!cab) return;
+    const cabId = cab.id || (cab as any)?._id;
+    if (!cabId) {
+      alert("Cannot delete: cab ID is missing.");
+      return;
+    }
+    const confirmed = window.confirm(
+      `Are you sure you want to delete cab "${cab.cabType}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await deletecab(cabId);
+      onDeleted?.();
+    } catch (err: any) {
+      console.error("Failed to delete cab:", err);
+      const status = err?.response?.status;
+      if (status === 404) {
+        alert(
+          `Cab ID "${cabId}" was not found on the server, or the backend server was not restarted. Please restart Spring Boot in IntelliJ IDEA.`
+        );
+      } else if (status === 405) {
+        alert(
+          "DELETE method not supported yet by running server. Please restart Spring Boot in IntelliJ IDEA to register the new delete endpoint."
+        );
+      } else {
+        alert("Failed to delete cab. Please check your network or restart Spring Boot.");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1004,9 +1332,22 @@ function AddEditCab({ cab, onSaved }: { cab: Cab | null; onSaved?: () => void })
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h3 className="text-lg font-semibold mb-2">
-        {cab ? "Edit Cab" : "Add New Cab"}
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">
+          {cab ? "Edit Cab" : "Add New Cab"}
+        </h3>
+        {cab && onCancel && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="text-xs text-gray-500 hover:text-gray-900"
+          >
+            Cancel Edit
+          </Button>
+        )}
+      </div>
       <div>
         <Label htmlFor="cabType">Cab Type</Label>
         <Input
@@ -1107,7 +1448,22 @@ function AddEditCab({ cab, onSaved }: { cab: Cab | null; onSaved?: () => void })
           />
         </div>
       </div>
-      <Button type="submit">{cab ? "Update Cab" : "Add Cab"}</Button>
+      <div className="flex items-center gap-3 pt-2">
+        <Button type="submit" disabled={isDeleting}>
+          {cab ? "Update Cab" : "Add Cab"}
+        </Button>
+        {cab && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {isDeleting ? "Deleting..." : "Delete Cab"}
+          </Button>
+        )}
+      </div>
     </form>
   );
 }
@@ -1139,8 +1495,19 @@ const EMPTY_HOMESTAY_FORM: Homestay = {
   checkOutTime: "11:00 AM",
 };
 
-function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onSaved?: () => void }) {
+function AddEditHomestay({
+  homestay,
+  onSaved,
+  onDeleted,
+  onCancel,
+}: {
+  homestay: Homestay | null;
+  onSaved?: () => void;
+  onDeleted?: () => void;
+  onCancel?: () => void;
+}) {
   const [formData, setFormData] = useState<Homestay>(EMPTY_HOMESTAY_FORM);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (homestay) {
@@ -1160,6 +1527,41 @@ function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onS
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDelete = async () => {
+    if (!homestay) return;
+    const homestayId = homestay.id || (homestay as any)?._id;
+    if (!homestayId) {
+      alert("Cannot delete: homestay ID is missing.");
+      return;
+    }
+    const confirmed = window.confirm(
+      `Are you sure you want to delete homestay "${homestay.homestayName}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await deletehomestay(homestayId);
+      onDeleted?.();
+    } catch (err: any) {
+      console.error("Failed to delete homestay:", err);
+      const status = err?.response?.status;
+      if (status === 404) {
+        alert(
+          `Homestay ID "${homestayId}" was not found on the server, or the backend server was not restarted. Please restart Spring Boot in IntelliJ IDEA.`
+        );
+      } else if (status === 405) {
+        alert(
+          "DELETE method not supported yet by running server. Please restart Spring Boot in IntelliJ IDEA to register the new delete endpoint."
+        );
+      } else {
+        alert("Failed to delete homestay. Please check your network or restart Spring Boot.");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1195,9 +1597,22 @@ function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onS
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h3 className="text-lg font-semibold mb-2">
-        {homestay ? "Edit Homestay" : "Add New Homestay"}
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">
+          {homestay ? "Edit Homestay" : "Add New Homestay"}
+        </h3>
+        {homestay && onCancel && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="text-xs text-gray-500 hover:text-gray-900"
+          >
+            Cancel Edit
+          </Button>
+        )}
+      </div>
       <div>
         <Label htmlFor="homestayName">Homestay Name</Label>
         <Input
@@ -1286,9 +1701,22 @@ function AddEditHomestay({ homestay, onSaved }: { homestay: Homestay | null; onS
           required
         />
       </div>
-      <Button type="submit">
-        {homestay ? "Update Homestay" : "Add Homestay"}
-      </Button>
+      <div className="flex items-center gap-3 pt-2">
+        <Button type="submit" disabled={isDeleting}>
+          {homestay ? "Update Homestay" : "Add Homestay"}
+        </Button>
+        {homestay && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {isDeleting ? "Deleting..." : "Delete Homestay"}
+          </Button>
+        )}
+      </div>
     </form>
   );
 }
@@ -1360,13 +1788,30 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <FlightList onSelect={setSelectedFlight} refreshKey={flightRefresh} />
+                <FlightList
+                  onSelect={setSelectedFlight}
+                  refreshKey={flightRefresh}
+                  onDeleted={(deletedId: string) => {
+                    if (
+                      (selectedFlight as any)?.id === deletedId ||
+                      (selectedFlight as any)?._id === deletedId
+                    ) {
+                      setSelectedFlight(null);
+                    }
+                    setFlightRefresh((k) => k + 1);
+                  }}
+                />
                 <AddEditFlight
                   flight={selectedFlight}
                   onSaved={() => {
                     setFlightRefresh((k) => k + 1);
                     setSelectedFlight(null);
                   }}
+                  onDeleted={() => {
+                    setFlightRefresh((k) => k + 1);
+                    setSelectedFlight(null);
+                  }}
+                  onCancel={() => setSelectedFlight(null)}
                 />
               </div>
             </CardContent>
@@ -1421,13 +1866,30 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <TrainList onSelect={setSelectedTrain} refreshKey={trainRefresh} />
+                <TrainList
+                  onSelect={setSelectedTrain}
+                  refreshKey={trainRefresh}
+                  onDeleted={(deletedId: string) => {
+                    if (
+                      (selectedTrain as any)?.id === deletedId ||
+                      (selectedTrain as any)?._id === deletedId
+                    ) {
+                      setSelectedTrain(null);
+                    }
+                    setTrainRefresh((k) => k + 1);
+                  }}
+                />
                 <AddEditTrain
                   train={selectedTrain}
                   onSaved={() => {
                     setTrainRefresh((k) => k + 1);
                     setSelectedTrain(null);
                   }}
+                  onDeleted={() => {
+                    setTrainRefresh((k) => k + 1);
+                    setSelectedTrain(null);
+                  }}
+                  onCancel={() => setSelectedTrain(null)}
                 />
               </div>
             </CardContent>
@@ -1443,13 +1905,30 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <BusList onSelect={setSelectedBus} refreshKey={busRefresh} />
+                <BusList
+                  onSelect={setSelectedBus}
+                  refreshKey={busRefresh}
+                  onDeleted={(deletedId: string) => {
+                    if (
+                      (selectedBus as any)?.id === deletedId ||
+                      (selectedBus as any)?._id === deletedId
+                    ) {
+                      setSelectedBus(null);
+                    }
+                    setBusRefresh((k) => k + 1);
+                  }}
+                />
                 <AddEditBus
                   bus={selectedBus}
                   onSaved={() => {
                     setBusRefresh((k) => k + 1);
                     setSelectedBus(null);
                   }}
+                  onDeleted={() => {
+                    setBusRefresh((k) => k + 1);
+                    setSelectedBus(null);
+                  }}
+                  onCancel={() => setSelectedBus(null)}
                 />
               </div>
             </CardContent>
@@ -1465,13 +1944,30 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <CabList onSelect={setSelectedCab} refreshKey={cabRefresh} />
+                <CabList
+                  onSelect={setSelectedCab}
+                  refreshKey={cabRefresh}
+                  onDeleted={(deletedId: string) => {
+                    if (
+                      (selectedCab as any)?.id === deletedId ||
+                      (selectedCab as any)?._id === deletedId
+                    ) {
+                      setSelectedCab(null);
+                    }
+                    setCabRefresh((k) => k + 1);
+                  }}
+                />
                 <AddEditCab
                   cab={selectedCab}
                   onSaved={() => {
                     setCabRefresh((k) => k + 1);
                     setSelectedCab(null);
                   }}
+                  onDeleted={() => {
+                    setCabRefresh((k) => k + 1);
+                    setSelectedCab(null);
+                  }}
+                  onCancel={() => setSelectedCab(null)}
                 />
               </div>
             </CardContent>
@@ -1487,13 +1983,30 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <HomestayList onSelect={setSelectedHomestay} refreshKey={homestayRefresh} />
+                <HomestayList
+                  onSelect={setSelectedHomestay}
+                  refreshKey={homestayRefresh}
+                  onDeleted={(deletedId: string) => {
+                    if (
+                      (selectedHomestay as any)?.id === deletedId ||
+                      (selectedHomestay as any)?._id === deletedId
+                    ) {
+                      setSelectedHomestay(null);
+                    }
+                    setHomestayRefresh((k) => k + 1);
+                  }}
+                />
                 <AddEditHomestay
                   homestay={selectedHomestay}
                   onSaved={() => {
                     setHomestayRefresh((k) => k + 1);
                     setSelectedHomestay(null);
                   }}
+                  onDeleted={() => {
+                    setHomestayRefresh((k) => k + 1);
+                    setSelectedHomestay(null);
+                  }}
+                  onCancel={() => setSelectedHomestay(null)}
                 />
               </div>
             </CardContent>

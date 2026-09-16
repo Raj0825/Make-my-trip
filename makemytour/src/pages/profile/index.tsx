@@ -4,7 +4,7 @@ import {
   User, Phone, Mail, Edit2, Calendar, CreditCard,
   X, Check, LogOut, Plane, Building2, Train, Bus,
   Car, Home, AlertCircle, Clock, CheckCircle2, XCircle,
-  IndianRupee, Tag, ArrowRight, Ticket, Heart, Gift, Palmtree,
+  IndianRupee, Tag, ArrowRight, Ticket, Heart, Gift, Palmtree, Trash2,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/router";
@@ -12,7 +12,7 @@ import { clearUser, setUser } from "@/store";
 import LoyaltyWidget from "@/components/loyalty/LoyaltyWidget";
 import BackButton from "@/components/navigation/BackButton";
 import {
-  editprofile, cancelbooking,
+  editprofile, cancelbooking, deletebooking,
   gethotel, getflight, gettrain, getbus, getcab, gethomestay,
 } from "@/api";
 import {
@@ -118,6 +118,29 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState<"all" | "active" | "cancelled">("all");
   const [detailsBooking, setDetailsBooking] = useState<any>(null);
   const [entityNames, setEntityNames] = useState<Record<string, Record<string, string>>>({});
+  const [deletingBookingId, setDeletingBookingId] = useState<string | null>(null);
+
+  const handleDeleteBooking = async (bookingId: string) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this booking from your history? This action cannot be undone."
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeletingBookingId(bookingId);
+      await deletebooking(bookingId, user?.id || user?._id);
+      const updatedBookings = (user?.bookings || []).filter((b: any) => b.bookingId !== bookingId);
+      dispatch(setUser({ ...user, bookings: updatedBookings }));
+      if (detailsBooking?.bookingId === bookingId) {
+        setDetailsBooking(null);
+      }
+    } catch (err: any) {
+      console.error("Failed to delete booking:", err);
+      alert("Failed to delete booking. Please check that Spring Boot is restarted in IntelliJ IDEA.");
+    } finally {
+      setDeletingBookingId(null);
+    }
+  };
 
   useEffect(() => {
     // Build a { type: { entityId: name } } lookup once, so booking cards can
@@ -421,18 +444,31 @@ const ProfilePage = () => {
                                 </div>
                               )}
 
-                              {/* Track Refund button */}
-                              {booking.refundStatus && booking.refundStatus !== "NO_REFUND" && (
-                                <Link href={`/refund/${booking.bookingId}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
-                                  Track Refund →
-                                </Link>
-                              )}
+                              {/* Action row in cancelled card */}
+                              <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                                {booking.refundStatus && booking.refundStatus !== "NO_REFUND" ? (
+                                  <Link href={`/refund/${booking.bookingId}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+                                    Track Refund →
+                                  </Link>
+                                ) : <span />}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteBooking(booking.bookingId);
+                                  }}
+                                  disabled={deletingBookingId === booking.bookingId}
+                                  className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition-colors ml-auto"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  {deletingBookingId === booking.bookingId ? "Deleting..." : "Delete Booking"}
+                                </button>
+                              </div>
                             </div>
                           )}
 
-                          {/* Cancel action */}
+                          {/* Cancel and Delete action for active bookings */}
                           {!booking.cancelled && (
                             <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                               <div>
@@ -446,10 +482,24 @@ const ProfilePage = () => {
                                   </p>
                                 )}
                               </div>
-                              <button onClick={(e) => { e.stopPropagation(); openCancelDialog(booking); }}
-                                className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600 font-semibold transition-colors">
-                                <XCircle className="w-4 h-4" /> Cancel
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteBooking(booking.bookingId);
+                                  }}
+                                  disabled={deletingBookingId === booking.bookingId}
+                                  className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                                  title="Delete booking from history"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  {deletingBookingId === booking.bookingId ? "Deleting..." : "Delete"}
+                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); openCancelDialog(booking); }}
+                                  className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600 font-semibold transition-colors">
+                                  <XCircle className="w-4 h-4" /> Cancel
+                                </button>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -695,6 +745,15 @@ const ProfilePage = () => {
                         <Ticket className="w-4 h-4" /> View Ticket
                       </Link>
                     )}
+                    <Button
+                      onClick={() => handleDeleteBooking(detailsBooking.bookingId)}
+                      disabled={deletingBookingId === detailsBooking.bookingId}
+                      variant="destructive"
+                      className="rounded-xl font-semibold bg-red-600 hover:bg-red-700 text-white flex items-center gap-1.5 h-9 text-sm px-4"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {deletingBookingId === detailsBooking.bookingId ? "Deleting..." : "Delete"}
+                    </Button>
                     <Button onClick={() => setDetailsBooking(null)} variant="outline"
                       className="flex-1 rounded-xl font-semibold border-gray-200">
                       Close

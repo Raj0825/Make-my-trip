@@ -278,6 +278,107 @@ export const deletehotel = async (id) => {
   }
 };
 
+export const deleteflight = async (id) => {
+  try {
+    const res = await axios.delete(`${BACKEND_URL}/admin/flight/${id}`);
+    return res.data;
+  } catch (error) {
+    if (error?.response?.status === 404) {
+      try {
+        const fallbackRes = await axios.delete(`${BACKEND_URL}/flight/${id}`);
+        return fallbackRes.data;
+      } catch (fallbackError) {
+        console.error("deleteflight fallback error:", fallbackError);
+      }
+    }
+    console.error("deleteflight error:", error);
+    throw error;
+  }
+};
+
+export const deletetrain = async (id) => {
+  try {
+    const res = await axios.delete(`${BACKEND_URL}/admin/train/${id}`);
+    return res.data;
+  } catch (error) {
+    if (error?.response?.status === 404) {
+      try {
+        const fallbackRes = await axios.delete(`${BACKEND_URL}/train/${id}`);
+        return fallbackRes.data;
+      } catch (fallbackError) {
+        console.error("deletetrain fallback error:", fallbackError);
+      }
+    }
+    console.error("deletetrain error:", error);
+    throw error;
+  }
+};
+
+export const deletebus = async (id) => {
+  try {
+    const res = await axios.delete(`${BACKEND_URL}/admin/bus/${id}`);
+    return res.data;
+  } catch (error) {
+    if (error?.response?.status === 404) {
+      try {
+        const fallbackRes = await axios.delete(`${BACKEND_URL}/bus/${id}`);
+        return fallbackRes.data;
+      } catch (fallbackError) {
+        console.error("deletebus fallback error:", fallbackError);
+      }
+    }
+    console.error("deletebus error:", error);
+    throw error;
+  }
+};
+
+export const deletecab = async (id) => {
+  try {
+    const res = await axios.delete(`${BACKEND_URL}/admin/cab/${id}`);
+    return res.data;
+  } catch (error) {
+    if (error?.response?.status === 404) {
+      try {
+        const fallbackRes = await axios.delete(`${BACKEND_URL}/cab/${id}`);
+        return fallbackRes.data;
+      } catch (fallbackError) {
+        console.error("deletecab fallback error:", fallbackError);
+      }
+    }
+    console.error("deletecab error:", error);
+    throw error;
+  }
+};
+
+export const deletehomestay = async (id) => {
+  try {
+    const res = await axios.delete(`${BACKEND_URL}/admin/homestay/${id}`);
+    return res.data;
+  } catch (error) {
+    if (error?.response?.status === 404) {
+      try {
+        const fallbackRes = await axios.delete(`${BACKEND_URL}/homestay/${id}`);
+        return fallbackRes.data;
+      } catch (fallbackError) {
+        console.error("deletehomestay fallback error:", fallbackError);
+      }
+    }
+    console.error("deletehomestay error:", error);
+    throw error;
+  }
+};
+
+export const deletebooking = async (bookingId, userId) => {
+  try {
+    const query = userId ? `?userId=${encodeURIComponent(userId)}` : "";
+    const res = await axios.delete(`${BACKEND_URL}/admin/booking/${bookingId}${query}`);
+    return res.data;
+  } catch (error) {
+    console.error("deletebooking error:", error);
+    throw error;
+  }
+};
+
 export const handleflightbooking = async (userId, flightId, seats, price, unitPrice, seatNumbers, travelClass, passengers) => {
   try {
     let url = `${BACKEND_URL}/booking/flight?userId=${userId}&flightId=${flightId}&seats=${seats}&price=${price}&unitPrice=${unitPrice}`;
