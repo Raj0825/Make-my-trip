@@ -1,4 +1,4 @@
-﻿import { Coins } from "lucide-react";
+import { Coins } from "lucide-react";
 
 interface Props {
   /** User's current spendable points balance */
@@ -18,10 +18,24 @@ interface Props {
  * allowed points or not redeeming any.
  */
 export default function LoyaltyRedeemToggle({ available, maxRedeemPct, subtotal, redeemedPoints, onChange }: Props) {
-  if (available <= 0) return null;
+  if (available <= 0) {
+    return (
+      <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50/70 px-3.5 py-3 text-gray-500 text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+            <Coins size={15} />
+          </div>
+          <div>
+            <p className="font-semibold text-gray-700 text-sm">MMT Rewards (0 pts)</p>
+            <p className="text-gray-400 text-[11px]">Earn 1 reward point per ₹1 spent to redeem on future trips.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const cap = Math.floor(subtotal * (maxRedeemPct / 100));
-  const maxRedeemable = Math.min(available, cap);
+  // Allow redeeming up to full available balance or subtotal
+  const maxRedeemable = Math.min(available, Math.max(1, Math.floor(subtotal)));
 
   if (maxRedeemable <= 0) return null;
 
@@ -48,7 +62,7 @@ export default function LoyaltyRedeemToggle({ available, maxRedeemPct, subtotal,
         </div>
         <div>
           <p className={`text-sm font-semibold ${isApplied ? "text-amber-800" : "text-gray-700"}`}>
-            {isApplied ? `Redeeming ${maxRedeemable.toLocaleString("en-IN")} pts` : `Use ${maxRedeemable.toLocaleString("en-IN")} reward pts`}
+            {isApplied ? `Redeeming ${maxRedeemable.toLocaleString("en-IN")} MMT pts` : `Use ${maxRedeemable.toLocaleString("en-IN")} MMT reward pts`}
           </p>
           <p className="text-xs text-gray-500">
             {isApplied

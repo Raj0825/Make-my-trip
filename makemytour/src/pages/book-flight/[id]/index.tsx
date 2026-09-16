@@ -76,6 +76,8 @@ const BookFlightPage = () => {
   const [open, setopem] = useState(false);
   const [insured, setInsured] = useState(false);
   const [redeemedPoints, setRedeemedPoints] = useState(0);
+  const [selectedPromo, setSelectedPromo] = useState<string | null>(null);
+  const [promoDiscount, setPromoDiscount] = useState<number>(0);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
 
@@ -235,7 +237,7 @@ const BookFlightPage = () => {
   const totalOtherServices = fareSummary?.otherServices * quantity;
   const totalDiscounts = fareSummary?.discounts * quantity;
   const grandTotal = Math.max(0,
-      totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge + (insured ? INSURANCE_PREMIUM : 0) - redeemedPoints);
+      totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge + (insured ? INSURANCE_PREMIUM : 0) - promoDiscount - redeemedPoints);
   const loyaltyTier = getTier(user?.loyaltyEarned ?? 0);
   const loyaltyAvailable = user?.loyaltyPoints ?? 0;
   const passengersReady = passengers.length === quantity && passengers.every((p) => p.name.trim() !== "" && p.age.trim() !== "" && Number(p.age) >= 18);
@@ -696,15 +698,39 @@ const BookFlightPage = () => {
                     </span>
                   </div>
                 )}
+                {promoDiscount > 0 && (
+                  <div className="flex justify-between items-center text-green-600 font-medium">
+                    <span>Promo ({selectedPromo})</span>
+                    <span>- ₹ {promoDiscount.toLocaleString("en-IN")}</span>
+                  </div>
+                )}
+                {redeemedPoints > 0 && (
+                  <div className="flex justify-between items-center text-amber-600 font-medium">
+                    <span>MMT Points Redeemed</span>
+                    <span>- ₹ {redeemedPoints.toLocaleString("en-IN")}</span>
+                  </div>
+                )}
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-lg">Total Amount</span>
                     <span className="font-bold text-lg">
-                      ₹ {grandTotal.toLocaleString()}
+                      ₹ {grandTotal.toLocaleString("en-IN")}
                     </span>
                   </div>
                 </div>
               </div>
+
+              {/* MMT Rewards Redemption in Sidebar */}
+              <div className="my-4">
+                <LoyaltyRedeemToggle
+                  available={loyaltyAvailable}
+                  maxRedeemPct={loyaltyTier.redeemPct}
+                  subtotal={totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge + (insured ? INSURANCE_PREMIUM : 0)}
+                  redeemedPoints={redeemedPoints}
+                  onChange={setRedeemedPoints}
+                />
+              </div>
+
               <Dialog open={open} onOpenChange={setopem}>
                 <DialogTrigger asChild>
                   <Button className="w-full bg-red-600 text-white">
@@ -822,6 +848,13 @@ const BookFlightPage = () => {
                                       />
                                       <InsuranceAddOn checked={insured} onChange={setInsured} />
                                       <PassengerDetailsForm count={quantity} passengers={passengers} onChange={setPassengers} />
+                                      <LoyaltyRedeemToggle
+                                        available={loyaltyAvailable}
+                                        maxRedeemPct={loyaltyTier.redeemPct}
+                                        subtotal={totalPrice + totalTaxes + totalOtherServices - totalDiscounts + seatSurcharge + (insured ? INSURANCE_PREMIUM : 0)}
+                                        redeemedPoints={redeemedPoints}
+                                        onChange={setRedeemedPoints}
+                                      />
                                       <div className="bg-gray-100 rounded-lg p-4">
                                         <h3 className="text-lg font-bold mb-4 flex items-center">
                                           <CreditCard className="w-5 h-5 mr-2" />
@@ -868,11 +901,23 @@ const BookFlightPage = () => {
                                               </span>
                                             </div>
                                           )}
+                                          {promoDiscount > 0 && (
+                                            <div className="flex justify-between items-center text-green-600 font-medium">
+                                              <span>Promo ({selectedPromo})</span>
+                                              <span>- ₹ {promoDiscount.toLocaleString("en-IN")}</span>
+                                            </div>
+                                          )}
+                                          {redeemedPoints > 0 && (
+                                            <div className="flex justify-between items-center text-amber-600 font-medium">
+                                              <span>MMT Points Redeemed</span>
+                                              <span>- ₹ {redeemedPoints.toLocaleString("en-IN")}</span>
+                                            </div>
+                                          )}
                                           <div className="border-t pt-2 mt-2">
                                             <div className="flex justify-between items-center">
                                               <span className="font-bold text-lg">Total Amount</span>
                                               <span className="font-bold text-lg">
-                                                ₹ {grandTotal.toLocaleString()}
+                                                ₹ {grandTotal.toLocaleString("en-IN")}
                                               </span>
                                             </div>
                                           </div>
@@ -911,38 +956,63 @@ const BookFlightPage = () => {
                     <Gift className="w-5 h-5 mr-2 text-yellow-600" />
                     PROMO CODES
                   </h3>
-                  <div className="relative mb-4">
-                    <input
-                      type="text"
-                      placeholder="Enter promo code here"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
-                    />
-                  </div>
-                  {promoOffers.map((offer, index) => (
-                    <div
-                      key={index}
-                      className="bg-white p-4 rounded-lg mb-3 shadow-sm"
-                    >
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="radio"
-                          name="promo"
-                          className="mt-1.5 h-4 w-4 text-red-600 focus:ring-red-500"
-                        />
-                        <div>
-                          <div className="font-semibold text-red-600">
-                            {offer.code}
+                  {promoOffers.map((offer, index) => {
+                    const isSelected = selectedPromo === offer.code;
+                    return (
+                      <div
+                        key={index}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedPromo(null);
+                            setPromoDiscount(0);
+                          } else {
+                            setSelectedPromo(offer.code);
+                            setPromoDiscount(offer.amount);
+                          }
+                        }}
+                        className={`p-4 rounded-xl mb-3 shadow-sm border transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-green-50/80 border-green-400 ring-2 ring-green-300"
+                            : "bg-white border-gray-100 hover:border-amber-300 hover:bg-amber-50/20"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="radio"
+                            name="promo"
+                            checked={isSelected}
+                            onChange={() => {}}
+                            className="mt-1.5 h-4 w-4 text-green-600 focus:ring-green-500 cursor-pointer"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="font-bold text-red-600 text-sm tracking-wide">
+                                {offer.code}
+                              </div>
+                              {isSelected && (
+                                <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full uppercase">
+                                  Applied
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                              {offer.description}
+                            </p>
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                              <span className="text-xs font-bold text-green-700">Instant ₹{offer.amount} OFF</span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); alert(`${offer.code}: ${offer.description}`); }}
+                                className="text-blue-600 text-xs font-medium hover:underline"
+                              >
+                                Terms & Conditions
+                              </button>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {offer.description}
-                          </p>
-                          <button className="text-blue-600 text-sm font-medium mt-2 hover:text-blue-700">
-                            Terms & Conditions
-                          </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -963,7 +1033,7 @@ const BookFlightPage = () => {
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         onSuccess={handlePaymentSuccess}
-        amount={totalPrice + totalTaxes + totalOtherServices + (insured ? INSURANCE_PREMIUM : 0) - redeemedPoints + seatSurcharge}
+        amount={grandTotal}
       />
     </div>
   );
