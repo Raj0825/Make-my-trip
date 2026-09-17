@@ -356,7 +356,7 @@ public class AdminController {
         if (bookingId == null || bookingId.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(java.util.Map.of("error", "Booking ID cannot be empty"));
         }
-        bookingId = bookingId.trim();
+        final String cleanBookingId = bookingId.trim();
         boolean found = false;
 
         if (userId != null && !userId.trim().isEmpty()) {
@@ -364,10 +364,10 @@ public class AdminController {
             if (userOpt.isPresent()) {
                 Users user = userOpt.get();
                 if (user.getBookings() != null) {
-                    found = user.getBookings().removeIf(b -> bookingId.equals(b.getBookingId()));
+                    found = user.getBookings().removeIf(b -> cleanBookingId.equals(b.getBookingId()));
                     if (found) {
                         userRepository.save(user);
-                        return ResponseEntity.ok(java.util.Map.of("message", "Booking deleted successfully", "bookingId", bookingId));
+                        return ResponseEntity.ok(java.util.Map.of("message", "Booking deleted successfully", "bookingId", cleanBookingId));
                     }
                 }
             }
@@ -375,7 +375,7 @@ public class AdminController {
 
         for (Users u : userRepository.findAll()) {
             if (u.getBookings() != null) {
-                boolean removed = u.getBookings().removeIf(b -> bookingId.equals(b.getBookingId()));
+                boolean removed = u.getBookings().removeIf(b -> cleanBookingId.equals(b.getBookingId()));
                 if (removed) {
                     userRepository.save(u);
                     found = true;
@@ -385,9 +385,9 @@ public class AdminController {
         }
 
         if (found) {
-            return ResponseEntity.ok(java.util.Map.of("message", "Booking deleted successfully", "bookingId", bookingId));
+            return ResponseEntity.ok(java.util.Map.of("message", "Booking deleted successfully", "bookingId", cleanBookingId));
         }
-        return ResponseEntity.status(404).body(java.util.Map.of("error", "Booking not found with id: " + bookingId));
+        return ResponseEntity.status(404).body(java.util.Map.of("error", "Booking not found with id: " + cleanBookingId));
     }
 
 }
