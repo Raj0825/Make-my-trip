@@ -73,9 +73,8 @@ function generatePolicyNo() {
   return "FX" + Math.floor(100000 + Math.random() * 899999).toString();
 }
 
-// Mini order receipt after "booking" forex, printable/downloadable like the
-// e-tickets elsewhere in the app.
-function OrderReceipt({
+// Full Forex Confirmation View shown after exchange is placed
+function ForexConfirmationView({
   fromAmount,
   fromCode,
   toAmount,
@@ -83,7 +82,8 @@ function OrderReceipt({
   rate,
   deliveryMode,
   orderId,
-  onClose,
+  selectedBranch,
+  onReset,
 }: {
   fromAmount: number;
   fromCode: string;
@@ -92,21 +92,48 @@ function OrderReceipt({
   rate: number;
   deliveryMode: string;
   orderId: string;
-  onClose: () => void;
+  selectedBranch: any;
+  onReset: () => void;
 }) {
+  const router = useRouter();
   const handlePrint = () => window.print();
   const handleDownload = () => {
     const html = `<!doctype html><html><head><meta charset="utf-8" /><title>Forex Order ${orderId}</title>
-      <style>body{font-family:Arial,sans-serif;padding:24px;color:#111}.card{border:1px solid #e5e7eb;border-radius:12px;padding:20px;max-width:480px}
-      h1{font-size:18px;margin:0 0 4px}.muted{color:#6b7280;font-size:12px}table{width:100%;border-collapse:collapse;margin-top:12px}
-      td{padding:6px 0;font-size:13px}.label{color:#6b7280}.total{font-size:16px;font-weight:bold;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:8px}</style></head><body>
-      <div class="card"><h1>Forex Order Confirmation</h1><p class="muted">Order ID: ${orderId}</p>
-      <table>
-        <tr><td class="label">You Pay</td><td>${fromAmount.toLocaleString()} ${fromCode}</td></tr>
-        <tr><td class="label">You Get</td><td>${toAmount.toLocaleString()} ${toCode}</td></tr>
-        <tr><td class="label">Exchange Rate</td><td>1 ${toCode} = ₹${rate.toFixed(2)}</td></tr>
-        <tr><td class="label">Delivery</td><td>${deliveryMode}</td></tr>
-      </table><p class="total">Amount Payable: ₹${fromAmount.toLocaleString()}</p></div></body></html>`;
+      <style>
+        body{font-family:Arial,sans-serif;padding:24px;color:#111;background:#f9fafb}
+        .card{border:1px solid #e5e7eb;border-radius:12px;padding:24px;max-width:560px;margin:0 auto;background:#fff}
+        .brand-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:12px;margin-bottom:16px}
+        .brand-logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:bold;color:#1e293b}
+        .badge{font-size:11px;font-weight:bold;text-transform:uppercase;background:#eff6ff;color:#2563eb;padding:4px 8px;border-radius:6px}
+        h1{font-size:18px;margin:0 0 4px}
+        .muted{color:#6b7280;font-size:12px}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
+        td{padding:6px 0;font-size:13px;vertical-align:top}
+        .label{color:#6b7280;white-space:nowrap;padding-right:12px}
+        .total{font-size:16px;font-weight:bold;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:8px}
+      </style></head><body>
+      <div class="card">
+        <div class="brand-header">
+          <div class="brand-logo">
+            <span style="color:#ef4444;font-size:22px;">✈</span>
+            <span>MakeMyTour</span>
+          </div>
+          <span class="badge">Forex Confirmation</span>
+        </div>
+        <h1>Forex Exchange Order Confirmation</h1>
+        <p class="muted">Order Reference: ${orderId} · ${new Date().toLocaleDateString()}</p>
+        <table>
+          <tr><td class="label">You Pay</td><td>₹${fromAmount.toLocaleString()} (${fromCode})</td></tr>
+          <tr><td class="label">You Receive</td><td>${toAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${toCode}</td></tr>
+          <tr><td class="label">Locked Rate</td><td>1 ${toCode} = ₹${rate.toFixed(2)}</td></tr>
+          <tr><td class="label">Delivery Method</td><td>${deliveryMode}</td></tr>
+          <tr><td class="label">Collection Branch</td><td>${selectedBranch?.name || "MakeMyTour Airport/City Branch"}</td></tr>
+          <tr><td class="label">Branch Address</td><td>${selectedBranch?.address || "Terminal 2, CSMIA"}, ${selectedBranch?.city || "Mumbai"}</td></tr>
+          <tr><td class="label">Branch Hours</td><td>${selectedBranch?.hours || "9:30 AM – 7:30 PM"}</td></tr>
+        </table>
+        <p class="total">Amount Payable: ₹${fromAmount.toLocaleString()}</p>
+      </div>
+      </body></html>`;
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -117,24 +144,154 @@ function OrderReceipt({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 print:bg-white print:static print:p-0">
-      <div className="bg-white rounded-xl max-w-md w-full shadow-2xl overflow-hidden print:shadow-none">
-        <div className="bg-blue-600 text-white px-6 py-4 flex items-center justify-between print:hidden">
-          <div className="flex items-center gap-2 font-semibold"><CheckCircle2 size={20} /> Order Confirmed</div>
-          <button onClick={onClose} className="hover:opacity-80"><X size={20} /></button>
-        </div>
-        <div className="p-6">
-          <p className="text-xs text-gray-500 mb-1">Order ID</p>
-          <p className="font-mono font-semibold text-gray-800 mb-4">{orderId}</p>
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm mb-4">
-            <div className="flex justify-between"><span className="text-gray-600">You Pay</span><span className="font-semibold">₹{fromAmount.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">You Get</span><span className="font-semibold">{toAmount.toLocaleString()} {toCode}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Rate</span><span className="font-semibold">1 {toCode} = ₹{rate.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Delivery</span><span className="font-semibold">{deliveryMode}</span></div>
+    <div className="min-h-screen bg-gray-50 pb-16">
+      {/* Confirmation Hero */}
+      <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20 shadow-inner">
+            <CheckCircle2 size={36} className="text-emerald-400" />
           </div>
-          <div className="flex gap-3 print:hidden">
-            <Button onClick={handlePrint} variant="outline" className="flex-1 flex items-center gap-2"><Printer size={16} /> Print</Button>
-            <Button onClick={handleDownload} className="flex-1 flex items-center gap-2 bg-blue-600 text-white"><Download size={16} /> Download</Button>
+          <span className="bg-blue-500/30 text-blue-200 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
+            Exchange Confirmed
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold mt-3">Forex Exchange Order Confirmed</h1>
+          <p className="text-blue-200 mt-2 text-sm sm:text-base">
+            Your foreign currency exchange has been successfully locked at guaranteed live rates.
+          </p>
+          <p className="text-xs font-mono text-blue-300 mt-2">Order ID: {orderId}</p>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 -mt-6 space-y-6">
+        {/* Main Details Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100">
+          {/* Brand header */}
+          <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <span className="text-red-500 text-xl font-bold">✈</span>
+              <span className="font-bold text-gray-900 text-xl">MakeMyTour</span>
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md">
+              Forex Confirmation
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+            <div className="bg-blue-50/70 rounded-xl p-5 border border-blue-100">
+              <p className="text-xs font-bold text-blue-800 uppercase tracking-wide">You Pay</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-blue-950 mt-1">
+                ₹ {fromAmount.toLocaleString("en-IN")}
+              </p>
+              <p className="text-xs text-blue-700 mt-1">{fromCode} (Indian Rupee)</p>
+            </div>
+            <div className="bg-emerald-50/70 rounded-xl p-5 border border-emerald-100">
+              <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide">You Receive</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-emerald-950 mt-1">
+                {toAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} {toCode}
+              </p>
+              <p className="text-xs text-emerald-700 mt-1">Locked Rate: 1 {toCode} = ₹{rate.toFixed(2)}</p>
+            </div>
+          </div>
+
+          {/* Key order details */}
+          <div className="bg-gray-50 rounded-xl p-5 space-y-3 text-sm mb-6 border border-gray-100">
+            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+              <span className="text-gray-500 font-medium">Order Status</span>
+              <span className="font-semibold text-emerald-600 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Rate Locked & Confirmed
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+              <span className="text-gray-500 font-medium">Delivery Method</span>
+              <span className="font-semibold text-gray-800">{deliveryMode}</span>
+            </div>
+            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+              <span className="text-gray-500 font-medium">Collection Center</span>
+              <span className="font-semibold text-gray-800">{selectedBranch?.name || "MakeMyTour Forex Center"}</span>
+            </div>
+            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+              <span className="text-gray-500 font-medium">Branch Address</span>
+              <span className="text-gray-700">{selectedBranch?.address || "Inner Circle"}, {selectedBranch?.city || "Delhi"}</span>
+            </div>
+            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+              <span className="text-gray-500 font-medium">Operating Hours</span>
+              <span className="text-gray-700">{selectedBranch?.hours || "9:30 AM – 7:30 PM"}</span>
+            </div>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-gray-500 font-medium">Order Placed On</span>
+              <span className="text-gray-700">{new Date().toLocaleString()}</span>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 print:hidden">
+            <Button
+              onClick={handlePrint}
+              variant="outline"
+              className="flex-1 flex items-center justify-center gap-2 border-gray-300 py-3"
+            >
+              <Printer size={16} /> Print Receipt
+            </Button>
+            <Button
+              onClick={handleDownload}
+              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 shadow-md"
+            >
+              <Download size={16} /> Download HTML Receipt
+            </Button>
+          </div>
+        </div>
+
+        {/* KYC & Instructions Checklist */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 border border-gray-100">
+          <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+            <ShieldCheck size={20} className="text-blue-600" /> Essential Collection & KYC Checklist
+          </h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Per Reserve Bank of India (RBI) regulations, please carry the following original documents when collecting foreign exchange or activating your forex card:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-gray-50 border border-gray-100">
+              <CheckCircle2 size={16} className="text-blue-600 shrink-0 mt-0.5" />
+              <span><strong>Original Valid Passport</strong> + 1 self-attested photocopy</span>
+            </div>
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-gray-50 border border-gray-100">
+              <CheckCircle2 size={16} className="text-blue-600 shrink-0 mt-0.5" />
+              <span><strong>Valid Visa / Air Ticket</strong> demonstrating upcoming international travel</span>
+            </div>
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-gray-50 border border-gray-100">
+              <CheckCircle2 size={16} className="text-blue-600 shrink-0 mt-0.5" />
+              <span><strong>PAN Card</strong> of the traveler making the transaction</span>
+            </div>
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-gray-50 border border-gray-100">
+              <CheckCircle2 size={16} className="text-blue-600 shrink-0 mt-0.5" />
+              <span><strong>Order ID Reference:</strong> {orderId} (digital or printed copy)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Navigation */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+          <Button
+            onClick={onReset}
+            variant="outline"
+            className="border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold"
+          >
+            ← Exchange More Currency
+          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => router.push("/insurance")}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+            >
+              Get Travel Insurance
+            </Button>
+            <Button
+              onClick={() => router.push("/")}
+              variant="outline"
+              className="border-gray-300 font-medium"
+            >
+              Back to Home
+            </Button>
           </div>
         </div>
       </div>
@@ -168,7 +325,6 @@ export default function ForexPage() {
   const fromRate = liveRates.find((r) => r.code === fromCode)?.rate ?? 1;
   const toRate = liveRates.find((r) => r.code === toCode)?.rate ?? 1;
   const convertedAmount = (fromAmount * fromRate) / toRate;
-  const effectiveRate = toRate / fromRate === 0 ? 0 : fromRate / toRate; // INR-per-toCode equivalent when swapping bases
   const displayRate = toCode === "INR" ? fromRate : (fromCode === "INR" ? toRate : fromRate / toRate);
 
   const swap = () => {
@@ -182,10 +338,27 @@ export default function ForexPage() {
     setOrder({ orderId: generatePolicyNo() });
   };
 
+  if (order) {
+    const selectedBranch = EXCHANGE_LOCATIONS.find((l) => l.city === selectedCity) || EXCHANGE_LOCATIONS[0];
+    return (
+      <ForexConfirmationView
+        fromAmount={fromAmount}
+        fromCode={fromCode}
+        toAmount={convertedAmount}
+        toCode={toCode}
+        rate={displayRate}
+        deliveryMode={deliveryMode === "pickup" ? "Branch Pickup" : "Multi-Currency Forex Card"}
+        orderId={order.orderId}
+        selectedBranch={selectedBranch}
+        onReset={() => setOrder(null)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-emerald-800 to-teal-700 text-white">
+      <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <BackButton variant="dark" className="mb-4" />
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
@@ -220,8 +393,8 @@ export default function ForexPage() {
             </div>
 
             <button type="button" onClick={swap}
-              className="w-10 h-10 rounded-full bg-blue-50 hover:bg-blue-100 flex items-center justify-center mx-auto transition-transform hover:rotate-180 duration-300">
-              <ArrowLeftRight size={16} className="text-blue-600" />
+              className="w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center mx-auto transition-transform hover:rotate-180 duration-300 shadow-sm">
+              <ArrowLeftRight size={16} />
             </button>
 
             <div>
@@ -241,8 +414,10 @@ export default function ForexPage() {
           <div className="flex gap-1.5 mt-3 flex-wrap">
             {QUICK_AMOUNTS.map((amt) => (
               <button key={amt} type="button" onClick={() => setFromAmount(amt)}
-                className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
-                  fromAmount === amt ? "border-blue-500 text-blue-600 bg-blue-50" : "border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600"
+                className={`text-[11px] font-semibold px-3 py-1 rounded-full border transition-all ${
+                  fromAmount === amt
+                    ? "border-blue-600 bg-blue-600 text-white shadow-sm"
+                    : "border-blue-200 text-blue-800 bg-blue-50/50 hover:bg-blue-100 hover:border-blue-400"
                 }`}>
                 {fromCode === "INR" ? `₹${amt.toLocaleString()}` : amt.toLocaleString()}
               </button>
@@ -262,14 +437,18 @@ export default function ForexPage() {
                 { key: "card", icon: CreditCard, label: "Forex Card", sub: "Prepaid multi-currency card" },
               ].map((m) => (
                 <button key={m.key} type="button" onClick={() => setDeliveryMode(m.key as any)}
-                  className={`rounded-xl border-2 p-3 text-left transition-all ${deliveryMode === m.key ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:border-blue-300"}`}>
+                  className={`rounded-xl border-2 p-3 text-left transition-all ${deliveryMode === m.key ? "border-blue-600 bg-blue-50 shadow-sm" : "border-gray-200 hover:border-blue-300"}`}>
                   <m.icon size={16} className={deliveryMode === m.key ? "text-blue-600" : "text-gray-500"} />
                   <p className="text-sm font-medium mt-1">{m.label}</p>
                   <p className="text-[11px] text-gray-500">{m.sub}</p>
                 </button>
               ))}
             </div>
-            <Button onClick={handleOrder} className="w-full bg-blue-600 text-white py-3" disabled={fromAmount <= 0}>
+            <Button
+              onClick={handleOrder}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md transition-all text-base"
+              disabled={fromAmount <= 0}
+            >
               Order {toCode} {convertedAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })} for ₹{fromAmount.toLocaleString()}
             </Button>
           </div>
@@ -318,7 +497,7 @@ export default function ForexPage() {
             <div className="flex gap-1.5 flex-wrap">
               {["All", ...CITIES].map((c) => (
                 <button key={c} type="button" onClick={() => setSelectedCity(c)}
-                  className={`text-xs font-medium px-3 py-1.5 rounded-full border ${selectedCity === c ? "bg-blue-600 text-white border-blue-600" : "border-gray-300 text-gray-600 hover:border-blue-400"}`}>
+                  className={`text-xs font-semibold px-3.5 py-1.5 rounded-full border transition-colors ${selectedCity === c ? "bg-blue-600 text-white border-blue-600 shadow-sm" : "border-gray-300 text-gray-700 hover:border-blue-400 hover:text-blue-600"}`}>
                   {c}
                 </button>
               ))}
@@ -358,23 +537,10 @@ export default function ForexPage() {
           </div>
         </div>
 
-        <button onClick={() => router.push("/insurance")} className="w-full text-center text-sm text-blue-600 hover:underline flex items-center justify-center gap-1">
+        <button onClick={() => router.push("/insurance")} className="w-full text-center text-sm text-blue-600 hover:underline flex items-center justify-center gap-1 font-medium">
           Also planning a trip? Check out Travel Insurance <ShieldCheck size={14} />
         </button>
       </div>
-
-      {order && (
-        <OrderReceipt
-          fromAmount={fromAmount}
-          fromCode={fromCode}
-          toAmount={convertedAmount}
-          toCode={toCode}
-          rate={displayRate}
-          deliveryMode={deliveryMode === "pickup" ? "Branch Pickup" : "Forex Card"}
-          orderId={order.orderId}
-          onClose={() => setOrder(null)}
-        />
-      )}
     </div>
   );
 }

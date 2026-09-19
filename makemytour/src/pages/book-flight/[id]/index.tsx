@@ -27,6 +27,11 @@ import {
   Star,
   Info,
   ArrowRight,
+  Printer,
+  Download,
+  CheckCircle2,
+  X,
+  QrCode,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getflight, handleflightbooking, trackInteraction } from "@/api";
@@ -56,6 +61,184 @@ import { Users, Ticket } from "lucide-react";
 import SignupDialog from "@/components/SignupDialog";
 import Loader from "@/components/Loader";
 import { setUser } from "@/store";
+function FlightETicket({
+  flight,
+  travelClass,
+  seats,
+  pnr,
+  grandTotal,
+  passengers,
+  insured,
+  insurancePolicyNo,
+  onClose,
+}: {
+  flight: Flight;
+  travelClass: string;
+  seats: string[];
+  pnr: string;
+  grandTotal: number;
+  passengers: PassengerInfo[];
+  insured: boolean;
+  insurancePolicyNo?: string | null;
+  onClose: () => void;
+}) {
+  const handlePrint = () => window.print();
+  const handleDownload = () => {
+    const insuranceRow = insured
+      ? `<tr><td class="label">Travel Insurance</td><td>Policy ${insurancePolicyNo || "Active"} · Included</td></tr>`
+      : "";
+    const html = `<!doctype html><html><head><meta charset="utf-8" />
+      <title>Flight Ticket ${pnr}</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:24px;color:#111;background:#f9fafb}
+        .card{border:1px solid #e5e7eb;border-radius:12px;padding:24px;max-width:560px;margin:0 auto;background:#fff}
+        .brand-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:12px;margin-bottom:16px}
+        .brand-logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:bold;color:#1e293b}
+        .badge{font-size:11px;font-weight:bold;text-transform:uppercase;background:#eff6ff;color:#2563eb;padding:4px 8px;border-radius:6px}
+        h1{font-size:18px;margin:0 0 4px}
+        .muted{color:#6b7280;font-size:12px}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
+        td{padding:6px 0;font-size:13px;vertical-align:top}
+        .label{color:#6b7280;white-space:nowrap;padding-right:12px}
+        .total{font-size:16px;font-weight:bold;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:8px}
+      </style></head><body>
+      <div class="card">
+        <div class="brand-header">
+          <div class="brand-logo">
+            <span style="color:#ef4444;font-size:22px;">✈</span>
+            <span>MakeMyTour</span>
+          </div>
+          <span class="badge">Flight E-Ticket</span>
+        </div>
+        <h1>${flight.flightName}</h1>
+        <p class="muted">PNR: ${pnr}</p>
+        <table>
+          <tr><td class="label">From</td><td>${flight.from}</td></tr>
+          <tr><td class="label">To</td><td>${flight.to}</td></tr>
+          <tr><td class="label">Departure</td><td>${new Date(flight.departureTime).toLocaleString()}</td></tr>
+          <tr><td class="label">Arrival</td><td>${new Date(flight.arrivalTime).toLocaleString()}</td></tr>
+          <tr><td class="label">Class</td><td>${travelClass}</td></tr>
+          <tr><td class="label">Seats</td><td>${seats.join(", ")}</td></tr>
+          <tr><td class="label">Passengers</td><td>${passengers.map((p, i) => `${i + 1}. ${p.name} (Age ${p.age})`).join("<br/>")}</td></tr>
+          ${insuranceRow}
+        </table>
+        <p class="total">Total Paid: ₹ ${grandTotal.toLocaleString()}</p>
+      </div>
+      </body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `flight-ticket-${pnr}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 print:bg-white print:static print:p-0">
+      <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl overflow-hidden print:shadow-none print:rounded-none max-h-[90vh] overflow-y-auto">
+        <div className="bg-black text-white px-6 py-4 flex items-center justify-between print:hidden sticky top-0 z-10">
+          <div className="flex items-center gap-2 font-semibold">
+            <CheckCircle2 size={20} className="text-emerald-400" />
+            Flight Booking Confirmed
+          </div>
+          <button onClick={onClose} className="hover:opacity-80">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-6">
+          {/* Properly aligned MakeMyTour Logo Header */}
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Plane className="w-5 h-5 text-red-500" />
+              <span className="font-bold text-gray-900 text-lg">MakeMyTour</span>
+            </div>
+            <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md">
+              Flight E-Ticket
+            </span>
+          </div>
+
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-xl font-bold">{flight.flightName}</h3>
+              <p className="text-gray-500 text-sm">
+                PNR: <span className="font-mono font-semibold text-gray-800">{pnr}</span>
+              </p>
+            </div>
+            <div className="border border-gray-200 rounded-lg p-1.5">
+              <QrCode size={56} className="text-gray-800" />
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm mb-4">
+            <div className="flex justify-between">
+              <span className="text-gray-600">From / To</span>
+              <span className="font-medium">{flight.from} → {flight.to}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Departure</span>
+              <span className="font-medium">{new Date(flight.departureTime).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Arrival</span>
+              <span className="font-medium">{new Date(flight.arrivalTime).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Cabin Class</span>
+              <span className="font-medium">{travelClass}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Seats</span>
+              <span className="font-mono font-medium">{seats.join(", ")}</span>
+            </div>
+            {insured && (
+              <div className="flex justify-between text-emerald-700">
+                <span>Travel Insurance</span>
+                <span className="font-medium">{insurancePolicyNo || "Active"}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="mb-4">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+              Passengers ({passengers.length})
+            </p>
+            <div className="space-y-1">
+              {passengers.map((p, i) => (
+                <div key={i} className="flex justify-between text-xs bg-slate-50 px-3 py-1.5 rounded border border-slate-100">
+                  <span className="font-medium text-gray-800">{i + 1}. {p.name}</span>
+                  <span className="text-gray-500">Age {p.age}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center border-t border-gray-100 pt-3 mb-5">
+            <span className="text-gray-600 text-sm">Total Paid</span>
+            <span className="text-xl font-bold text-emerald-600">₹ {grandTotal.toLocaleString("en-IN")}</span>
+          </div>
+
+          <div className="flex gap-3 print:hidden">
+            <Button
+              onClick={handlePrint}
+              variant="outline"
+              className="flex-1 flex items-center gap-2 border-gray-300"
+            >
+              <Printer size={16} /> Print
+            </Button>
+            <Button
+              onClick={handleDownload}
+              className="flex-1 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Download size={16} /> Download
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const BookFlightPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -78,6 +261,16 @@ const BookFlightPage = () => {
   const [insured, setInsured] = useState(false);
   const [redeemedPoints, setRedeemedPoints] = useState(0);
   const [selectedPromo, setSelectedPromo] = useState<string | null>(null);
+  const [ticketData, setTicketData] = useState<{
+    flight: Flight;
+    travelClass: string;
+    seats: string[];
+    pnr: string;
+    grandTotal: number;
+    passengers: PassengerInfo[];
+    insured: boolean;
+    insurancePolicyNo?: string | null;
+  } | null>(null);
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
@@ -272,11 +465,22 @@ const BookFlightPage = () => {
         const freshUser = await getuserbyemail(user?.email);
         dispatch(setUser(freshUser));
 
+        const pnr = data?.id ? `FLT${data.id}` : `FLT-${Math.floor(100000 + Math.random() * 900000)}`;
+        setTicketData({
+          flight,
+          travelClass,
+          seats: selectedSeats,
+          pnr,
+          grandTotal,
+          passengers: [...passengers],
+          insured,
+          insurancePolicyNo: insured ? `IN-FLT-${Math.floor(100000 + Math.random() * 900000)}` : null,
+        });
+
         setopem(false);
         setQuantity(1);
         setSelectedSeats([]);
         setSeatSurcharge(0);
-        router.push("/profile");
       } catch (error: any) {
         const message = error?.response?.data || "Booking failed. Please try again.";
         alert(typeof message === "string" ? message : "Booking failed. Please try again.");
@@ -751,7 +955,7 @@ const BookFlightPage = () => {
 
               <Dialog open={open} onOpenChange={setopem}>
                 <DialogTrigger asChild>
-                  <Button className="w-full bg-red-600 text-white">
+                  <Button className="w-full bg-black hover:bg-neutral-800 text-white font-bold py-3 text-base shadow-md">
                     Book Now
                   </Button>
                 </DialogTrigger>
@@ -1001,6 +1205,22 @@ const BookFlightPage = () => {
         onSuccess={handlePaymentSuccess}
         amount={grandTotal}
       />
+      {ticketData && (
+        <FlightETicket
+          flight={ticketData.flight}
+          travelClass={ticketData.travelClass}
+          seats={ticketData.seats}
+          pnr={ticketData.pnr}
+          grandTotal={ticketData.grandTotal}
+          passengers={ticketData.passengers}
+          insured={ticketData.insured}
+          insurancePolicyNo={ticketData.insurancePolicyNo}
+          onClose={() => {
+            setTicketData(null);
+            router.push("/profile");
+          }}
+        />
+      )}
     </div>
   );
 };

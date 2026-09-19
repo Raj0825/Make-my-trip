@@ -445,7 +445,7 @@ export default function Home() {
                           ₹{result.price}
                         </p>
                         <Button
-                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                          className="w-full mt-4 bg-black hover:bg-neutral-800 text-white font-semibold shadow"
                           onClick={() => handlebooknow(result.id)}
                         >
                           Book Now

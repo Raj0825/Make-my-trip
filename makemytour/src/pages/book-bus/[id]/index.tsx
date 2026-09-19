@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   X,
   Users,
+  Plane,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getbus, handlebusbooking, getBookedSeats, redeemLoyaltyPoints } from "@/api";
@@ -348,16 +349,26 @@ function ETicket({
     const html = `<!doctype html><html><head><meta charset="utf-8" />
       <title>Bus Ticket ${pnr}</title>
       <style>
-        body{font-family:Arial,sans-serif;padding:24px;color:#111}
-        .card{border:1px solid #e5e7eb;border-radius:12px;padding:20px;max-width:560px}
+        body{font-family:Arial,sans-serif;padding:24px;color:#111;background:#f9fafb}
+        .card{border:1px solid #e5e7eb;border-radius:12px;padding:24px;max-width:560px;margin:0 auto;background:#fff}
+        .brand-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:12px;margin-bottom:16px}
+        .brand-logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:bold;color:#1e293b}
+        .badge{font-size:11px;font-weight:bold;text-transform:uppercase;background:#eff6ff;color:#2563eb;padding:4px 8px;border-radius:6px}
         h1{font-size:18px;margin:0 0 4px}
         .muted{color:#6b7280;font-size:12px}
         table{width:100%;border-collapse:collapse;margin-top:12px}
-        td{padding:6px 0;font-size:13px}
-        .label{color:#6b7280}
+        td{padding:6px 0;font-size:13px;vertical-align:top}
+        .label{color:#6b7280;white-space:nowrap;padding-right:12px}
         .total{font-size:16px;font-weight:bold;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:8px}
       </style></head><body>
       <div class="card">
+        <div class="brand-header">
+          <div class="brand-logo">
+            <span style="color:#ef4444;font-size:22px;">✈</span>
+            <span>MakeMyTour</span>
+          </div>
+          <span class="badge">Bus E-Ticket</span>
+        </div>
         <h1>${bus.busName}</h1>
         <p class="muted">PNR: ${pnr}</p>
         <table>
@@ -395,6 +406,17 @@ function ETicket({
           </button>
         </div>
         <div className="p-6">
+          {/* Properly aligned MakeMyTour Logo Header */}
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Plane className="w-5 h-5 text-red-500" />
+              <span className="font-bold text-gray-900 text-lg">MakeMyTour</span>
+            </div>
+            <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md">
+              Bus E-Ticket
+            </span>
+          </div>
+
           <div className="flex items-start justify-between mb-4">
             <div>
               <h3 className="text-xl font-bold">{bus.busName}</h3>

@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   MapPin, Calendar, Users, Wallet, Sparkles, Loader2,
   Sun, Utensils, Hotel, Camera, Info, Clock, ChevronDown, ChevronUp, Plane,
-  CheckCircle2, Ticket, IndianRupee, ShieldCheck, AlertCircle, X, Printer, ArrowRight
+  CheckCircle2, Ticket, IndianRupee, ShieldCheck, AlertCircle, X, Printer, ArrowRight, Download
 } from "lucide-react";
 import { setUser } from "@/store";
 import { handleholidaybooking } from "@/api";
@@ -44,6 +44,30 @@ interface Passenger {
   age: string;
   gender: string;
 }
+
+const POPULAR_HOLIDAY_CITIES = [
+  "Goa",
+  "Manali",
+  "Shimla",
+  "Kerala",
+  "Kashmir",
+  "Jaipur",
+  "Udaipur",
+  "Leh Ladakh",
+  "Andaman",
+  "Ooty",
+  "Darjeeling",
+  "Rishikesh",
+  "Dubai",
+  "Singapore",
+  "Bali",
+  "Bangkok",
+  "Phuket",
+  "Maldives",
+  "Paris",
+  "London",
+  "Switzerland",
+];
 
 // ─────────────────────────────────────────────────────────────
 //  Mock LLM Engine
@@ -244,6 +268,55 @@ export default function HolidayPlannerPage() {
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
   const [showTicketModal, setShowTicketModal] = useState(false);
 
+  const handleDownloadTicket = () => {
+    if (!confirmedBooking || !itinerary) return;
+    const travelersList = passengers
+      .map((p, i) => `${i + 1}. ${p.name} (${p.gender}, Age ${p.age})`)
+      .join("<br/>");
+    const html = `<!doctype html><html><head><meta charset="utf-8" />
+      <title>Holiday Ticket ${confirmedBooking.bookingId}</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:24px;color:#111;background:#f9fafb}
+        .card{border:1px solid #e5e7eb;border-radius:12px;padding:24px;max-width:580px;margin:0 auto;background:#fff}
+        .brand-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:12px;margin-bottom:16px}
+        .brand-logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:bold;color:#1e293b}
+        .badge{font-size:11px;font-weight:bold;text-transform:uppercase;background:#eff6ff;color:#2563eb;padding:4px 8px;border-radius:6px}
+        h1{font-size:18px;margin:0 0 4px}
+        .muted{color:#6b7280;font-size:12px}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
+        td{padding:6px 0;font-size:13px;vertical-align:top}
+        .label{color:#6b7280;white-space:nowrap;padding-right:12px}
+        .total{font-size:16px;font-weight:bold;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:8px}
+      </style></head><body>
+      <div class="card">
+        <div class="brand-header">
+          <div class="brand-logo">
+            <span style="color:#ef4444;font-size:22px;">✈</span>
+            <span>MakeMyTour</span>
+          </div>
+          <span class="badge">Holiday Package Master Ticket</span>
+        </div>
+        <h1>${itinerary.destination} Holiday Package</h1>
+        <p class="muted">Master PNR: ${confirmedBooking.bookingId}</p>
+        <table>
+          <tr><td class="label">Duration</td><td>${itinerary.duration} Days / ${Math.max(1, itinerary.duration - 1)} Nights</td></tr>
+          <tr><td class="label">Travel Style</td><td>${itinerary.style}</td></tr>
+          <tr><td class="label">Accommodation</td><td>${itinerary.accommodation}</td></tr>
+          <tr><td class="label">Travelers</td><td>${travelersList}</td></tr>
+          <tr><td class="label">Inclusions</td><td>Daily transport passes, hotel accommodation, and ${itinerary.highlights.length} guided activities</td></tr>
+        </table>
+        <p class="total">Total Paid: ₹${totalBudget.toLocaleString("en-IN")}</p>
+      </div>
+      </body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `holiday-ticket-${confirmedBooking.bookingId}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Restore state from sessionStorage
   useEffect(() => {
     try {
@@ -419,17 +492,79 @@ export default function HolidayPlannerPage() {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Destination */}
+            {/* Destination Dropdown */}
             <div className="sm:col-span-2">
-              <label className="block text-sm font-semibold text-gray-600 mb-1.5 flex items-center gap-1">
-                <MapPin size={14} className="text-indigo-600" /> Destination
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1">
+                <MapPin size={14} className="text-indigo-600" /> Choose Destination City
               </label>
-              <input
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                placeholder="e.g. Goa, Manali, Kerala, Rajasthan…"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition"
-              />
+              <div className="space-y-2">
+                <select
+                  value={POPULAR_HOLIDAY_CITIES.includes(destination) ? destination : destination ? "custom" : ""}
+                  onChange={(e) => {
+                    if (e.target.value === "custom") {
+                      setDestination("");
+                    } else {
+                      setDestination(e.target.value);
+                    }
+                  }}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition bg-white font-medium shadow-sm"
+                >
+                  <option value="" disabled>Select a city to explore...</option>
+                  <optgroup label="Popular Indian Cities & Destinations">
+                    <option value="Goa">Goa (Beaches & Nightlife)</option>
+                    <option value="Manali">Manali (Snow & Valleys)</option>
+                    <option value="Shimla">Shimla (Colonial Charm & Hills)</option>
+                    <option value="Kerala">Kerala (Backwaters, Munnar & Alleppey)</option>
+                    <option value="Kashmir">Kashmir (Srinagar & Gulmarg)</option>
+                    <option value="Jaipur">Jaipur (Pink City & Forts)</option>
+                    <option value="Udaipur">Udaipur (City of Lakes & Palaces)</option>
+                    <option value="Leh Ladakh">Leh Ladakh (Pangong Lake & Passes)</option>
+                    <option value="Andaman">Andaman & Nicobar (Havelock & Radhanagar)</option>
+                    <option value="Ooty">Ooty & Coonoor (Nilgiri Hills)</option>
+                    <option value="Darjeeling">Darjeeling & Gangtok (Tea Estates)</option>
+                    <option value="Rishikesh">Rishikesh & Haridwar (Ganga & Rafting)</option>
+                  </optgroup>
+                  <optgroup label="Popular International Cities">
+                    <option value="Dubai">Dubai (Burj Khalifa, Desert Safari & Marina)</option>
+                    <option value="Singapore">Singapore (Sentosa Island & Marina Bay)</option>
+                    <option value="Bali">Bali (Ubud, Kuta & Temple Culture)</option>
+                    <option value="Bangkok">Bangkok & Pattaya (City Life & Coral Islands)</option>
+                    <option value="Phuket">Phuket (Phi Phi Islands & Beaches)</option>
+                    <option value="Maldives">Maldives (Overwater Bungalows & Coral Reefs)</option>
+                    <option value="Paris">Paris (Eiffel Tower & Louvre Museum)</option>
+                    <option value="London">London (Big Ben, London Eye & Heritage)</option>
+                    <option value="Switzerland">Switzerland (Interlaken, Lucerne & Alps)</option>
+                  </optgroup>
+                  <option value="custom">Other / Type Custom City...</option>
+                </select>
+
+                {(!POPULAR_HOLIDAY_CITIES.includes(destination) || destination === "") && (
+                  <input
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    placeholder="Type city name (e.g. Amritsar, Coorg, Rome, New York)..."
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition text-sm bg-gray-50/70"
+                  />
+                )}
+
+                {/* Quick selection chips */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {["Goa", "Manali", "Kerala", "Kashmir", "Dubai", "Singapore", "Bali", "Udaipur"].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setDestination(c)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
+                        destination === c
+                          ? "border-black bg-black text-white font-medium"
+                          : "border-gray-200 text-gray-600 bg-white hover:border-gray-400"
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Duration */}
@@ -489,7 +624,7 @@ export default function HolidayPlannerPage() {
           <button
             onClick={handleGenerate}
             disabled={loading || !destination.trim()}
-            className="mt-6 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3.5 rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 text-base shadow-sm"
+            className="mt-6 w-full bg-black hover:bg-neutral-800 text-white font-bold py-3.5 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 text-base shadow-md"
           >
             {loading ? (
               <><Loader2 className="animate-spin" size={18} /> AI is crafting your holiday package…</>
@@ -725,7 +860,7 @@ export default function HolidayPlannerPage() {
               <button
                 onClick={handleStartBooking}
                 disabled={isBooking}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 text-lg disabled:opacity-50"
+                className="w-full bg-black hover:bg-neutral-800 text-white font-bold py-4 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 text-lg disabled:opacity-50"
               >
                 {isBooking ? (
                   <><Loader2 className="animate-spin" size={20} /> Processing Single Ticket Booking…</>
@@ -777,6 +912,17 @@ export default function HolidayPlannerPage() {
 
             {/* Ticket Body */}
             <div className="p-6 space-y-5">
+              {/* Properly aligned MakeMyTour Logo Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-red-500 text-xl font-bold">✈</span>
+                  <span className="font-bold text-gray-900 text-lg">MakeMyTour</span>
+                </div>
+                <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md">
+                  Single Master Ticket
+                </span>
+              </div>
+
               {/* Key Details Grid */}
               <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -825,12 +971,18 @@ export default function HolidayPlannerPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-2 print:hidden">
                 <button
                   onClick={() => router.push("/profile")}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition"
+                  className="flex-1 bg-black hover:bg-neutral-800 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition"
                 >
                   <Ticket size={16} /> View in My Bookings
+                </button>
+                <button
+                  onClick={handleDownloadTicket}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition"
+                >
+                  <Download size={16} /> Download Ticket
                 </button>
                 <button
                   onClick={() => window.print()}

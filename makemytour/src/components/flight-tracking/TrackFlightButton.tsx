@@ -61,16 +61,20 @@ export default function TrackFlightButton({ flightId }: { flightId: string }) {
       variant={tracking ? "outline" : "default"}
       onClick={handleToggle}
       disabled={loading}
-      className="w-full"
+      className={
+        tracking
+          ? "w-full border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold py-2.5 rounded-lg transition-all"
+          : "w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition-all"
+      }
     >
       {loading ? (
         <Loader2 className="animate-spin mr-2" size={16} />
       ) : tracking ? (
-        <BellOff className="mr-2" size={16} />
+        <BellOff className="mr-2 text-blue-600" size={16} />
       ) : (
         <Bell className="mr-2" size={16} />
       )}
-      {tracking ? "Stop Tracking Flight" : "Track This Flight"}
+      {tracking ? "Stop Tracking Flight" : "Track Flight"}
     </Button>
   );
 }

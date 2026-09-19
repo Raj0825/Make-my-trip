@@ -105,21 +105,24 @@ function generatePolicyNo() {
   return "POL" + Math.floor(1000000 + Math.random() * 8999999).toString();
 }
 
-function PolicyDocument({
+function InsuranceConfirmationView({
   plan,
   travelers,
   days,
   premium,
   applicant,
-  onClose,
+  tripType,
+  onReset,
 }: {
   plan: Plan;
   travelers: number;
   days: number;
   premium: number;
   applicant: { name: string; age: string; nominee: string };
-  onClose: () => void;
+  tripType: string;
+  onReset: () => void;
 }) {
+  const router = useRouter();
   const policyNo = useMemo(() => generatePolicyNo(), []);
   const issuedOn = new Date().toLocaleDateString();
 
@@ -128,72 +131,211 @@ function PolicyDocument({
     const rows = COVERAGE_ROWS.map(
       (r) => `<tr><td class="label">${r.label}</td><td>₹${plan.coverage[r.key].toLocaleString()}</td></tr>`
     ).join("");
-    const html = `<!doctype html><html><head><meta charset="utf-8" /><title>Policy ${policyNo}</title>
-      <style>body{font-family:Arial,sans-serif;padding:24px;color:#111}.card{border:1px solid #e5e7eb;border-radius:12px;padding:20px;max-width:560px}
-      h1{font-size:18px;margin:0 0 4px}.muted{color:#6b7280;font-size:12px}table{width:100%;border-collapse:collapse;margin-top:12px}
-      td{padding:6px 0;font-size:13px}.label{color:#6b7280}.total{font-size:16px;font-weight:bold;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:8px}</style></head><body>
-      <div class="card"><h1>Travel Insurance Policy</h1><p class="muted">Policy No: ${policyNo} · Issued ${issuedOn}</p>
-      <table>
-        <tr><td class="label">Plan</td><td>${plan.name}</td></tr>
-        <tr><td class="label">Applicant</td><td>${applicant.name} (age ${applicant.age})</td></tr>
-        <tr><td class="label">Nominee</td><td>${applicant.nominee}</td></tr>
-        <tr><td class="label">Travelers Covered</td><td>${travelers}</td></tr>
-        <tr><td class="label">Trip Duration</td><td>${days} day(s)</td></tr>
-        ${rows}
-      </table><p class="total">Premium Paid: ₹${premium.toLocaleString()}</p></div></body></html>`;
+    const html = `<!doctype html><html><head><meta charset="utf-8" /><title>Insurance Policy ${policyNo}</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:24px;color:#111;background:#f9fafb}
+        .card{border:1px solid #e5e7eb;border-radius:12px;padding:24px;max-width:560px;margin:0 auto;background:#fff}
+        .brand-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:12px;margin-bottom:16px}
+        .brand-logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:bold;color:#1e293b}
+        .badge{font-size:11px;font-weight:bold;text-transform:uppercase;background:#eff6ff;color:#2563eb;padding:4px 8px;border-radius:6px}
+        h1{font-size:18px;margin:0 0 4px}
+        .muted{color:#6b7280;font-size:12px}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
+        td{padding:6px 0;font-size:13px;vertical-align:top}
+        .label{color:#6b7280;white-space:nowrap;padding-right:12px}
+        .total{font-size:16px;font-weight:bold;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:8px}
+      </style></head><body>
+      <div class="card">
+        <div class="brand-header">
+          <div class="brand-logo">
+            <span style="color:#ef4444;font-size:22px;">✈</span>
+            <span>MakeMyTour</span>
+          </div>
+          <span class="badge">${plan.name} Travel Insurance</span>
+        </div>
+        <h1>Certificate of Insurance</h1>
+        <p class="muted">Policy No: ${policyNo} · Issued ${issuedOn}</p>
+        <table>
+          <tr><td class="label">Plan Tier</td><td>${plan.name}</td></tr>
+          <tr><td class="label">Primary Insured</td><td>${applicant.name} (${applicant.age} yrs)</td></tr>
+          <tr><td class="label">Nominee</td><td>${applicant.nominee}</td></tr>
+          <tr><td class="label">Travelers Covered</td><td>${travelers} traveler(s)</td></tr>
+          <tr><td class="label">Duration</td><td>${days} day(s) (${tripType})</td></tr>
+          <tr><td class="label">Status</td><td>Active & Verified</td></tr>
+          ${rows}
+        </table>
+        <p class="total">Total Premium Paid: ₹${premium.toLocaleString()}</p>
+      </div>
+      </body></html>`;
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `policy-${policyNo}.html`;
+    a.download = `insurance-policy-${policyNo}.html`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 print:bg-white print:static print:p-0">
-      <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl overflow-hidden print:shadow-none max-h-[90vh] overflow-y-auto">
-        <div className="bg-blue-600 text-white px-6 py-4 flex items-center justify-between print:hidden sticky top-0">
-          <div className="flex items-center gap-2 font-semibold"><CheckCircle2 size={20} /> Policy Issued</div>
-          <button onClick={onClose} className="hover:opacity-80"><X size={20} /></button>
+    <div className="min-h-screen bg-gray-50 pb-16">
+      {/* Confirmation Hero */}
+      <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-blue-900 text-white py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20 shadow-inner">
+            <CheckCircle2 size={36} className="text-emerald-400" />
+          </div>
+          <span className="bg-blue-500/30 text-blue-200 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
+            Policy Issued & Active
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold mt-3">Travel Insurance Confirmation</h1>
+          <p className="text-blue-200 mt-2 text-sm sm:text-base">
+            Your journey is now comprehensively protected under MakeMyTour Secure Shield.
+          </p>
+          <p className="text-xs font-mono text-blue-300 mt-2">Policy Number: {policyNo}</p>
         </div>
-        <div className="p-6">
-          <div className="flex items-start justify-between mb-4">
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 -mt-6 space-y-6">
+        {/* Main Certificate Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100">
+          {/* Properly aligned MakeMyTour Logo Header */}
+          <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <span className="text-red-500 text-xl font-bold">✈</span>
+              <span className="font-bold text-gray-900 text-xl">MakeMyTour</span>
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md">
+              {plan.name} Plan Certificate
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
-              <h3 className="text-lg font-bold flex items-center gap-1.5"><Shield size={18} className="text-blue-600" /> {plan.name} Travel Insurance</h3>
-              <p className="text-gray-500 text-sm">Policy No: <span className="font-mono font-semibold text-gray-800">{policyNo}</span></p>
-              <p className="text-xs text-gray-400">Issued on {issuedOn}</p>
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Shield className="text-blue-600" size={24} /> {plan.name} Coverage Policy
+              </h2>
+              <p className="text-gray-500 text-sm mt-0.5">
+                Policy No: <span className="font-mono font-semibold text-gray-800">{policyNo}</span> · Issued on {issuedOn}
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="text-xs text-gray-400 block font-medium">Premium Paid</span>
+              <span className="text-2xl font-black text-emerald-600">₹ {premium.toLocaleString("en-IN")}</span>
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-2 gap-3 text-sm mb-4">
-            <div><p className="text-gray-400 text-[11px] uppercase">Applicant</p><p className="font-medium">{applicant.name} ({applicant.age} yrs)</p></div>
-            <div><p className="text-gray-400 text-[11px] uppercase">Nominee</p><p className="font-medium">{applicant.nominee}</p></div>
-            <div><p className="text-gray-400 text-[11px] uppercase">Travelers</p><p className="font-medium">{travelers}</p></div>
-            <div><p className="text-gray-400 text-[11px] uppercase">Duration</p><p className="font-medium">{days} day(s)</p></div>
+          {/* Insured Details Grid */}
+          <div className="bg-gray-50 rounded-xl p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-6 border border-gray-100">
+            <div>
+              <p className="text-gray-400 text-[11px] font-bold uppercase">Primary Applicant</p>
+              <p className="font-semibold text-gray-900 mt-0.5">{applicant.name || "Primary Traveler"}</p>
+              <p className="text-xs text-gray-500">{applicant.age} Years</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-[11px] font-bold uppercase">Appointed Nominee</p>
+              <p className="font-semibold text-gray-900 mt-0.5">{applicant.nominee || "Immediate Family"}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-[11px] font-bold uppercase">Travelers Insured</p>
+              <p className="font-semibold text-gray-900 mt-0.5">{travelers} Traveler{travelers > 1 ? "s" : ""}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-[11px] font-bold uppercase">Trip Duration</p>
+              <p className="font-semibold text-gray-900 mt-0.5">{days} Days ({tripType})</p>
+            </div>
           </div>
 
-          <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Amount you can receive</p>
-          <div className="space-y-1.5 mb-4">
-            {COVERAGE_ROWS.map((r) => {
-              const Icon = r.icon;
-              return (
-                <div key={r.key} className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-1.5 text-gray-700"><Icon size={13} className="text-blue-600" /> {r.label}</span>
-                  <span className="font-semibold">₹{plan.coverage[r.key].toLocaleString()}</span>
-                </div>
-              );
-            })}
+          {/* Detailed Coverage Table */}
+          <div className="mb-6">
+            <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">
+              Included Coverage & Maximum Sum Insured
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {COVERAGE_ROWS.map((r) => {
+                const Icon = r.icon;
+                return (
+                  <div key={r.key} className="flex items-center justify-between p-3 rounded-lg bg-blue-50/50 border border-blue-100/70 text-sm">
+                    <span className="flex items-center gap-2 text-gray-800 font-medium">
+                      <Icon size={16} className="text-blue-600 shrink-0" />
+                      {r.label}
+                    </span>
+                    <span className="font-bold text-blue-900">
+                      ₹ {plan.coverage[r.key].toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="flex justify-between items-center border-t border-gray-100 pt-3 mb-5">
-            <span className="text-gray-600 text-sm">Premium Paid</span>
-            <span className="text-xl font-bold">₹ {premium.toLocaleString()}</span>
+          {/* Action buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 print:hidden">
+            <Button
+              onClick={handlePrint}
+              variant="outline"
+              className="flex-1 flex items-center justify-center gap-2 border-gray-300 py-3"
+            >
+              <Printer size={16} /> Print Policy Certificate
+            </Button>
+            <Button
+              onClick={handleDownload}
+              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 shadow-md"
+            >
+              <Download size={16} /> Download Policy PDF/HTML
+            </Button>
           </div>
+        </div>
 
-          <div className="flex gap-3 print:hidden">
-            <Button onClick={handlePrint} variant="outline" className="flex-1 flex items-center gap-2"><Printer size={16} /> Print</Button>
-            <Button onClick={handleDownload} className="flex-1 flex items-center gap-2 bg-blue-600 text-white"><Download size={16} /> Download</Button>
+        {/* 24x7 Claims Assistance */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+            <Phone size={20} className="text-blue-600" /> 24x7 Worldwide Emergency Assistance & Claims
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            If you experience travel delays, medical issues, or luggage loss during your trip, contact our round-the-clock claims department immediately:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+              <p className="text-xs text-gray-400 font-bold uppercase">Toll-Free Helpline</p>
+              <p className="text-base font-bold text-blue-700 mt-1">1800 209 5858</p>
+              <p className="text-xs text-gray-500 mt-0.5">Free from any mobile or landline</p>
+            </div>
+            <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+              <p className="text-xs text-gray-400 font-bold uppercase">International Medical</p>
+              <p className="text-base font-bold text-blue-700 mt-1">+91 22 6734 7800</p>
+              <p className="text-xs text-gray-500 mt-0.5">Collect calls accepted abroad</p>
+            </div>
+            <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+              <p className="text-xs text-gray-400 font-bold uppercase">Instant Claims Email</p>
+              <p className="text-base font-bold text-blue-700 mt-1">claims@makemytour.com</p>
+              <p className="text-xs text-gray-500 mt-0.5">2-hour cashless approval turnaround</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Navigation */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+          <Button
+            onClick={onReset}
+            variant="outline"
+            className="border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold"
+          >
+            ← Insure Another Trip
+          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => router.push("/")}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+            >
+              Book Flights & Hotels
+            </Button>
+            <Button
+              onClick={() => router.push("/profile")}
+              variant="outline"
+              className="border-gray-300 font-medium"
+            >
+              Go to My Bookings
+            </Button>
           </div>
         </div>
       </div>
@@ -229,6 +371,20 @@ export default function InsurancePage() {
     setIssuedPolicy({ plan, travelers, days, premium, applicant });
     setIsPaymentOpen(false);
   };
+
+  if (issuedPolicy) {
+    return (
+      <InsuranceConfirmationView
+        plan={issuedPolicy.plan}
+        travelers={issuedPolicy.travelers}
+        days={issuedPolicy.days}
+        premium={issuedPolicy.premium}
+        applicant={issuedPolicy.applicant}
+        tripType={tripType}
+        onReset={() => setIssuedPolicy(null)}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -368,17 +524,6 @@ export default function InsurancePage() {
             </form>
           </div>
         </div>
-      )}
-
-      {issuedPolicy && (
-        <PolicyDocument
-          plan={issuedPolicy.plan}
-          travelers={issuedPolicy.travelers}
-          days={issuedPolicy.days}
-          premium={issuedPolicy.premium}
-          applicant={issuedPolicy.applicant}
-          onClose={() => setIssuedPolicy(null)}
-        />
       )}
 
       <FakePaymentModal
