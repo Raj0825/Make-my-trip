@@ -66,6 +66,34 @@ public class DatabaseSeederTest {
         assertTrue(trains >= 30, "Trains count must be >= 30, found: " + trains);
         assertTrue(buses >= 30, "Buses count must be >= 30, found: " + buses);
         assertTrue(cabs >= 40, "Cabs count must be >= 40, found: " + cabs);
+
+        java.time.LocalDate minDate = java.time.LocalDate.of(2026, 9, 19);
+        java.time.LocalDate maxDate = java.time.LocalDate.of(2026, 10, 19);
+
+        for (com.makemytrip.makemytrip.models.Flight f : flightRepository.findAll()) {
+            java.time.LocalDate d = java.time.LocalDate.parse(f.getDate());
+            assertTrue(!d.isBefore(minDate) && !d.isAfter(maxDate),
+                    "Flight " + f.getFlightName() + " date " + f.getDate() + " out of range");
+            assertTrue(f.getDepartureTime().startsWith(f.getDate()),
+                    "Flight departureTime should start with date: " + f.getDepartureTime());
+        }
+
+        for (com.makemytrip.makemytrip.models.Train t : trainRepository.findAll()) {
+            java.time.LocalDate d = java.time.LocalDate.parse(t.getDate());
+            assertTrue(!d.isBefore(minDate) && !d.isAfter(maxDate),
+                    "Train " + t.getTrainName() + " date " + t.getDate() + " out of range");
+            assertTrue(t.getDepartureTime().startsWith(t.getDate()),
+                    "Train departureTime should start with date: " + t.getDepartureTime());
+        }
+
+        System.out.println("=== Sample Flights With Random Dates ===");
+        flightRepository.findAll().stream().limit(5).forEach(f ->
+                System.out.println("Flight: " + f.getFlightName() + " | Date: " + f.getDate() + " | Dep: " + f.getDepartureTime() + " | Arr: " + f.getArrivalTime()));
+
+        System.out.println("=== Sample Trains With Random Dates ===");
+        trainRepository.findAll().stream().limit(5).forEach(t ->
+                System.out.println("Train: " + t.getTrainName() + " | Date: " + t.getDate() + " | Dep: " + t.getDepartureTime() + " | Arr: " + t.getArrivalTime()));
+
         System.out.println("=== ALL ASSERTIONS PASSED SUCCESSFULLY! ===");
     }
 }

@@ -11,6 +11,7 @@ public class Train {
     private String to;
     private String departureTime;
     private String arrivalTime;
+    private String date;
     private double price;
     private int availableSeats;
 
@@ -62,6 +63,14 @@ public class Train {
 
     public void setArrivalTime(String arrivalTime) {
         this.arrivalTime = arrivalTime;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 
     public double getPrice() {

@@ -209,7 +209,7 @@ export default function Home() {
         (f) =>
           (f.from ?? "").toLowerCase() === from.toLowerCase() &&
           (f.to ?? "").toLowerCase() === to.toLowerCase() &&
-          (!date || (f.departureTime ?? "").startsWith(date))
+          (!date || (f.departureTime ?? "").startsWith(date) || (f.date ?? "") === date)
       );
       setsearchresult(results);
     } else if (bookingtype === "hotels") {
@@ -223,7 +223,7 @@ export default function Home() {
         (t) =>
           (t.from ?? "").toLowerCase() === from.toLowerCase() &&
           (t.to ?? "").toLowerCase() === to.toLowerCase() &&
-          (!date || (t.departureTime ?? "").startsWith(date))
+          (!date || (t.departureTime ?? "").startsWith(date) || (t.date ?? "") === date)
       );
       setsearchresult(results);
     } else if (bookingtype === "buses") {
@@ -231,7 +231,7 @@ export default function Home() {
         (b) =>
           (b.from ?? "").toLowerCase() === from.toLowerCase() &&
           (b.to ?? "").toLowerCase() === to.toLowerCase() &&
-          (!date || (b.departureTime ?? "").startsWith(date))
+          (!date || (b.departureTime ?? "").startsWith(date) || (b.date ?? "") === date)
       );
       setsearchresult(results);
     } else if (bookingtype === "cabs") {
@@ -239,7 +239,7 @@ export default function Home() {
         (c) =>
           (c.from ?? "").toLowerCase() === from.toLowerCase() &&
           (c.to ?? "").toLowerCase() === to.toLowerCase() &&
-          (!date || (c.departureTime ?? "").startsWith(date))
+          (!date || (c.departureTime ?? "").startsWith(date) || (c.date ?? "") === date)
       );
       setsearchresult(results);
     } else if (bookingtype === "homestays") {
@@ -251,14 +251,16 @@ export default function Home() {
     }
   };
   const formatDate = (dateString: string): string => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
     const options: Intl.DateTimeFormatOptions = {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     };
-    const date = new Date(dateString);
     return date.toLocaleString("en-US", options);
   };
   const handlebooknow = (id: any) => {

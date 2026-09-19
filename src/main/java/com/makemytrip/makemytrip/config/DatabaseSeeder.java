@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.*;
 
 @Component
@@ -41,6 +42,8 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private final Random random = new Random();
+
     @Override
     public void run(String... args) {
         log.info("Checking database seeding status...");
@@ -59,6 +62,9 @@ public class DatabaseSeeder implements CommandLineRunner {
         long cabCount = seedCabs(force);
         long demoBookingsCount = seedDemoBookings();
 
+        // Ensure all flights and trains have dates randomly set between 19 September 2026 and 19 October 2026
+        Map<String, Object> dateReport = randomizeFlightAndTrainDates();
+
         report.put("flights", flightCount);
         report.put("hotels", hotelCount);
         report.put("homestays", homestayCount);
@@ -66,9 +72,85 @@ public class DatabaseSeeder implements CommandLineRunner {
         report.put("buses", busCount);
         report.put("cabs", cabCount);
         report.put("demoBookings", demoBookingsCount);
+        report.put("dateRandomization", dateReport);
         report.put("status", "SUCCESS");
 
         return report;
+    }
+
+    public synchronized Map<String, Object> randomizeFlightAndTrainDates() {
+        LocalDate startDate = LocalDate.of(2026, 9, 19);
+
+        List<Flight> flights = flightRepository.findAll();
+        for (Flight f : flights) {
+            int days = random.nextInt(31); // 0 to 30 days (19 Sep 2026 to 19 Oct 2026 inclusive)
+            LocalDate depDate = startDate.plusDays(days);
+            String dateStr = depDate.toString();
+            f.setDate(dateStr);
+
+            String oldDep = f.getDepartureTime() != null ? f.getDepartureTime() : "08:00";
+            String depTimePart = extractTimePart(oldDep, "08:00");
+            f.setDepartureTime(dateStr + "T" + depTimePart);
+
+            String oldArr = f.getArrivalTime() != null ? f.getArrivalTime() : "10:30";
+            String arrTimePart = extractTimePart(oldArr, "10:30");
+
+            LocalDate arrDate = depDate;
+            if (arrTimePart.compareTo(depTimePart) < 0) {
+                arrDate = depDate.plusDays(1);
+            }
+            f.setArrivalTime(arrDate.toString() + "T" + arrTimePart);
+        }
+        flightRepository.saveAll(flights);
+
+        List<Train> trains = trainRepository.findAll();
+        for (Train t : trains) {
+            int days = random.nextInt(31);
+            LocalDate depDate = startDate.plusDays(days);
+            String dateStr = depDate.toString();
+            t.setDate(dateStr);
+
+            String oldDep = t.getDepartureTime() != null ? t.getDepartureTime() : "06:00";
+            String depTimePart = extractTimePart(oldDep, "06:00");
+            t.setDepartureTime(dateStr + "T" + depTimePart);
+
+            String oldArr = t.getArrivalTime() != null ? t.getArrivalTime() : "14:00";
+            String arrTimePart = extractTimePart(oldArr, "14:00");
+
+            LocalDate arrDate = depDate;
+            if (arrTimePart.compareTo(depTimePart) < 0) {
+                arrDate = depDate.plusDays(1);
+            }
+            t.setArrivalTime(arrDate.toString() + "T" + arrTimePart);
+        }
+        trainRepository.saveAll(trains);
+
+        log.info("Successfully randomized dates between 2026-09-19 and 2026-10-19 for {} flights and {} trains.",
+                flights.size(), trains.size());
+
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("flightsUpdated", flights.size());
+        map.put("trainsUpdated", trains.size());
+        map.put("startDate", "2026-09-19");
+        map.put("endDate", "2026-10-19");
+        return map;
+    }
+
+    private String extractTimePart(String timeStr, String fallback) {
+        if (timeStr == null || timeStr.trim().isEmpty()) return fallback + ":00";
+        String s = timeStr.trim();
+        if (s.contains("T")) {
+            s = s.substring(s.indexOf("T") + 1);
+        } else if (s.contains(" ")) {
+            s = s.substring(s.lastIndexOf(" ") + 1);
+        }
+        if (s.length() == 5 && s.matches("\\d{2}:\\d{2}")) {
+            return s + ":00";
+        }
+        if (s.length() == 8 && s.matches("\\d{2}:\\d{2}:\\d{2}")) {
+            return s;
+        }
+        return fallback + ":00";
     }
 
     private long seedFlights(boolean force) {
@@ -137,8 +219,19 @@ public class DatabaseSeeder implements CommandLineRunner {
         f.setFlightName(name);
         f.setFrom(from);
         f.setTo(to);
-        f.setDepartureTime(dep);
-        f.setArrivalTime(arr);
+
+        LocalDate startDate = LocalDate.of(2026, 9, 19);
+        int days = random.nextInt(31);
+        LocalDate depDate = startDate.plusDays(days);
+        String dateStr = depDate.toString();
+        f.setDate(dateStr);
+
+        String depTime = dep.length() == 5 ? dep + ":00" : dep;
+        String arrTime = arr.length() == 5 ? arr + ":00" : arr;
+        f.setDepartureTime(dateStr + "T" + depTime);
+        LocalDate arrDate = arrTime.compareTo(depTime) < 0 ? depDate.plusDays(1) : depDate;
+        f.setArrivalTime(arrDate.toString() + "T" + arrTime);
+
         f.setPrice(price);
         f.setAvailableSeats(totalSeats);
         f.setFirstClassSeats(first);
@@ -330,8 +423,19 @@ public class DatabaseSeeder implements CommandLineRunner {
         t.setTrainName(name);
         t.setFrom(from);
         t.setTo(to);
-        t.setDepartureTime(dep);
-        t.setArrivalTime(arr);
+
+        LocalDate startDate = LocalDate.of(2026, 9, 19);
+        int days = random.nextInt(31);
+        LocalDate depDate = startDate.plusDays(days);
+        String dateStr = depDate.toString();
+        t.setDate(dateStr);
+
+        String depTime = dep.length() == 5 ? dep + ":00" : dep;
+        String arrTime = arr.length() == 5 ? arr + ":00" : arr;
+        t.setDepartureTime(dateStr + "T" + depTime);
+        LocalDate arrDate = arrTime.compareTo(depTime) < 0 ? depDate.plusDays(1) : depDate;
+        t.setArrivalTime(arrDate.toString() + "T" + arrTime);
+
         t.setPrice(price);
         t.setAvailableSeats(seats);
         return t;

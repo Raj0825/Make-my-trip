@@ -410,4 +410,9 @@ public class AdminController {
         ));
     }
 
+    @PostMapping("/randomize-dates")
+    public ResponseEntity<?> randomizeDates() {
+        return ResponseEntity.ok(databaseSeeder.randomizeFlightAndTrainDates());
+    }
+
 }
