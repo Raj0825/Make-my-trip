@@ -1,6 +1,6 @@
 import React from "react";
 import SignupDialog from "./SignupDialog";
-import { LogOut, Plane, User, Bell } from "lucide-react";
+import { LogOut, Plane, User, Bell, Ticket } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import {
@@ -76,6 +76,10 @@ const Navbar = () => {
                   <DropdownMenuItem onClick={() => router.push("/profile")}>
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/profile#my-bookings")}>
+                    <Ticket className="mr-2 h-4 w-4" />
+                    <span>My Bookings</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/track-flights")}>
                     <Bell className="mr-2 h-4 w-4" />

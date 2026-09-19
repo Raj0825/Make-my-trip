@@ -120,6 +120,17 @@ const ProfilePage = () => {
   const [entityNames, setEntityNames] = useState<Record<string, Record<string, string>>>({});
   const [deletingBookingId, setDeletingBookingId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (router.asPath.includes("#my-bookings") || router.query.tab === "bookings") {
+      setTimeout(() => {
+        const el = document.getElementById("my-bookings");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 150);
+    }
+  }, [router.asPath, router.query]);
+
   const handleDeleteBooking = async (bookingId: string) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this booking from your history? This action cannot be undone."
@@ -291,8 +302,17 @@ const ProfilePage = () => {
                       <span className="truncate">{user?.email}</span>
                     </div>
                     <div className="pt-2 flex flex-col gap-2">
+                      <button
+                        onClick={() => {
+                          const el = document.getElementById("my-bookings");
+                          if (el) el.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-100 transition-colors shadow-sm"
+                      >
+                        <Ticket className="w-4 h-4 text-blue-600" /> My Bookings {allBookings.length > 0 ? `(${allBookings.length})` : ""}
+                      </button>
                       <button onClick={() => setIsEditing(true)}
-                        className="w-full flex items-center justify-center gap-2 py-2 border border-blue-200 text-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-colors">
+                        className="w-full flex items-center justify-center gap-2 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors">
                         <Edit2 className="w-3.5 h-3.5" /> Edit Profile
                       </button>
                       <Link href="/wishlist"
@@ -322,7 +342,7 @@ const ProfilePage = () => {
 
           {/* Right — Bookings */}
           <div className="md:col-span-2">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div id="my-bookings" className="bg-white rounded-2xl shadow-sm border border-gray-100 scroll-mt-6">
               <div className="px-6 pt-6 pb-0">
                 <h2 className="text-xl font-bold text-gray-800 mb-4">My Bookings</h2>
                 {/* Tabs */}
