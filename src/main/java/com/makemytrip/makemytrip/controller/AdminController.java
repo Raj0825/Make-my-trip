@@ -42,6 +42,9 @@ public class AdminController {
     @Autowired
     private DynamicPricingService dynamicPricingService;
 
+    @Autowired
+    private com.makemytrip.makemytrip.config.DatabaseSeeder databaseSeeder;
+
     @GetMapping("/users")
     public ResponseEntity<List<Users>> getallusers(){
         List<Users> users=userRepository.findAll();
@@ -388,6 +391,23 @@ public class AdminController {
             return ResponseEntity.ok(java.util.Map.of("message", "Booking deleted successfully", "bookingId", cleanBookingId));
         }
         return ResponseEntity.status(404).body(java.util.Map.of("error", "Booking not found with id: " + cleanBookingId));
+    }
+
+    @PostMapping("/seed")
+    public ResponseEntity<?> triggerSeed(@RequestParam(defaultValue = "false") boolean force) {
+        return ResponseEntity.ok(databaseSeeder.seedAll(force));
+    }
+
+    @GetMapping("/seed-status")
+    public ResponseEntity<?> getSeedStatus() {
+        return ResponseEntity.ok(java.util.Map.of(
+                "flights", flightRepository.count(),
+                "hotels", hotelRepository.count(),
+                "homestays", homestayRepository.count(),
+                "trains", trainRepository.count(),
+                "buses", busRepository.count(),
+                "cabs", cabRepository.count()
+        ));
     }
 
 }
